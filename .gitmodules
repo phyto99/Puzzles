@@ -4,4 +4,4 @@
 
 [submodule "raven-datasets"]
 	path = raven-datasets
-	url = https://github.com/mikomel/raven.git
+	url = https://github.com/mikomel/raven-datasets.git
