@@ -1,8 +1,0 @@
-exclude:
-  - ACRE
-  - raven-datasets
-  - .gitmodules
-
-# Prevent Jekyll from processing submodule directories (they contain files
-# that can trigger Liquid/Jekyll parsing errors). Excluding them keeps Pages
-# builds from failing while still serving the main site content.
