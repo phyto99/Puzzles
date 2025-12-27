@@ -179,6 +179,14 @@
             opacity: 0.8;
         }
 
+        .acre-state-label {
+            margin-top: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+            min-height: 30px;
+        }
+
         .acre-controls {
             display: flex;
             gap: 20px;
@@ -258,14 +266,10 @@
                 <div id="interactiveContainer" class="acre-interactive-scene">
                     <div class="canvas-container"></div>
                 </div>
+                <div id="acreStateLabel" class="acre-state-label">Click to toggle: Undeterminable</div>
 
                 <div class="acre-controls" style="flex-direction: row; gap: 20px;">
-                    <button class="acre-btn" onclick="submitAcre('active')"
-                        title="Object activates the machine">Active</button>
-                    <button class="acre-btn" onclick="submitAcre('inactive')"
-                        title="Object does not activate">Inactive</button>
-                    <button class="acre-btn" onclick="submitAcre('undeterminable')"
-                        title="Insufficient evidence">Undeterminable</button>
+                    <button class="acre-btn" onclick="checkAcreAnswer()" title="Check your answer">Check Answer</button>
                 </div>
                 <div id="acreFeedback"
                     style="margin-top: 20px; font-size: 1.1rem; font-weight: bold; min-height: 30px;"></div>
@@ -297,7 +301,7 @@
         // Single interactive scene state
         let currentInteractiveScene = null;
         let interactiveRenderer = null;
-        let interactiveSceneObj = null; // Three.js scene object to update lights
+        let interactiveSceneObj = null;
         let interactiveCamera = null;
 
         async function loadNewPuzzle() {
@@ -328,7 +332,7 @@
 
             // Reset visual states
             document.getElementById('interactiveContainer').classList.remove('correct', 'wrong');
-            document.getElementById('acreFeedback').innerHTML = ''; // Clear feedback
+            document.getElementById('acreFeedback').innerHTML = '';
 
             try {
                 const response = await fetch('/api/get_puzzle', {
@@ -422,7 +426,6 @@
             const contextDiv = document.getElementById('acreContext');
             contextDiv.innerHTML = '';
 
-            // Context: 3x2 Grid
             data.context_scenes.forEach(scene => {
                 const sceneCard = document.createElement('div');
                 sceneCard.className = 'acre-scene';
@@ -433,27 +436,22 @@
                 requestAnimationFrame(() => renderScene(canvasContainer, scene));
             });
 
-            // Interactive Prediction Area
-            // Use Candidate 0 (OFF state) as base, but we will control the light
-            // In ACRE, the candidates have the exact same object positions, just light diff.
             const baseScene = data.candidates[0].scene;
             const container = document.querySelector('#interactiveContainer .canvas-container');
-            container.innerHTML = ''; // clear previous
+            container.innerHTML = '';
 
-            // Render PREVIEW (Default OFF)
             requestAnimationFrame(() => renderInteractScene(container, baseScene));
 
             document.getElementById('status').textContent = `Type: ${data.puzzle_type} | Regime: ${data.regime}`;
         }
 
-        // Standard render for context
         function renderScene(container, sceneData) {
             const width = container.clientWidth;
             const height = container.clientHeight;
             const scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x808080); // Darker grey background
+            scene.background = new THREE.Color(0x404040);
             const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-            camera.position.set(0, -8, 6); // Pull back to see entire platform
+            camera.position.set(0, -8, 6);
             camera.lookAt(0, 0, 0);
             const renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(width, height);
@@ -461,19 +459,17 @@
             container.appendChild(renderer.domElement);
 
             addCommonObjects(scene, sceneData, true, camera, renderer, container);
-
             renderer.render(scene, camera);
         }
 
-        // Variable render for interactive part
         function renderInteractScene(container, sceneData) {
             const width = container.clientWidth;
             const height = container.clientHeight;
             interactiveSceneObj = new THREE.Scene();
-            interactiveSceneObj.background = new THREE.Color(0x808080); // Darker grey background
+            interactiveSceneObj.background = new THREE.Color(0x404040);
 
             interactiveCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-            interactiveCamera.position.set(0, -8, 6); // Pull back to see entire platform
+            interactiveCamera.position.set(0, -8, 6);
             interactiveCamera.lookAt(0, 0, 0);
 
             interactiveRenderer = new THREE.WebGLRenderer({ antialias: true });
@@ -481,56 +477,51 @@
             interactiveRenderer.shadowMap.enabled = true;
             container.appendChild(interactiveRenderer.domElement);
 
-            // Mouse rotation
-            let isDragging = false;
-            let previousMousePosition = { x: 0, y: 0 };
-
-            interactiveRenderer.domElement.addEventListener('mousedown', (e) => {
-                isDragging = true;
-            });
-
-            interactiveRenderer.domElement.addEventListener('mousemove', (e) => {
-                if (isDragging) {
-                    const deltaX = e.offsetX - previousMousePosition.x;
-                    const deltaY = e.offsetY - previousMousePosition.y;
-
-                    // Rotate camera around scene
-                    const rotationSpeed = 0.005;
-                    const radius = Math.sqrt(
-                        interactiveCamera.position.x ** 2 +
-                        interactiveCamera.position.y ** 2
-                    );
-
-                    let angle = Math.atan2(interactiveCamera.position.y, interactiveCamera.position.x);
-                    angle -= deltaX * rotationSpeed;
-
-                    interactiveCamera.position.x = radius * Math.cos(angle);
-                    interactiveCamera.position.y = radius * Math.sin(angle);
-                    interactiveCamera.position.z += deltaY * rotationSpeed * 5;
-                    interactiveCamera.position.z = Math.max(2, Math.min(12, interactiveCamera.position.z));
-
-                    interactiveCamera.lookAt(0, 0, 0);
-                    interactiveRenderer.render(interactiveSceneObj, interactiveCamera);
+            // Click to toggle light state
+            interactiveRenderer.domElement.addEventListener('click', (e) => {
+                // Cycle through states: undeterminable -> active -> inactive -> undeterminable
+                if (selectedAnswer === 'undeterminable') {
+                    selectedAnswer = 'active';
+                    isLightVisuallyOn = true;
+                } else if (selectedAnswer === 'active') {
+                    selectedAnswer = 'inactive';
+                    isLightVisuallyOn = false;
+                } else {
+                    selectedAnswer = 'undeterminable';
+                    isLightVisuallyOn = false;
                 }
-                previousMousePosition = { x: e.offsetX, y: e.offsetY };
+                updateLightVisuals();
             });
 
-            interactiveRenderer.domElement.addEventListener('mouseup', () => {
-                isDragging = false;
-            });
-
-            interactiveRenderer.domElement.addEventListener('mouseleave', () => {
-                isDragging = false;
-            });
-
-            currentInteractiveScene = { ...sceneData, light_state: 'off' }; // Start OFF
+            currentInteractiveScene = { ...sceneData, light_state: 'undetermined' };
             addCommonObjects(interactiveSceneObj, currentInteractiveScene, false, interactiveCamera, interactiveRenderer, container);
             interactiveRenderer.render(interactiveSceneObj, interactiveCamera);
+        }
+
+        function addHoverRotation(renderer, scene, camera) {
+            let lastRotation = scene.rotation.y;
+
+            renderer.domElement.addEventListener('mousemove', (e) => {
+                const rect = renderer.domElement.getBoundingClientRect();
+                const mouseX = (e.clientX - rect.left) / rect.width;
+                const targetRotation = (mouseX - 0.5) * Math.PI * 0.5;
+
+                lastRotation += (targetRotation - lastRotation) * 0.1;
+                scene.rotation.y = lastRotation;
+                renderer.render(scene, camera);
+            });
+
+            renderer.domElement.addEventListener('mouseleave', () => {
+            });
         }
 
         let isLightVisuallyOn = false;
         let platformMesh = null;
         let mainLight = null;
+        let aboveSphere = null;
+        let selectedAnswer = 'undeterminable';
+        let questionMarkMesh = null;
+        let edgeLines = null;
 
         function toggleInteractiveLight() {
             isLightVisuallyOn = !isLightVisuallyOn;
@@ -540,82 +531,132 @@
         function updateLightVisuals() {
             if (!platformMesh) return;
 
-            if (isLightVisuallyOn) {
-                // WHITE Light as requested
-                platformMesh.material.emissive.setHex(0xffffff);
-                platformMesh.material.emissiveIntensity = 0.8;
-                platformMesh.material.color.setHex(0xffffff); // White when on
-                if (mainLight) mainLight.intensity = 1.5;
-            } else {
-                platformMesh.material.emissive.setHex(0x000000);
-                platformMesh.material.emissiveIntensity = 0.0;
-                platformMesh.material.color.setHex(0xcccccc); // Reset to base grey when off
+            const labelEl = document.getElementById('acreStateLabel');
+
+            if (selectedAnswer === 'undeterminable') {
+                platformMesh.visible = false;
+                if (edgeLines) edgeLines.visible = false;
                 if (mainLight) mainLight.intensity = 0.0;
+                if (questionMarkMesh) questionMarkMesh.visible = true;
+                labelEl.textContent = 'Click to toggle: Undeterminable';
+            } else if (selectedAnswer === 'inactive') {
+                platformMesh.visible = true;
+                if (edgeLines) edgeLines.visible = true;
+                platformMesh.material.color.setHex(0xa0a0a0);
+                platformMesh.material.emissive.setHex(0x000000);
+                platformMesh.material.emissiveIntensity = 0;
+                platformMesh.material.roughness = 0.85;
+                platformMesh.material.metalness = 0.05;
+                if (mainLight) mainLight.intensity = 0.0;
+                if (questionMarkMesh) questionMarkMesh.visible = false;
+                labelEl.textContent = 'Click to toggle: Inactive';
+            } else if (selectedAnswer === 'active') {
+                platformMesh.visible = true;
+                if (edgeLines) edgeLines.visible = true;
+                platformMesh.material.color.setHex(0xf5f5f5);
+                platformMesh.material.emissive.setHex(0xcccccc);
+                platformMesh.material.emissiveIntensity = 0.5;
+                platformMesh.material.roughness = 0.85;
+                platformMesh.material.metalness = 0.05;
+                if (mainLight) mainLight.intensity = 0.4;
+                if (questionMarkMesh) questionMarkMesh.visible = false;
+                labelEl.textContent = 'Click to toggle: Active';
             }
+
             interactiveRenderer.render(interactiveSceneObj, interactiveCamera);
         }
 
         function addCommonObjects(scene, sceneData, isContext, camera, renderer, container) {
-            // Stronger ambient light to see material properties
-            const ambient = new THREE.AmbientLight(0xffffff, 0.7); // Brighter white ambient
+            const sunLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            sunLight.position.set(5, -5, 8);
+            sunLight.castShadow = true;
+            scene.add(sunLight);
+
+            const ambient = new THREE.AmbientLight(0xffffff, 0.45);
             scene.add(ambient);
 
-            // Platform - 7x7x1 as specified
             const platformSize = 7;
             const platformHeight = 1;
             const platformGeo = new THREE.BoxGeometry(platformSize, platformSize, platformHeight);
 
             const isOn = sceneData.light_state === 'on';
+            const isOff = sceneData.light_state === 'off';
+            const isUndetermined = sceneData.light_state === 'undetermined';
 
-            // Platform material - entire slab glows when ON
             const platformMat = new THREE.MeshStandardMaterial({
-                color: 0xcccccc, // Light grey base
-                roughness: 0.2,
-                metalness: 0.1
+                color: 0xa0a0a0,
+                roughness: 0.85,
+                metalness: 0.05
             });
 
-            // Full platform glow when ON
             if (isContext && isOn) {
-                platformMat.emissive.setHex(0xffffff);
-                platformMat.emissiveIntensity = 0.8; // Strong glow
-                platformMat.color.setHex(0xffffff); // White when on
-            } else if (isContext && sceneData.light_state === 'undetermined') {
-                platformMat.emissive.setHex(0x808080);
-                platformMat.emissiveIntensity = 0.4;
+                platformMat.emissive.setHex(0xcccccc);
+                platformMat.emissiveIntensity = 0.5;
+                platformMat.color.setHex(0xf5f5f5);
             }
 
             const platform = new THREE.Mesh(platformGeo, platformMat);
-            platform.position.z = platformHeight / 2; // Center at Z=0.5
+            platform.position.z = platformHeight / 2;
             platform.receiveShadow = true;
-            platform.castShadow = false; // Platform doesn't cast shadow
+            platform.castShadow = false;
+
+            if (!isContext) {
+                platform.visible = false;
+            }
+
             scene.add(platform);
 
-            if (!isContext) platformMesh = platform;
+            if (!isContext) {
+                platformMesh = platform;
 
-            // Platform outline
+                // Create question mark for undeterminable state
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 400px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('?', 256, 256);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                const qMarkMat = new THREE.SpriteMaterial({
+                    map: texture,
+                    transparent: true,
+                    depthTest: true
+                });
+                const qMarkSprite = new THREE.Sprite(qMarkMat);
+                qMarkSprite.position.set(0, 0, platformHeight + 1);
+                qMarkSprite.scale.set(3, 3, 1);
+                qMarkSprite.visible = true;
+                scene.add(qMarkSprite);
+                questionMarkMesh = qMarkSprite;
+            }
+
             const edges = new THREE.EdgesGeometry(platformGeo);
             const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 }));
             line.position.z = platformHeight / 2;
             scene.add(line);
 
-            // Directional light for better material visibility
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
-            dirLight.position.set(5, 5, 10);
-            dirLight.castShadow = true;
-            scene.add(dirLight);
+            if (!isContext) {
+                line.visible = false;
+                edgeLines = line;
+            }
 
-            // Point Light - only light source besides ambient
-            const centerLight = new THREE.PointLight(0xffffff, 1.5, 15);
-            centerLight.position.set(0, 0, 4);
-            centerLight.intensity = (isContext && isOn) ? 1.5 : 0.0;
-            centerLight.castShadow = true;
-            scene.add(centerLight);
+            const underLight = new THREE.PointLight(0xffffff, 0.5, 25);
+            underLight.position.set(0, 0, 0);
+            scene.add(underLight);
 
-            if (!isContext) mainLight = centerLight;
+            const aboveLight = new THREE.PointLight(0xffffff, 0.6, 25);
+            aboveLight.position.set(0, 0, platformHeight + 2);
+            aboveLight.intensity = (isContext && isOn) ? 0.4 : 0.0;
+            scene.add(aboveLight);
 
-            // Objects - positioned on top of platform
+            if (!isContext) mainLight = aboveLight;
+
             sceneData.objects.forEach(obj => {
-                const scaleFactor = 2.0; // 2x bigger
+                const scaleFactor = 2.0;
                 let r = (obj.size * scaleFactor) / 2;
                 let geometry;
 
@@ -624,35 +665,33 @@
                 } else if (obj.shape === 'sphere') {
                     geometry = new THREE.SphereGeometry(r, 32, 32);
                 } else if (obj.shape === 'cylinder') {
-                    // Cylinder upright (circle facing up) - NO rotation needed
                     geometry = new THREE.CylinderGeometry(r, r, obj.size * scaleFactor, 32);
-                    // Three.js cylinders are Y-up by default, but we use Z-up
-                    // So we need to rotate to align with Z axis
                     geometry.rotateX(Math.PI / 2);
                 }
 
                 const color = COLORS[obj.color] || 0x999999;
                 let mat;
 
-                // Enhanced material properties for visibility
                 if (obj.material === 'metal') {
                     mat = new THREE.MeshStandardMaterial({
                         color: color,
-                        metalness: 0.95,  // Very metallic
-                        roughness: 0.05   // Very reflective
+                        metalness: 0.9,
+                        roughness: 0.15,
+                        envMapIntensity: 2.0,
+                        emissive: color,
+                        emissiveIntensity: 0.25
                     });
-                } else { // rubber
+                } else {
                     mat = new THREE.MeshStandardMaterial({
                         color: color,
-                        metalness: 0.0,   // Not metallic
-                        roughness: 1.0    // Completely matte
+                        metalness: 0.0,
+                        roughness: 0.9
                     });
                 }
 
                 const mesh = new THREE.Mesh(geometry, mat);
 
-                // Position on top of platform (platform top is at Z=1)
-                let z = platformHeight; // Start from platform top
+                let z = platformHeight;
                 if (obj.shape === 'sphere') z += r;
                 else z += (obj.size * scaleFactor) / 2;
 
@@ -663,30 +702,14 @@
                 scene.add(mesh);
             });
 
-            // Add hover rotation for ALL scenes
             if (renderer && container) {
-                let isHovering = false;
-                let rotationAngle = 0;
-
-                renderer.domElement.addEventListener('mouseenter', () => {
-                    isHovering = true;
-                });
-
-                renderer.domElement.addEventListener('mouseleave', () => {
-                    isHovering = false;
-                });
-
                 renderer.domElement.addEventListener('mousemove', (e) => {
-                    if (isHovering && !isDragging) {
-                        // Rotate around Y axis based on mouse X position
-                        const rect = renderer.domElement.getBoundingClientRect();
-                        const mouseX = (e.clientX - rect.left) / rect.width; // 0 to 1
-                        rotationAngle = (mouseX - 0.5) * Math.PI; // -90° to +90°
+                    const rect = renderer.domElement.getBoundingClientRect();
+                    const mouseX = (e.clientX - rect.left) / rect.width;
+                    const rotationAngle = (mouseX - 0.5) * Math.PI;
 
-                        // Rotate entire scene around Y axis
-                        scene.rotation.y = rotationAngle;
-                        renderer.render(scene, camera);
-                    }
+                    scene.rotation.y = rotationAngle;
+                    renderer.render(scene, camera);
                 });
             }
         }
@@ -715,18 +738,16 @@
             }, 1500);
         }
 
-        async function submitAcre(chosenAnswer) {
+        async function checkAcreAnswer() {
             if (isWaiting) return;
             isWaiting = true;
 
-            // Map simplified answer to label and light state
             const answerMap = {
-                'active': { label: 2, light: true, display: 'Active' },
-                'inactive': { label: 0, light: false, display: 'Inactive' },
-                'undeterminable': { label: 1, light: false, display: 'Undeterminable' }
+                'active': { label: 2, display: 'Active' },
+                'inactive': { label: 0, display: 'Inactive' },
+                'undeterminable': { label: 1, display: 'Undeterminable' }
             };
 
-            // Map question subtypes to readable reasoning names
             const reasoningMap = {
                 'direct': 'Direct',
                 'indirect': 'Indirect',
@@ -734,14 +755,9 @@
                 'potential': 'Backward-blocking'
             };
 
-            const choice = answerMap[chosenAnswer];
+            const choice = answerMap[selectedAnswer];
             if (!choice) return;
 
-            // Update visual light state
-            isLightVisuallyOn = choice.light;
-            updateLightVisuals();
-
-            // Check correctness
             const correctCand = currentData.candidates.find(c => c.correct);
             const correctLabel = correctCand.id === 0 ? 0 : 2;
             const isCorrect = (choice.label === correctLabel);
@@ -749,12 +765,10 @@
             const container = document.getElementById('interactiveContainer');
             container.classList.add(isCorrect ? 'correct' : 'wrong');
 
-            // Display feedback with reasoning type
             const feedbackEl = document.getElementById('acreFeedback');
             const questionSubtype = currentData.question_subtype || 'unknown';
             const reasoningName = reasoningMap[questionSubtype] || questionSubtype;
 
-            // Determine correct answer text
             let correctAnswerText = '';
             if (correctLabel === 2) correctAnswerText = 'Active';
             else if (correctLabel === 0) correctAnswerText = 'Inactive';
