@@ -1,0 +1,3 @@
+[submodule "ACRE"]
+	path = ACRE
+	url = https://github.com/wellyzhang/ACRE.git
