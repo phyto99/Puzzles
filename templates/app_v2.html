@@ -451,7 +451,7 @@
             const width = container.clientWidth;
             const height = container.clientHeight;
             const scene = new THREE.Scene();
-            scene.background = new THREE.Color(0xdce0e5);
+            scene.background = new THREE.Color(0x808080); // Darker grey background
             const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
             camera.position.set(0, -8, 6); // Pull back to see entire platform
             camera.lookAt(0, 0, 0);
@@ -470,7 +470,7 @@
             const width = container.clientWidth;
             const height = container.clientHeight;
             interactiveSceneObj = new THREE.Scene();
-            interactiveSceneObj.background = new THREE.Color(0xdce0e5);
+            interactiveSceneObj.background = new THREE.Color(0x808080); // Darker grey background
 
             interactiveCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
             interactiveCamera.position.set(0, -8, 6); // Pull back to see entire platform
@@ -543,19 +543,21 @@
             if (isLightVisuallyOn) {
                 // WHITE Light as requested
                 platformMesh.material.emissive.setHex(0xffffff);
-                platformMesh.material.emissiveIntensity = 0.5;
+                platformMesh.material.emissiveIntensity = 0.8;
+                platformMesh.material.color.setHex(0xffffff); // White when on
                 if (mainLight) mainLight.intensity = 1.5;
             } else {
                 platformMesh.material.emissive.setHex(0x000000);
                 platformMesh.material.emissiveIntensity = 0.0;
+                platformMesh.material.color.setHex(0xcccccc); // Reset to base grey when off
                 if (mainLight) mainLight.intensity = 0.0;
             }
             interactiveRenderer.render(interactiveSceneObj, interactiveCamera);
         }
 
         function addCommonObjects(scene, sceneData, isContext, camera, renderer, container) {
-            // Ambient light - lighter so we can see platform when OFF
-            const ambient = new THREE.AmbientLight(0x808080, 0.6); // Medium grey
+            // Stronger ambient light to see material properties
+            const ambient = new THREE.AmbientLight(0xffffff, 0.7); // Brighter white ambient
             scene.add(ambient);
 
             // Platform - 7x7x1 as specified
@@ -565,26 +567,27 @@
 
             const isOn = sceneData.light_state === 'on';
 
-            // Platform material with proper visibility when OFF
+            // Platform material - entire slab glows when ON
             const platformMat = new THREE.MeshStandardMaterial({
-                color: 0xaaaaaa, // Lighter base color
-                roughness: 0.3,
-                metalness: 0.2
+                color: 0xcccccc, // Light grey base
+                roughness: 0.2,
+                metalness: 0.1
             });
 
-            // Three states: ON (white), OFF (dark), UNDETERMINED (grey)
+            // Full platform glow when ON
             if (isContext && isOn) {
                 platformMat.emissive.setHex(0xffffff);
-                platformMat.emissiveIntensity = 0.6;
+                platformMat.emissiveIntensity = 0.8; // Strong glow
+                platformMat.color.setHex(0xffffff); // White when on
             } else if (isContext && sceneData.light_state === 'undetermined') {
-                platformMat.emissive.setHex(0x808080); // Middle grey
-                platformMat.emissiveIntensity = 0.3;
+                platformMat.emissive.setHex(0x808080);
+                platformMat.emissiveIntensity = 0.4;
             }
 
             const platform = new THREE.Mesh(platformGeo, platformMat);
             platform.position.z = platformHeight / 2; // Center at Z=0.5
             platform.receiveShadow = true;
-            platform.castShadow = true;
+            platform.castShadow = false; // Platform doesn't cast shadow
             scene.add(platform);
 
             if (!isContext) platformMesh = platform;
@@ -595,10 +598,16 @@
             line.position.z = platformHeight / 2;
             scene.add(line);
 
+            // Directional light for better material visibility
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            dirLight.position.set(5, 5, 10);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+
             // Point Light - only light source besides ambient
-            const centerLight = new THREE.PointLight(0xffffff, 2.0, 15);
+            const centerLight = new THREE.PointLight(0xffffff, 1.5, 15);
             centerLight.position.set(0, 0, 4);
-            centerLight.intensity = (isContext && isOn) ? 2.0 : 0.0;
+            centerLight.intensity = (isContext && isOn) ? 1.5 : 0.0;
             centerLight.castShadow = true;
             scene.add(centerLight);
 
@@ -606,16 +615,17 @@
 
             // Objects - positioned on top of platform
             sceneData.objects.forEach(obj => {
-                let r = obj.size / 2;
+                const scaleFactor = 2.0; // 2x bigger
+                let r = (obj.size * scaleFactor) / 2;
                 let geometry;
 
                 if (obj.shape === 'cube') {
-                    geometry = new THREE.BoxGeometry(obj.size, obj.size, obj.size);
+                    geometry = new THREE.BoxGeometry(obj.size * scaleFactor, obj.size * scaleFactor, obj.size * scaleFactor);
                 } else if (obj.shape === 'sphere') {
                     geometry = new THREE.SphereGeometry(r, 32, 32);
                 } else if (obj.shape === 'cylinder') {
                     // Cylinder upright (circle facing up) - NO rotation needed
-                    geometry = new THREE.CylinderGeometry(r, r, obj.size, 32);
+                    geometry = new THREE.CylinderGeometry(r, r, obj.size * scaleFactor, 32);
                     // Three.js cylinders are Y-up by default, but we use Z-up
                     // So we need to rotate to align with Z axis
                     geometry.rotateX(Math.PI / 2);
@@ -624,18 +634,18 @@
                 const color = COLORS[obj.color] || 0x999999;
                 let mat;
 
-                // Material properties - metal vs rubber (matte)
+                // Enhanced material properties for visibility
                 if (obj.material === 'metal') {
                     mat = new THREE.MeshStandardMaterial({
                         color: color,
-                        metalness: 0.9,  // Very metallic
-                        roughness: 0.1   // Very smooth/reflective
+                        metalness: 0.95,  // Very metallic
+                        roughness: 0.05   // Very reflective
                     });
                 } else { // rubber
                     mat = new THREE.MeshStandardMaterial({
                         color: color,
-                        metalness: 0.0,  // Not metallic
-                        roughness: 0.9   // Very matte
+                        metalness: 0.0,   // Not metallic
+                        roughness: 1.0    // Completely matte
                     });
                 }
 
@@ -644,7 +654,7 @@
                 // Position on top of platform (platform top is at Z=1)
                 let z = platformHeight; // Start from platform top
                 if (obj.shape === 'sphere') z += r;
-                else z += obj.size / 2;
+                else z += (obj.size * scaleFactor) / 2;
 
                 mesh.position.set(obj.position[0], obj.position[1], z);
                 mesh.rotation.z = obj.rotation * (Math.PI / 180);
