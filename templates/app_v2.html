@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Puzzle Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            color: #555;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .controls select {
+            padding: 5px 10px;
+            font-size: 0.9rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .status {
+            margin: 10px 0;
+            font-weight: bold;
+            height: 24px;
+        }
+
+        /* RAVEN Layout */
+        .context-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            width: 480px;
+            margin: 0 auto 30px auto;
+        }
+
+        .panel {
+            width: 150px;
+            height: 150px;
+            background-color: #ddd;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .panel img {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+        }
+
+        .answers-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            width: 640px;
+            margin: 0 auto;
+        }
+
+        .answer-panel {
+            width: 150px;
+            height: 150px;
+            background-color: #fff;
+            border: 2px solid #ccc;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .answer-panel:hover {
+            border-color: #888;
+            transform: scale(1.02);
+        }
+
+        .answer-panel.correct {
+            border-color: #4CAF50;
+            background-color: #e8f5e9;
+            box-shadow: 0 0 10px #4CAF50;
+        }
+
+        .answer-panel.wrong {
+            border-color: #f44336;
+            background-color: #ffebee;
+            opacity: 0.7;
+        }
+
+        /* ACRE Layout */
+        .acre-context {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            /* 3x2 Grid */
+            gap: 15px;
+            margin-bottom: 30px;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .acre-scene {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .canvas-container {
+            width: 100%;
+            padding-top: 75%;
+            position: relative;
+            background: #dce0e5;
+        }
+
+        .canvas-container canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* Interactive Prediction Area */
+        .acre-prediction-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .acre-interactive-scene {
+            width: 400px;
+            border: 3px solid #ccc;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .acre-interactive-scene.correct {
+            border-color: #4CAF50;
+            box-shadow: 0 0 15px #4CAF50;
+        }
+
+        .acre-interactive-scene.wrong {
+            border-color: #f44336;
+            opacity: 0.8;
+        }
+
+        .acre-controls {
+            display: flex;
+            gap: 20px;
+        }
+
+        .acre-btn {
+            padding: 10px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: 2px solid #ccc;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .acre-btn:hover {
+            background: #eee;
+            transform: translateY(-2px);
+        }
+
+        .acre-btn.selected {
+            background: #333;
+            color: white;
+            border-color: #333;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        footer {
+            margin-top: 40px;
+            font-size: 0.8em;
+            color: #666;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Unified Puzzle Generator</h1>
+
+        <div class="controls">
+            <select id="generatorType" onchange="loadNewPuzzle()">
+                <option value="raven" selected>I-RAVEN</option>
+                <option value="acre">ACRE</option>
+            </select>
+            <select id="subType" onchange="loadNewPuzzle()">
+                <option value="standard">Standard</option>
+                <option value="mesh" selected>Mesh</option>
+            </select>
+            <button onclick="loadNewPuzzle()"
+                style="padding: 5px 10px; border-radius: 4px; border: 1px solid #ccc; background: white; cursor: pointer;">Skip</button>
+        </div>
+
+        <div id="status" class="status">Loading...</div>
+
+        <!-- RAVEN Content -->
+        <div id="ravenContent" class="hidden">
+            <div class="context-grid" id="contextGrid"></div>
+            <h2>Select the missing piece:</h2>
+            <div class="answers-grid" id="answersGrid"></div>
+        </div>
+
+        <!-- ACRE Content -->
+        <div id="acreContent" class="hidden">
+            <h2>Context (Habituation)</h2>
+            <div class="acre-context" id="acreContext"></div>
+
+            <h2 id="acreQuestionText">Prediction Challenge</h2>
+
+            <div class="acre-prediction-area">
+                <div id="interactiveContainer" class="acre-interactive-scene">
+                    <div class="canvas-container"></div>
+                </div>
+
+                <div class="acre-controls" style="flex-direction: row; gap: 20px;">
+                    <button class="acre-btn" onclick="submitAcre('active')"
+                        title="Object activates the machine">Active</button>
+                    <button class="acre-btn" onclick="submitAcre('inactive')"
+                        title="Object does not activate">Inactive</button>
+                    <button class="acre-btn" onclick="submitAcre('undeterminable')"
+                        title="Insufficient evidence">Undeterminable</button>
+                </div>
+                <div id="acreFeedback"
+                    style="margin-top: 20px; font-size: 1.1rem; font-weight: bold; min-height: 30px;"></div>
+            </div>
+        </div>
+
+        <footer>
+            <div id="raven-credits" class="hidden">
+                <strong>I-RAVEN:</strong> "A-I-RAVEN and I-RAVEN-Mesh: Two New Benchmarks for Abstract Visual
+                Reasoning"<br>
+                Mikołaj Małkiński and Jacek Mańdziuk (IJCAI 2025)
+            </div>
+            <div id="acre-credits" class="hidden">
+                <strong>ACRE:</strong> "ACRE: Abstract Causal REasoning Beyond Covariation"<br>
+                Chi Zhang, Baoxiong Jia, Mark Edmonds, Song-Chun Zhu, Yixin Zhu (CVPR 2021)
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const COLORS = {
+            "gray": 0x575757, "red": 0xad2323, "blue": 0x2a4bd7, "green": 0x1d6914,
+            "brown": 0x814a19, "purple": 0x8126c0, "cyan": 0x29d0d0, "yellow": 0xffee33
+        };
+
+        let currentData = null;
+        let isWaiting = false;
+
+        // Single interactive scene state
+        let currentInteractiveScene = null;
+        let interactiveRenderer = null;
+        let interactiveSceneObj = null; // Three.js scene object to update lights
+        let interactiveCamera = null;
+
+        async function loadNewPuzzle() {
+            if (isWaiting) return;
+
+            const genType = document.getElementById('generatorType').value;
+            const subSelect = document.getElementById('subType');
+
+            if (subSelect.getAttribute('data-gen') !== genType) {
+                subSelect.setAttribute('data-gen', genType);
+                if (genType === 'raven') {
+                    subSelect.innerHTML = `
+                    <option value="standard">Standard</option>
+                    <option value="mesh" selected>Mesh</option>
+                `;
+                } else if (genType === 'acre') {
+                    subSelect.innerHTML = `
+                    <option value="IID" selected>IID</option>
+                    <option value="Comp">Compositional</option>
+                    <option value="Sys">Systematic</option>
+                `;
+                }
+            }
+
+            const subType = subSelect.value;
+            document.getElementById('status').textContent = `Generating ${genType} puzzle...`;
+            document.getElementById('status').style.color = "#333";
+
+            // Reset visual states
+            document.getElementById('interactiveContainer').classList.remove('correct', 'wrong');
+            document.getElementById('acreFeedback').innerHTML = ''; // Clear feedback
+
+            try {
+                const response = await fetch('/api/get_puzzle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        generator_type: genType,
+                        type: genType === 'raven' ? subType : undefined,
+                        regime: genType === 'acre' ? subType : undefined
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    alert("Error: " + data.error);
+                    return;
+                }
+
+                currentData = data;
+
+                if (data.generator_type === 'raven') {
+                    renderRaven(data);
+                } else {
+                    renderAcre(data);
+                }
+
+            } catch (e) {
+                print(e);
+                console.error(e);
+                document.getElementById('status').textContent = "Error connecting to server.";
+            }
+        }
+
+        function renderRaven(data) {
+            document.getElementById('ravenContent').classList.remove('hidden');
+            document.getElementById('acreContent').classList.add('hidden');
+            document.getElementById('raven-credits').classList.remove('hidden');
+            document.getElementById('acre-credits').classList.add('hidden');
+
+            const contextGrid = document.getElementById('contextGrid');
+            const answersGrid = document.getElementById('answersGrid');
+
+            contextGrid.innerHTML = '';
+            answersGrid.innerHTML = '';
+
+            for (let i = 0; i < 8; i++) {
+                const div = document.createElement('div');
+                div.className = 'panel';
+                const img = document.createElement('img');
+                img.src = "data:image/png;base64," + data.panels[i];
+                div.appendChild(img);
+                contextGrid.appendChild(div);
+            }
+
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'panel';
+            emptyDiv.innerHTML = '<span style="color:#999; font-size: 2em;">?</span>';
+            contextGrid.appendChild(emptyDiv);
+
+            for (let i = 0; i < 8; i++) {
+                const div = document.createElement('div');
+                div.className = 'answer-panel';
+                div.onclick = () => checkRavenAnswer(i, div);
+
+                const img = document.createElement('img');
+                img.src = "data:image/png;base64," + data.panels[8 + i];
+                img.style.width = '100%';
+                img.style.height = '100%';
+
+                div.appendChild(img);
+                answersGrid.appendChild(div);
+            }
+
+            document.getElementById('status').textContent = `Config: ${data.config_name}`;
+        }
+
+        function renderAcre(data) {
+            document.getElementById('ravenContent').classList.add('hidden');
+            document.getElementById('acreContent').classList.remove('hidden');
+            document.getElementById('raven-credits').classList.add('hidden');
+            document.getElementById('acre-credits').classList.remove('hidden');
+
+            const questionEl = document.getElementById('acreQuestionText');
+            if (data.puzzle_type === 'cause') {
+                questionEl.textContent = "Independent Queries: What would be the machine's state given the object(s)?";
+            } else {
+                questionEl.textContent = "Interventional Queries of the Fourth Trial: What would be the machine's state given the intervention?";
+            }
+
+            const contextDiv = document.getElementById('acreContext');
+            contextDiv.innerHTML = '';
+
+            // Context: 3x2 Grid
+            data.context_scenes.forEach(scene => {
+                const sceneCard = document.createElement('div');
+                sceneCard.className = 'acre-scene';
+                const canvasContainer = document.createElement('div');
+                canvasContainer.className = 'canvas-container';
+                sceneCard.appendChild(canvasContainer);
+                contextDiv.appendChild(sceneCard);
+                requestAnimationFrame(() => renderScene(canvasContainer, scene));
+            });
+
+            // Interactive Prediction Area
+            // Use Candidate 0 (OFF state) as base, but we will control the light
+            // In ACRE, the candidates have the exact same object positions, just light diff.
+            const baseScene = data.candidates[0].scene;
+            const container = document.querySelector('#interactiveContainer .canvas-container');
+            container.innerHTML = ''; // clear previous
+
+            // Render PREVIEW (Default OFF)
+            requestAnimationFrame(() => renderInteractScene(container, baseScene));
+
+            document.getElementById('status').textContent = `Type: ${data.puzzle_type} | Regime: ${data.regime}`;
+        }
+
+        // Standard render for context
+        function renderScene(container, sceneData) {
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xdce0e5);
+            const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+            camera.position.set(0, -8, 6); // Pull back to see entire platform
+            camera.lookAt(0, 0, 0);
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(width, height);
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            addCommonObjects(scene, sceneData, true, camera, renderer, container);
+
+            renderer.render(scene, camera);
+        }
+
+        // Variable render for interactive part
+        function renderInteractScene(container, sceneData) {
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            interactiveSceneObj = new THREE.Scene();
+            interactiveSceneObj.background = new THREE.Color(0xdce0e5);
+
+            interactiveCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+            interactiveCamera.position.set(0, -8, 6); // Pull back to see entire platform
+            interactiveCamera.lookAt(0, 0, 0);
+
+            interactiveRenderer = new THREE.WebGLRenderer({ antialias: true });
+            interactiveRenderer.setSize(width, height);
+            interactiveRenderer.shadowMap.enabled = true;
+            container.appendChild(interactiveRenderer.domElement);
+
+            // Mouse rotation
+            let isDragging = false;
+            let previousMousePosition = { x: 0, y: 0 };
+
+            interactiveRenderer.domElement.addEventListener('mousedown', (e) => {
+                isDragging = true;
+            });
+
+            interactiveRenderer.domElement.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const deltaX = e.offsetX - previousMousePosition.x;
+                    const deltaY = e.offsetY - previousMousePosition.y;
+
+                    // Rotate camera around scene
+                    const rotationSpeed = 0.005;
+                    const radius = Math.sqrt(
+                        interactiveCamera.position.x ** 2 +
+                        interactiveCamera.position.y ** 2
+                    );
+
+                    let angle = Math.atan2(interactiveCamera.position.y, interactiveCamera.position.x);
+                    angle -= deltaX * rotationSpeed;
+
+                    interactiveCamera.position.x = radius * Math.cos(angle);
+                    interactiveCamera.position.y = radius * Math.sin(angle);
+                    interactiveCamera.position.z += deltaY * rotationSpeed * 5;
+                    interactiveCamera.position.z = Math.max(2, Math.min(12, interactiveCamera.position.z));
+
+                    interactiveCamera.lookAt(0, 0, 0);
+                    interactiveRenderer.render(interactiveSceneObj, interactiveCamera);
+                }
+                previousMousePosition = { x: e.offsetX, y: e.offsetY };
+            });
+
+            interactiveRenderer.domElement.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            interactiveRenderer.domElement.addEventListener('mouseleave', () => {
+                isDragging = false;
+            });
+
+            currentInteractiveScene = { ...sceneData, light_state: 'off' }; // Start OFF
+            addCommonObjects(interactiveSceneObj, currentInteractiveScene, false, interactiveCamera, interactiveRenderer, container);
+            interactiveRenderer.render(interactiveSceneObj, interactiveCamera);
+        }
+
+        let isLightVisuallyOn = false;
+        let platformMesh = null;
+        let mainLight = null;
+
+        function toggleInteractiveLight() {
+            isLightVisuallyOn = !isLightVisuallyOn;
+            updateLightVisuals();
+        }
+
+        function updateLightVisuals() {
+            if (!platformMesh) return;
+
+            if (isLightVisuallyOn) {
+                // WHITE Light as requested
+                platformMesh.material.emissive.setHex(0xffffff);
+                platformMesh.material.emissiveIntensity = 0.5;
+                if (mainLight) mainLight.intensity = 1.5;
+            } else {
+                platformMesh.material.emissive.setHex(0x000000);
+                platformMesh.material.emissiveIntensity = 0.0;
+                if (mainLight) mainLight.intensity = 0.0;
+            }
+            interactiveRenderer.render(interactiveSceneObj, interactiveCamera);
+        }
+
+        function addCommonObjects(scene, sceneData, isContext, camera, renderer, container) {
+            // Ambient light - lighter so we can see platform when OFF
+            const ambient = new THREE.AmbientLight(0x808080, 0.6); // Medium grey
+            scene.add(ambient);
+
+            // Platform - 7x7x1 as specified
+            const platformSize = 7;
+            const platformHeight = 1;
+            const platformGeo = new THREE.BoxGeometry(platformSize, platformSize, platformHeight);
+
+            const isOn = sceneData.light_state === 'on';
+
+            // Platform material with proper visibility when OFF
+            const platformMat = new THREE.MeshStandardMaterial({
+                color: 0xaaaaaa, // Lighter base color
+                roughness: 0.3,
+                metalness: 0.2
+            });
+
+            // Three states: ON (white), OFF (dark), UNDETERMINED (grey)
+            if (isContext && isOn) {
+                platformMat.emissive.setHex(0xffffff);
+                platformMat.emissiveIntensity = 0.6;
+            } else if (isContext && sceneData.light_state === 'undetermined') {
+                platformMat.emissive.setHex(0x808080); // Middle grey
+                platformMat.emissiveIntensity = 0.3;
+            }
+
+            const platform = new THREE.Mesh(platformGeo, platformMat);
+            platform.position.z = platformHeight / 2; // Center at Z=0.5
+            platform.receiveShadow = true;
+            platform.castShadow = true;
+            scene.add(platform);
+
+            if (!isContext) platformMesh = platform;
+
+            // Platform outline
+            const edges = new THREE.EdgesGeometry(platformGeo);
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 }));
+            line.position.z = platformHeight / 2;
+            scene.add(line);
+
+            // Point Light - only light source besides ambient
+            const centerLight = new THREE.PointLight(0xffffff, 2.0, 15);
+            centerLight.position.set(0, 0, 4);
+            centerLight.intensity = (isContext && isOn) ? 2.0 : 0.0;
+            centerLight.castShadow = true;
+            scene.add(centerLight);
+
+            if (!isContext) mainLight = centerLight;
+
+            // Objects - positioned on top of platform
+            sceneData.objects.forEach(obj => {
+                let r = obj.size / 2;
+                let geometry;
+
+                if (obj.shape === 'cube') {
+                    geometry = new THREE.BoxGeometry(obj.size, obj.size, obj.size);
+                } else if (obj.shape === 'sphere') {
+                    geometry = new THREE.SphereGeometry(r, 32, 32);
+                } else if (obj.shape === 'cylinder') {
+                    // Cylinder upright (circle facing up) - NO rotation needed
+                    geometry = new THREE.CylinderGeometry(r, r, obj.size, 32);
+                    // Three.js cylinders are Y-up by default, but we use Z-up
+                    // So we need to rotate to align with Z axis
+                    geometry.rotateX(Math.PI / 2);
+                }
+
+                const color = COLORS[obj.color] || 0x999999;
+                let mat;
+
+                // Material properties - metal vs rubber (matte)
+                if (obj.material === 'metal') {
+                    mat = new THREE.MeshStandardMaterial({
+                        color: color,
+                        metalness: 0.9,  // Very metallic
+                        roughness: 0.1   // Very smooth/reflective
+                    });
+                } else { // rubber
+                    mat = new THREE.MeshStandardMaterial({
+                        color: color,
+                        metalness: 0.0,  // Not metallic
+                        roughness: 0.9   // Very matte
+                    });
+                }
+
+                const mesh = new THREE.Mesh(geometry, mat);
+
+                // Position on top of platform (platform top is at Z=1)
+                let z = platformHeight; // Start from platform top
+                if (obj.shape === 'sphere') z += r;
+                else z += obj.size / 2;
+
+                mesh.position.set(obj.position[0], obj.position[1], z);
+                mesh.rotation.z = obj.rotation * (Math.PI / 180);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                scene.add(mesh);
+            });
+
+            // Add hover rotation for ALL scenes
+            if (renderer && container) {
+                let isHovering = false;
+                let rotationAngle = 0;
+
+                renderer.domElement.addEventListener('mouseenter', () => {
+                    isHovering = true;
+                });
+
+                renderer.domElement.addEventListener('mouseleave', () => {
+                    isHovering = false;
+                });
+
+                renderer.domElement.addEventListener('mousemove', (e) => {
+                    if (isHovering && !isDragging) {
+                        // Rotate around Y axis based on mouse X position
+                        const rect = renderer.domElement.getBoundingClientRect();
+                        const mouseX = (e.clientX - rect.left) / rect.width; // 0 to 1
+                        rotationAngle = (mouseX - 0.5) * Math.PI; // -90° to +90°
+
+                        // Rotate entire scene around Y axis
+                        scene.rotation.y = rotationAngle;
+                        renderer.render(scene, camera);
+                    }
+                });
+            }
+        }
+
+        async function checkRavenAnswer(selectedIndex, element) {
+            if (isWaiting) return;
+
+            const correctIndex = currentData.target;
+            const answerPanels = document.querySelectorAll('.answer-panel');
+
+            if (selectedIndex === correctIndex) {
+                element.classList.add('correct');
+                document.getElementById('status').textContent = "Correct!";
+                document.getElementById('status').style.color = "green";
+            } else {
+                element.classList.add('wrong');
+                answerPanels[correctIndex].classList.add('correct');
+                document.getElementById('status').textContent = "Wrong!";
+                document.getElementById('status').style.color = "red";
+            }
+
+            isWaiting = true;
+            setTimeout(() => {
+                isWaiting = false;
+                loadNewPuzzle();
+            }, 1500);
+        }
+
+        async function submitAcre(chosenAnswer) {
+            if (isWaiting) return;
+            isWaiting = true;
+
+            // Map simplified answer to label and light state
+            const answerMap = {
+                'active': { label: 2, light: true, display: 'Active' },
+                'inactive': { label: 0, light: false, display: 'Inactive' },
+                'undeterminable': { label: 1, light: false, display: 'Undeterminable' }
+            };
+
+            // Map question subtypes to readable reasoning names
+            const reasoningMap = {
+                'direct': 'Direct',
+                'indirect': 'Indirect',
+                'screen_off': 'Screening-off',
+                'potential': 'Backward-blocking'
+            };
+
+            const choice = answerMap[chosenAnswer];
+            if (!choice) return;
+
+            // Update visual light state
+            isLightVisuallyOn = choice.light;
+            updateLightVisuals();
+
+            // Check correctness
+            const correctCand = currentData.candidates.find(c => c.correct);
+            const correctLabel = correctCand.id === 0 ? 0 : 2;
+            const isCorrect = (choice.label === correctLabel);
+
+            const container = document.getElementById('interactiveContainer');
+            container.classList.add(isCorrect ? 'correct' : 'wrong');
+
+            // Display feedback with reasoning type
+            const feedbackEl = document.getElementById('acreFeedback');
+            const questionSubtype = currentData.question_subtype || 'unknown';
+            const reasoningName = reasoningMap[questionSubtype] || questionSubtype;
+
+            // Determine correct answer text
+            let correctAnswerText = '';
+            if (correctLabel === 2) correctAnswerText = 'Active';
+            else if (correctLabel === 0) correctAnswerText = 'Inactive';
+            else correctAnswerText = 'Undeterminable';
+
+            if (isCorrect) {
+                feedbackEl.innerHTML = `<span style="color: green;">✓ Correct!</span><br><small>Reasoning: ${reasoningName}</small>`;
+            } else {
+                feedbackEl.innerHTML = `<span style="color: red;">✗ ${correctAnswerText}</span><br><small>Reasoning: ${reasoningName}</small>`;
+            }
+
+            setTimeout(() => {
+                isWaiting = false;
+                feedbackEl.innerHTML = '';
+                loadNewPuzzle();
+            }, 3000);
+        }
+
+        window.onload = loadNewPuzzle;
+    </script>
+</body>
+
+</html>
