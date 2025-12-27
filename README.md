@@ -1,7 +1,7 @@
 Most advanced “AI IQ” work for visual models is happening as open benchmarks on GitHub and arXiv, often built from visual IQ tests, abstract visual reasoning puzzles, or real-world multimodal tasks. Many of these can be repurposed almost directly into human brain‑training or puzzle systems by swapping the model API for a human UI and adding scoring/progression.
 
 ---
-Here is the "Perfect Prompt" you can use to convert other dataset projects. You can paste this into a new chat with me (or another AI) when you have a new repository open.
+Here is the "Perfect Prompt" you can use to convert other dataset projects. You can paste this into a new chat with an AI when you have a new repository open.
 
 ---
 
