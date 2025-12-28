@@ -1,0 +1,7 @@
+[submodule "ACRE"]
+	path = ACRE
+	url = https://github.com/wellyzhang/ACRE.git
+
+[submodule "raven-datasets"]
+	path = raven-datasets
+	url = https://github.com/mikomel/raven-datasets.git
