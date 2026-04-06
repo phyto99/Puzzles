@@ -274,6 +274,7 @@
                 <div id="acreFeedback"
                     style="margin-top: 20px; font-size: 1.1rem; font-weight: bold; min-height: 30px;"></div>
             </div>
+
         </div>
 
         <footer>
@@ -304,6 +305,13 @@
         let interactiveSceneObj = null;
         let interactiveCamera = null;
 
+        const lightingConfig = {
+            ambientIntensity: 0.30,
+            keyIntensity:     0.90,
+            fillIntensity:    0.50,
+            keyX: -3, keyY: -4, keyZ: 8
+        };
+
         async function loadNewPuzzle() {
             if (isWaiting) return;
 
@@ -333,6 +341,9 @@
             // Reset visual states
             document.getElementById('interactiveContainer').classList.remove('correct', 'wrong');
             document.getElementById('acreFeedback').innerHTML = '';
+            selectedAnswer = 'undeterminable';
+            isAnswerLocked = false;
+            document.getElementById('acreStateLabel').textContent = 'Click to toggle: Undeterminable';
 
             try {
                 const response = await fetch('/api/get_puzzle', {
@@ -486,18 +497,15 @@
             interactiveRenderer.shadowMap.enabled = true;
             container.appendChild(interactiveRenderer.domElement);
 
-            // Click to toggle light state
+            // Click to cycle state — locked after Check Answer
             interactiveRenderer.domElement.addEventListener('click', (e) => {
-                // Cycle through states: undeterminable -> active -> inactive -> undeterminable
+                if (isAnswerLocked) return;
                 if (selectedAnswer === 'undeterminable') {
                     selectedAnswer = 'active';
-                    isLightVisuallyOn = true;
                 } else if (selectedAnswer === 'active') {
                     selectedAnswer = 'inactive';
-                    isLightVisuallyOn = false;
                 } else {
                     selectedAnswer = 'undeterminable';
-                    isLightVisuallyOn = false;
                 }
                 updateLightVisuals();
             });
@@ -531,6 +539,7 @@
         let selectedAnswer = 'undeterminable';
         let questionMarkMesh = null;
         let edgeLines = null;
+        let isAnswerLocked = false;
 
         function toggleInteractiveLight() {
             isLightVisuallyOn = !isLightVisuallyOn;
@@ -550,24 +559,24 @@
                 labelEl.textContent = 'Click to toggle: Undeterminable';
             } else if (selectedAnswer === 'inactive') {
                 platformMesh.visible = true;
-                if (edgeLines) edgeLines.visible = true;
-                platformMesh.material.color.setHex(0xa0a0a0);
+                platformMesh.material.color.setHex(0x888888);
                 platformMesh.material.emissive.setHex(0x000000);
                 platformMesh.material.emissiveIntensity = 0;
                 platformMesh.material.roughness = 0.85;
                 platformMesh.material.metalness = 0.05;
+                if (edgeLines) { edgeLines.visible = true; edgeLines.material.color.setHex(0x222222); }
                 if (mainLight) mainLight.intensity = 0.0;
                 if (questionMarkMesh) questionMarkMesh.visible = false;
                 labelEl.textContent = 'Click to toggle: Inactive';
             } else if (selectedAnswer === 'active') {
                 platformMesh.visible = true;
-                if (edgeLines) edgeLines.visible = true;
-                platformMesh.material.color.setHex(0xf5f5f5);
-                platformMesh.material.emissive.setHex(0xcccccc);
-                platformMesh.material.emissiveIntensity = 0.5;
+                platformMesh.material.color.setHex(0x888888);
+                platformMesh.material.emissive.setHex(0xffffff);
+                platformMesh.material.emissiveIntensity = 0.18;
                 platformMesh.material.roughness = 0.85;
                 platformMesh.material.metalness = 0.05;
-                if (mainLight) mainLight.intensity = 0.4;
+                if (edgeLines) { edgeLines.visible = true; edgeLines.material.color.setHex(0xdddddd); }
+                if (mainLight) mainLight.intensity = 1.2;
                 if (questionMarkMesh) questionMarkMesh.visible = false;
                 labelEl.textContent = 'Click to toggle: Active';
             }
@@ -576,13 +585,17 @@
         }
 
         function addCommonObjects(scene, sceneData, isContext, camera, renderer, container) {
-            const sunLight = new THREE.DirectionalLight(0xffffff, 0.5);
-            sunLight.position.set(5, -5, 8);
-            sunLight.castShadow = true;
-            scene.add(sunLight);
+            const keyLight = new THREE.DirectionalLight(0xffffff, lightingConfig.keyIntensity);
+            keyLight.position.set(lightingConfig.keyX, lightingConfig.keyY, lightingConfig.keyZ);
+            keyLight.castShadow = true;
+            scene.add(keyLight);
 
-            const ambient = new THREE.AmbientLight(0xffffff, 0.45);
+            const fillLight = new THREE.HemisphereLight(0xffffff, 0x444444, lightingConfig.fillIntensity);
+            scene.add(fillLight);
+
+            const ambient = new THREE.AmbientLight(0xffffff, lightingConfig.ambientIntensity);
             scene.add(ambient);
+
 
             const platformSize = 7;
             const platformHeight = 1;
@@ -593,30 +606,34 @@
             const isUndetermined = sceneData.light_state === 'undetermined';
 
             const platformMat = new THREE.MeshStandardMaterial({
-                color: 0xa0a0a0,
+                color: 0x888888,
                 roughness: 0.85,
-                metalness: 0.05
+                metalness: 0.05,
+                emissive: isOn ? new THREE.Color(0xffffff) : new THREE.Color(0x000000),
+                emissiveIntensity: isOn ? 0.09 : 0
             });
-
-            if (isContext && isOn) {
-                platformMat.emissive.setHex(0xcccccc);
-                platformMat.emissiveIntensity = 0.5;
-                platformMat.color.setHex(0xf5f5f5);
-            }
 
             const platform = new THREE.Mesh(platformGeo, platformMat);
             platform.position.z = platformHeight / 2;
             platform.receiveShadow = true;
             platform.castShadow = false;
-
-            if (!isContext) {
-                platform.visible = false;
-            }
-
+            if (!isContext) platform.visible = false;
             scene.add(platform);
 
+            // Outline: dark when off, bright when on — same in both context and interactive
+            const outlineColor = isOn ? 0xdddddd : 0x222222;
+            const edges = new THREE.EdgesGeometry(platformGeo);
+            const outline = new THREE.LineSegments(
+                edges,
+                new THREE.LineBasicMaterial({ color: outlineColor })
+            );
+            outline.position.z = platformHeight / 2;
+            scene.add(outline);
+
             if (!isContext) {
+                outline.visible = false;  // hidden until user picks a state
                 platformMesh = platform;
+                edgeLines = outline;
 
                 // Create question mark for undeterminable state
                 const canvas = document.createElement('canvas');
@@ -643,23 +660,9 @@
                 questionMarkMesh = qMarkSprite;
             }
 
-            const edges = new THREE.EdgesGeometry(platformGeo);
-            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 }));
-            line.position.z = platformHeight / 2;
-            scene.add(line);
-
-            if (!isContext) {
-                line.visible = false;
-                edgeLines = line;
-            }
-
-            const underLight = new THREE.PointLight(0xffffff, 0.5, 25);
-            underLight.position.set(0, 0, 0);
-            scene.add(underLight);
-
-            const aboveLight = new THREE.PointLight(0xffffff, 0.6, 25);
-            aboveLight.position.set(0, 0, platformHeight + 2);
-            aboveLight.intensity = (isContext && isOn) ? 0.4 : 0.0;
+            const aboveLight = new THREE.PointLight(0xffffff, 0.6, 35);
+            aboveLight.position.set(0, 0, platformHeight + 0.3);
+            aboveLight.intensity = (isContext && isOn) ? 1.2 : 0.0;
             scene.add(aboveLight);
 
             if (!isContext) mainLight = aboveLight;
@@ -682,20 +685,13 @@
                 let mat;
 
                 if (obj.material === 'metal') {
-                    mat = new THREE.MeshStandardMaterial({
+                    mat = new THREE.MeshPhongMaterial({
                         color: color,
-                        metalness: 0.9,
-                        roughness: 0.15,
-                        envMapIntensity: 2.0,
-                        emissive: color,
-                        emissiveIntensity: 0.25
+                        specular: 0xaaaaaa,
+                        shininess: 280
                     });
                 } else {
-                    mat = new THREE.MeshStandardMaterial({
-                        color: color,
-                        metalness: 0.0,
-                        roughness: 0.9
-                    });
+                    mat = new THREE.MeshLambertMaterial({ color: color });
                 }
 
                 const mesh = new THREE.Mesh(geometry, mat);
@@ -723,6 +719,8 @@
             }
         }
 
+
+
         async function checkRavenAnswer(selectedIndex, element) {
             if (isWaiting) return;
 
@@ -748,20 +746,18 @@
         }
 
         async function checkAcreAnswer() {
-            if (isWaiting) return;
+            if (isWaiting || isAnswerLocked) return;
             isWaiting = true;
+            isAnswerLocked = true;
 
             const answerMap = {
                 'active': { label: 2, display: 'Active' },
                 'inactive': { label: 0, display: 'Inactive' },
                 'undeterminable': { label: 1, display: 'Undeterminable' }
             };
-
             const reasoningMap = {
-                'direct': 'Direct',
-                'indirect': 'Indirect',
-                'screen_off': 'Screening-off',
-                'potential': 'Backward-blocking'
+                'direct': 'Direct', 'indirect': 'Indirect',
+                'screen_off': 'Screening-off', 'potential': 'Backward-blocking'
             };
 
             const choice = answerMap[selectedAnswer];
@@ -774,19 +770,22 @@
             const container = document.getElementById('interactiveContainer');
             container.classList.add(isCorrect ? 'correct' : 'wrong');
 
-            const feedbackEl = document.getElementById('acreFeedback');
-            const questionSubtype = currentData.question_subtype || 'unknown';
-            const reasoningName = reasoningMap[questionSubtype] || questionSubtype;
+            if (!isCorrect) {
+                // Show the correct answer in the scene visualization
+                if (correctLabel === 2) selectedAnswer = 'active';
+                else if (correctLabel === 0) selectedAnswer = 'inactive';
+                else selectedAnswer = 'undeterminable';
+                updateLightVisuals();
+            }
 
-            let correctAnswerText = '';
-            if (correctLabel === 2) correctAnswerText = 'Active';
-            else if (correctLabel === 0) correctAnswerText = 'Inactive';
-            else correctAnswerText = 'Undeterminable';
+            const feedbackEl = document.getElementById('acreFeedback');
+            const reasoningName = reasoningMap[currentData.question_subtype] || currentData.question_subtype || 'unknown';
+            const correctText = correctLabel === 2 ? 'Active' : correctLabel === 0 ? 'Inactive' : 'Undeterminable';
 
             if (isCorrect) {
                 feedbackEl.innerHTML = `<span style="color: green;">✓ Correct!</span><br><small>Reasoning: ${reasoningName}</small>`;
             } else {
-                feedbackEl.innerHTML = `<span style="color: red;">✗ ${correctAnswerText}</span><br><small>Reasoning: ${reasoningName}</small>`;
+                feedbackEl.innerHTML = `<span style="color: red;">✗ Answer: ${correctText}</span><br><small>Reasoning: ${reasoningName}</small>`;
             }
 
             setTimeout(() => {
