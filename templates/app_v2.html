@@ -717,7 +717,7 @@
                     const mouseX = (e.clientX - rect.left) / rect.width;
                     const rotationAngle = (mouseX - 0.5) * Math.PI;
 
-                    scene.rotation.y = rotationAngle;
+                    scene.rotation.z = rotationAngle;
                     renderer.render(scene, camera);
                 });
             }
