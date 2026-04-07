@@ -152,4 +152,4 @@ if __name__ == '__main__':
     print(f"Unified Server Running on http://localhost:{port}")
     print("ACRE mode: Subprocess Isolation (Bulletproof)")
     print("=" * 60)
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=True, use_reloader=False)
