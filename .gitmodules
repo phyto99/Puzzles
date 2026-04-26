@@ -5,3 +5,18 @@
 [submodule "raven-datasets"]
 	path = raven-datasets
 	url = https://github.com/mikomel/raven-datasets.git
+[submodule "ARC-AGI-2"]
+	path = ARC-AGI-2
+	url = https://github.com/arcprize/ARC-AGI-2.git
+[submodule "ARC-AGI"]
+	path = ARC-AGI
+	url = https://github.com/fchollet/ARC-AGI.git
+[submodule "Bongard-LOGO"]
+	path = Bongard-LOGO
+	url = https://github.com/NVlabs/Bongard-LOGO.git
+[submodule "PuzzleVQA"]
+	path = PuzzleVQA
+	url = https://github.com/vernontoh/PuzzleVQA.git
+[submodule "MARVEL"]
+	path = MARVEL
+	url = https://github.com/1171-jpg/MARVEL_AVR.git

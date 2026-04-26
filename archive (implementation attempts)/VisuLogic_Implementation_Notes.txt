@@ -1,0 +1,37 @@
+# VisuLogic Implementation Archive
+
+## Date: December 27, 2025
+
+## Status: Implementation attempt that was not working properly
+
+## Issues Encountered:
+1. Images not displaying in train mode - images were being fetched but not showing in frontend
+2. Complex data parsing required for different dataset formats (eval vs train)
+3. Image path handling differences between datasets
+4. Options parsing from embedded text in question fields
+
+## What was implemented:
+- Backend data loading from HuggingFace APIs for both eval and train datasets
+- Image fetching and base64 encoding
+- Question and options parsing from different data structures
+- Flask API routes for VisuLogic puzzles
+- Frontend integration (partial)
+
+## Key files created/modified:
+- `visulogic_ui.py` - Main VisuLogic data handling
+- `unified_server.py` - Added VisuLogic API routes
+- `templates/app_v2.html` - Frontend integration
+
+## Data sources:
+- Eval dataset: https://datasets-server.huggingface.co/rows?dataset=VisuLogic%2FVisuLogic&config=default&split=train&offset=0&length=100
+- Train dataset: https://datasets-server.huggingface.co/first-rows?dataset=VisuLogic%2FVisuLogic-Train&config=default&split=train
+
+## Next steps for future implementation:
+1. Fix image display issues in train mode
+2. Simplify data parsing logic
+3. Better error handling and debugging
+4. Test with multiple puzzle examples
+5. Optimize image fetching and caching
+
+## Git stash:
+This implementation is stashed with: git stash pop
