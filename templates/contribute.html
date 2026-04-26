@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Puzzle System — Contribution Hub</title>
+<style>
+  :root {
+    --bg: #0e0e0e;
+    --surface: #181818;
+    --surface2: #222;
+    --border: #2e2e2e;
+    --text: #e8e8e8;
+    --muted: #888;
+    --accent: #4a9eff;
+    --live: #4caf50;
+    --queued: #ff9800;
+    --shelved: #9c27b0;
+    --rejected: #555;
+    --open: #f44336;
+    --gap: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.6; }
+
+  /* ── Layout ── */
+  .page { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+  nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 40px; border-bottom: 1px solid var(--border); padding-bottom: 16px; align-items: center; }
+  nav a { color: var(--muted); text-decoration: none; font-size: 13px; padding: 4px 12px; border-radius: 20px; transition: all .15s; }
+  nav a:hover, nav a.active { background: var(--surface2); color: var(--text); }
+  nav .logo { color: var(--accent); font-weight: 700; font-size: 15px; margin-right: 12px; }
+  h1 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+  h2 { font-size: 17px; font-weight: 600; margin-bottom: 14px; color: var(--text); }
+  h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  p { color: var(--muted); margin-bottom: 12px; }
+  .subtitle { color: var(--muted); font-size: 15px; margin-bottom: 32px; }
+  section { margin-bottom: 56px; }
+
+  /* ── Status badges ── */
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; letter-spacing: .04em; }
+  .badge-LIVE     { background: #1b3a1e; color: var(--live); }
+  .badge-QUEUED   { background: #3a2a0a; color: var(--queued); }
+  .badge-SHELVED  { background: #2a1a3a; color: var(--shelved); }
+  .badge-REJECTED { background: #222; color: var(--rejected); }
+  .badge-OPEN     { background: #3a1010; color: var(--open); }
+  .badge-COVERED  { background: #1b3a1e; color: var(--live); }
+
+  /* ── Coverage Map ── */
+  .coverage-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 8px; }
+  .skill-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; transition: border-color .15s; }
+  .skill-card:hover { border-color: #444; }
+  .skill-card .skill-name { font-size: 13px; flex: 1; }
+  .skill-card .skill-covered { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .skill-card.open { border-left: 3px solid var(--open); }
+  .skill-card.live { border-left: 3px solid var(--live); }
+  .skill-card.queued { border-left: 3px solid var(--queued); }
+
+  /* ── Registry table ── */
+  .registry-controls { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .registry-controls input { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 7px 12px; border-radius: 6px; font-size: 13px; width: 240px; outline: none; }
+  .registry-controls input:focus { border-color: var(--accent); }
+  .filter-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; transition: all .15s; }
+  .filter-btn:hover { border-color: #555; color: var(--text); }
+  .filter-btn.active { background: var(--surface2); color: var(--text); border-color: #555; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { text-align: left; padding: 8px 12px; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--border); font-weight: 600; }
+  tbody tr { border-bottom: 1px solid #1a1a1a; transition: background .1s; }
+  tbody tr:hover { background: var(--surface); }
+  tbody td { padding: 10px 12px; vertical-align: top; }
+  tbody td.name { font-weight: 600; color: var(--text); }
+  tbody td.source a { color: var(--accent); text-decoration: none; font-size: 12px; }
+  tbody td.source a:hover { text-decoration: underline; }
+  tbody td.notes { color: var(--muted); font-size: 12px; max-width: 300px; }
+  .cat-header td { background: var(--surface2); color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; padding: 6px 12px; }
+  .hidden-row { display: none; }
+
+  /* ── Research Log ── */
+  .log-entry { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 12px; position: relative; }
+  .log-entry::before { content: ''; position: absolute; left: -1px; top: 20px; bottom: 20px; width: 3px; background: var(--accent); border-radius: 2px; }
+  .log-meta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+  .log-date { font-weight: 700; color: var(--text); }
+  .log-engine { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-family: monospace; }
+  .log-researcher { color: var(--accent); font-size: 13px; }
+  .log-domain { font-size: 14px; color: var(--text); margin-bottom: 8px; }
+  .log-finds { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .find-chip { background: #1b3a1e; color: var(--live); font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+  .reject-chip { background: #222; color: #555; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+  .gap-chip { background: #3a1010; color: var(--open); font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+  .log-section-label { font-size: 11px; text-transform: uppercase; color: var(--muted); margin-top: 10px; margin-bottom: 4px; letter-spacing: .05em; }
+
+  /* ── Dedup checker ── */
+  .checker-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+  .checker-box input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 9px 14px; border-radius: 6px; font-size: 14px; width: 100%; max-width: 480px; outline: none; }
+  .checker-box input:focus { border-color: var(--accent); }
+  #checker-results { margin-top: 16px; min-height: 40px; }
+  .checker-hit { background: var(--surface2); border-left: 3px solid var(--queued); border-radius: 6px; padding: 10px 14px; margin-bottom: 8px; font-size: 13px; }
+  .checker-hit.live { border-left-color: var(--live); }
+  .checker-hit.log { border-left-color: var(--accent); }
+  .checker-hit.open { border-left-color: var(--open); }
+  .checker-none { color: var(--live); font-style: italic; font-size: 13px; margin-top: 8px; }
+
+  /* ── Forms ── */
+  .form-section { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; }
+  .form-row { margin-bottom: 14px; }
+  label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 5px; }
+  input[type=text], select, textarea { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 6px; font-size: 13px; width: 100%; outline: none; font-family: inherit; }
+  input[type=text]:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  textarea { min-height: 80px; resize: vertical; }
+  select option { background: var(--surface2); }
+  .btn { display: inline-block; padding: 9px 20px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: all .15s; }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: #6ab3ff; }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: #555; }
+  .output-box { background: #0a0a0a; border: 1px solid var(--border); border-radius: 6px; padding: 14px; font-family: monospace; font-size: 12px; color: #ccc; white-space: pre-wrap; margin-top: 14px; display: none; }
+  .copy-btn { margin-top: 8px; }
+  .form-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 600px) { .form-cols { grid-template-columns: 1fr; } }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* ── Misc ── */
+  .stat-row { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 32px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 20px; text-align: center; min-width: 90px; }
+  .stat .num { font-size: 28px; font-weight: 700; }
+  .stat .lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; margin-top: 2px; }
+  .stat.live .num { color: var(--live); }
+  .stat.queued .num { color: var(--queued); }
+  .stat.shelved .num { color: var(--shelved); }
+  .stat.open .num { color: var(--open); }
+
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+  .tab { padding: 8px 16px; border-radius: 6px 6px 0 0; cursor: pointer; font-size: 13px; color: var(--muted); border: 1px solid transparent; border-bottom: none; transition: all .15s; }
+  .tab:hover { color: var(--text); }
+  .tab.active { background: var(--surface); border-color: var(--border); color: var(--text); margin-bottom: -1px; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <nav>
+    <span class="logo">∞ Puzzle System</span>
+    <a href="/">Play</a>
+    <a href="/contribute" class="active">Contribute</a>
+  </nav>
+
+  <h1>Contribution Hub</h1>
+  <p class="subtitle">Research new puzzle types, avoid duplicating work, propose integrations, and invent novel categories.</p>
+
+  <!-- Stats -->
+  <div class="stat-row" id="stats"></div>
+
+  <!-- Sections nav -->
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('coverage')">Coverage Map</div>
+    <div class="tab" onclick="showTab('registry')">Registry</div>
+    <div class="tab" onclick="showTab('log')">Research Log</div>
+    <div class="tab" onclick="showTab('checker')">Before You Research</div>
+    <div class="tab" onclick="showTab('log-session')">Log a Session</div>
+    <div class="tab" onclick="showTab('propose')">Propose a Puzzle</div>
+    <div class="tab" onclick="showTab('invent')">Invent a Category</div>
+  </div>
+
+  <!-- Coverage Map -->
+  <div class="tab-content active" id="tab-coverage">
+    <section>
+      <h2>Cognitive Skill Coverage</h2>
+      <p>Every cognitive skill this system trains or plans to train. Red = no coverage yet — these are the highest-priority research targets.</p>
+      <div class="coverage-grid" id="coverage-grid"></div>
+    </section>
+  </div>
+
+  <!-- Registry -->
+  <div class="tab-content" id="tab-registry">
+    <section>
+      <h2>Puzzle Registry</h2>
+      <div class="registry-controls">
+        <input type="text" id="search-input" placeholder="Search by name, skill, source…" oninput="filterRegistry()">
+        <button class="filter-btn active" onclick="setFilter('ALL', this)">All</button>
+        <button class="filter-btn" onclick="setFilter('LIVE', this)">Live</button>
+        <button class="filter-btn" onclick="setFilter('QUEUED', this)">Queued</button>
+        <button class="filter-btn" onclick="setFilter('SHELVED', this)">Shelved</button>
+        <button class="filter-btn" onclick="setFilter('REJECTED', this)">Rejected</button>
+      </div>
+      <table id="registry-table">
+        <thead><tr>
+          <th>Status</th><th>Name</th><th>Cognitive Skill</th><th>Format</th><th>Source / License</th><th>Notes</th>
+        </tr></thead>
+        <tbody id="registry-body"></tbody>
+      </table>
+    </section>
+  </div>
+
+  <!-- Research Log -->
+  <div class="tab-content" id="tab-log">
+    <section>
+      <h2>Research Log</h2>
+      <p>Append-only. Shows what has been searched, when, with which AI engine, and what gaps remain.</p>
+      <div id="log-container"></div>
+    </section>
+  </div>
+
+  <!-- Dedup Checker -->
+  <div class="tab-content" id="tab-checker">
+    <section>
+      <h2>Before You Research</h2>
+      <p>Enter a cognitive domain or keyword. This checks the registry and research log so you don't duplicate work already done.</p>
+      <div class="checker-box">
+        <input type="text" id="checker-input" placeholder="e.g. bayesian reasoning, cipher, temporal, spatial…" oninput="runChecker()" autocomplete="off">
+        <div id="checker-results"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Log Session -->
+  <div class="tab-content" id="tab-log-session">
+    <section>
+      <h2>Log a Research Session</h2>
+      <p>After researching, log what you searched so the next contributor can see what's already covered.</p>
+      <div class="form-section">
+        <div class="form-cols">
+          <div class="form-row">
+            <label>Date</label>
+            <input type="text" id="ls-date" placeholder="2026-04-26">
+          </div>
+          <div class="form-row">
+            <label>AI Engine</label>
+            <input type="text" id="ls-engine" placeholder="claude-sonnet-4-6, gpt-4o, gemini-2.0-flash…">
+          </div>
+        </div>
+        <div class="form-cols">
+          <div class="form-row">
+            <label>Researcher (GitHub username)</label>
+            <input type="text" id="ls-researcher" placeholder="phyto99">
+          </div>
+          <div class="form-row">
+            <label>Scope</label>
+            <select id="ls-scope">
+              <option value="broad">Broad survey</option>
+              <option value="narrow">Narrow sub-domain</option>
+              <option value="specific">Specific gap</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Domain / Search Angle</label>
+          <input type="text" id="ls-domain" placeholder="e.g. Bayesian / probabilistic reasoning generators">
+        </div>
+        <div class="form-row">
+          <label>Finds (comma-separated names)</label>
+          <input type="text" id="ls-finds" placeholder="ReasoningGym, CLadder, StepGame">
+        </div>
+        <div class="form-row">
+          <label>Rejected (comma-separated, brief reason)</label>
+          <textarea id="ls-rejected" placeholder="GSM8K (static dataset), WinoGrande (finite, narrow)"></textarea>
+        </div>
+        <div class="form-row">
+          <label>Remaining Open Gaps (one per line)</label>
+          <textarea id="ls-gaps" placeholder="Temporal reasoning&#10;Cipher puzzles&#10;Musical patterns"></textarea>
+        </div>
+        <div class="form-row">
+          <label>Recommended Next Search Angle</label>
+          <textarea id="ls-next" placeholder="Search specifically for Bayesian reasoning generators…"></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="generateLogEntry()">Generate Log Entry</button>
+        <div class="output-box" id="log-output"></div>
+        <button class="btn btn-secondary copy-btn" id="log-copy-btn" onclick="copyOutput('log-output')" style="display:none">Copy to Clipboard</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- Propose a Puzzle -->
+  <div class="tab-content" id="tab-propose">
+    <section>
+      <h2>Propose a New Puzzle Type</h2>
+      <p>Fills in a registry entry template. Paste into PUZZLE_REGISTRY.md or submit as a PR.</p>
+      <div class="form-section">
+        <div class="form-cols">
+          <div class="form-row">
+            <label>Name</label>
+            <input type="text" id="pp-name" placeholder="CLadder">
+          </div>
+          <div class="form-row">
+            <label>Proposed Status</label>
+            <select id="pp-status">
+              <option value="QUEUED">QUEUED — integrate this</option>
+              <option value="RESEARCHED">RESEARCHED — decision pending</option>
+              <option value="SHELVED">SHELVED — blocked, revisit later</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Category</label>
+          <select id="pp-category">
+            <option value="A">A — Abstract Visual Pattern Recognition</option>
+            <option value="B">B — 3D Scene Understanding</option>
+            <option value="C">C — Grid / Rule Induction</option>
+            <option value="D">D — Concept Learning from Examples</option>
+            <option value="E">E — Interactive Logic Puzzles</option>
+            <option value="F">F — Deductive / Formal Logic (Language)</option>
+            <option value="G">G — Constraint Satisfaction (Language)</option>
+            <option value="H">H — Causal and Counterfactual Reasoning</option>
+            <option value="I">I — Spatial Reasoning (Language)</option>
+            <option value="J">J — Relational / Compositional Reasoning</option>
+            <option value="K">K — Argument Analysis (Informal Logic)</option>
+            <option value="L">L — Word / Linguistic Puzzles</option>
+            <option value="M">M — Arithmetic and Mathematical Reasoning</option>
+            <option value="NEW">NEW — New category (describe below)</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Cognitive Skill Trained (specific)</label>
+          <input type="text" id="pp-skill" placeholder="Multi-hop causal counterfactual inference using Pearl's causal hierarchy">
+        </div>
+        <div class="form-row">
+          <label>Source / GitHub URL</label>
+          <input type="text" id="pp-source" placeholder="github.com/causalNLP/cladder">
+        </div>
+        <div class="form-cols">
+          <div class="form-row">
+            <label>License</label>
+            <select id="pp-license">
+              <option value="MIT">MIT</option>
+              <option value="Apache 2.0">Apache 2.0</option>
+              <option value="CC-BY 4.0">CC-BY 4.0</option>
+              <option value="CC-BY-NC 4.0">CC-BY-NC 4.0 ⚠ Non-commercial</option>
+              <option value="GPL">GPL</option>
+              <option value="Unknown">Unknown / contact authors</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Format</label>
+            <select id="pp-format">
+              <option value="multiple-choice">Multiple choice</option>
+              <option value="open-answer">Open answer</option>
+              <option value="interactive">Interactive / session-based</option>
+              <option value="true-false">True / False / Unknown</option>
+              <option value="fill-grid">Fill-in grid</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-cols">
+          <div class="form-row">
+            <label>Procedurally generatable?</label>
+            <select id="pp-gen">
+              <option value="yes">Yes — infinite generation</option>
+              <option value="dataset">Dataset-based — finite</option>
+              <option value="partial">Partial — limited generator</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Offline generation?</label>
+            <select id="pp-offline">
+              <option value="yes">Yes — fully offline</option>
+              <option value="download">Yes — after one-time dataset download</option>
+              <option value="no">No — network required ⚠</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Difficulty Axis</label>
+          <input type="text" id="pp-difficulty" placeholder="Causal graph complexity, Rung 1/2/3, presence of confounders">
+        </div>
+        <div class="form-row">
+          <label>Notes / Implementation Complexity</label>
+          <textarea id="pp-notes" placeholder="Offline generator in causalbenchmark/generator.py; 10K pre-built questions available; expert human ~85% accuracy"></textarea>
+        </div>
+        <div class="form-row" id="pp-blocker-row" style="display:none">
+          <label>Blocker (for SHELVED)</label>
+          <input type="text" id="pp-blocker" placeholder="Live API dependency; revisit when offline mirror available">
+        </div>
+        <button class="btn btn-primary" onclick="generateProposal()">Generate Registry Entry</button>
+        <div class="output-box" id="proposal-output"></div>
+        <button class="btn btn-secondary copy-btn" id="proposal-copy-btn" onclick="copyOutput('proposal-output')" style="display:none">Copy to Clipboard</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- Invent a Category -->
+  <div class="tab-content" id="tab-invent">
+    <section>
+      <h2>Invent a New Puzzle Category</h2>
+      <p>For cognitive skills with no existing dataset. Design the puzzle type from scratch using this template.</p>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 18px;margin-bottom:20px;">
+        <h3 style="margin-bottom:10px;color:var(--open)">Open Gaps — Research These First</h3>
+        <p style="margin-bottom:10px;font-size:13px;">Before inventing, check if one of these gaps can be filled by an existing benchmark:</p>
+        <div id="open-gaps-list"></div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-row">
+          <label>Name for This Puzzle Type</label>
+          <input type="text" id="inv-name" placeholder="BayesianUpdate">
+        </div>
+        <div class="form-row">
+          <label>Cognitive Skill Trained — be specific</label>
+          <textarea id="inv-skill" placeholder="Multi-step Bayesian belief updating: given prior probabilities and new evidence, compute updated posterior. Trains base-rate sensitivity and conditional probability reasoning."></textarea>
+          <p class="hint">Bad: "reasoning" — Good: "identify the logically inconsistent sentence in a short story using backward causal inference"</p>
+        </div>
+        <div class="form-row">
+          <label>Why this gap matters (tie to real-world capability)</label>
+          <textarea id="inv-why" placeholder="Humans routinely ignore base rates (base rate neglect). A player who can correctly update beliefs given evidence will make better probabilistic decisions in medicine, law, and everyday life."></textarea>
+        </div>
+        <div class="form-row">
+          <label>Format — what does the player see and do?</label>
+          <textarea id="inv-format" placeholder="Input: A scenario with stated prior probability + new evidence statement. Task: Select the correct updated probability from 4 choices. Answer: Multiple choice. Feedback: Show the correct Bayes calculation after selection."></textarea>
+        </div>
+        <div class="form-row">
+          <label>Generation approach — how to create instances procedurally</label>
+          <textarea id="inv-gen" placeholder="Parameterize: prior probability P(A), likelihood P(B|A), anti-likelihood P(B|¬A). Generate scenario text from templates. Compute correct posterior. Generate 3 distractors by varying P(B|A) or swapping prior/posterior."></textarea>
+        </div>
+        <div class="form-row">
+          <label>Difficulty axis — what makes it harder?</label>
+          <textarea id="inv-difficulty" placeholder="Easy: round numbers, single update step. Medium: decimal probabilities, two update steps. Hard: multiple evidence items, confounded likelihoods, requires distinguishing P(A|B) from P(B|A)."></textarea>
+        </div>
+        <div class="form-row">
+          <label>Prior art — does anything close already exist? Why is it insufficient?</label>
+          <textarea id="inv-prior" placeholder="No published benchmark found with a procedural generator. Static Bayesian reasoning items exist in some LSAT prep sets but are finite and not parameterized."></textarea>
+        </div>
+        <div class="form-cols">
+          <div class="form-row">
+            <label>Estimated Implementation Complexity</label>
+            <select id="inv-complexity">
+              <option value="Low">Low — pure Python, no deps</option>
+              <option value="Moderate">Moderate — some deps or UI work</option>
+              <option value="High">High — significant engineering</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Dependencies</label>
+            <input type="text" id="inv-deps" placeholder="None / numpy / z3-solver / PIL">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="generateInvention()">Generate Invention Spec</button>
+        <div class="output-box" id="invention-output"></div>
+        <button class="btn btn-secondary copy-btn" id="invention-copy-btn" onclick="copyOutput('invention-output')" style="display:none">Copy to Clipboard</button>
+      </div>
+    </section>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+// ── Data ────────────────────────────────────────────────────────────────────
+
+const REGISTRY = [
+  // Category A
+  { id:'i-raven',    name:'I-RAVEN',          status:'LIVE',     cat:'A', skill:'Abstract visual pattern recognition',       format:'multiple-choice', gen:true,  offline:true,  license:'MIT',         source:'github.com/husheng-liu/I-RAVEN',         notes:'Procedural 3×3 matrix; rule vocab: progression, symmetry, arithmetic; two modes (standard, mesh)' },
+  { id:'pgm',        name:'PGM',              status:'LIVE',     cat:'A', skill:'Abstract visual pattern recognition',       format:'multiple-choice', gen:true,  offline:true,  license:'Custom',      source:'custom generator (pgm_generator.py)',    notes:'DeepMind PGM rule vocab: XOR, OR, AND, consistent_union; 8 answer choices' },
+  { id:'marvel',     name:'MARVEL',           status:'LIVE',     cat:'A', skill:'Abstract visual pattern recognition',       format:'multiple-choice', gen:false, offline:true,  license:'Research',    source:'github.com/1171-jpg/MARVEL_AVR',         notes:'Pre-rendered panel images; label JSON; 4 answer choices' },
+  { id:'analogy',    name:'Visual Analogy',   status:'LIVE',     cat:'A', skill:'Analogical transformation (visual)',        format:'multiple-choice', gen:true,  offline:true,  license:'Custom',      source:'custom generator (analogy_generator.py)',notes:'A:B::C:? SVG; transformations: fill, size, shape, count, border, rotation' },
+  // Category B
+  { id:'acre',       name:'ACRE',             status:'LIVE',     cat:'B', skill:'Causal reasoning over 3D visual scenes',    format:'multiple-choice', gen:true,  offline:true,  license:'MIT',         source:'github.com/WellyZhang/ACRE',             notes:'Causal block scene; subprocess isolated; Three.js renderer' },
+  { id:'clevr',      name:'CLEVR',            status:'LIVE',     cat:'B', skill:'Spatial/relational NL questions over 3D',   format:'multiple-choice', gen:true,  offline:true,  license:'Custom',      source:'custom generator (clevr_generator.py)',  notes:'NL questions: count, exist, query, compare; reuses ACRE Three.js renderer' },
+  // Category C
+  { id:'arc1',       name:'ARC-AGI-1',        status:'LIVE',     cat:'C', skill:'Grid rule induction (open-ended)',           format:'open-answer',     gen:false, offline:true,  license:'Apache 2.0',  source:'github.com/fchollet/ARC-AGI',            notes:'400 tasks; colored grid transformation; original benchmark' },
+  { id:'arc2',       name:'ARC-AGI-2',        status:'LIVE',     cat:'C', skill:'Grid rule induction (open-ended)',           format:'open-answer',     gen:false, offline:true,  license:'Apache 2.0',  source:'github.com/arcprize/ARC-AGI-2',          notes:'1000 tasks; harder; same format as ARC-1' },
+  { id:'arc3',       name:'ARC-AGI-3',        status:'LIVE',     cat:'C', skill:'Grid rule induction (interactive)',          format:'interactive',     gen:true,  offline:true,  license:'MIT',         source:'Local environment files (ARC Prize)',     notes:'Interactive multi-step sessions; 6 environment files' },
+  // Category D
+  { id:'bongard',    name:'Bongard-LOGO',     status:'LIVE',     cat:'D', skill:'Concept learning from pos/neg examples',    format:'multiple-choice', gen:true,  offline:true,  license:'CC-BY-NC',    source:'github.com/NVlabs/Bongard-LOGO',         notes:'6 pos / 6 neg → classify test image; custom SVG generator; NC license' },
+  { id:'pvqa',       name:'PuzzleVQA',        status:'LIVE',     cat:'D', skill:'Visual pattern recognition with NL questions',format:'multiple-choice',gen:true,  offline:true,  license:'MIT',         source:'github.com/declare-lab/puzzlevqa',       notes:'Visual pattern + NL question; 10+ PIL-based pattern generators' },
+  // Category E
+  { id:'rlp',        name:'RLP / Simon Tatham',status:'LIVE',    cat:'E', skill:'Structured logic puzzle solving (interactive)',format:'interactive',   gen:true,  offline:true,  license:'MIT',         source:'chiark.greenend.org.uk/~sgtatham/puzzles',notes:'~40 classic game types; WSL subprocess; Xvfb virtual framebuffer' },
+  // Category F
+  { id:'rg-kk',      name:'Knights & Knaves', status:'QUEUED',   cat:'F', skill:'Propositional logic via truth constraints',  format:'open-answer',     gen:true,  offline:true,  license:'Apache 2.0',  source:'github.com/open-thought/reasoning-gym',  notes:'Part of Reasoning-Gym; Smullyan-style islander puzzles' },
+  { id:'rg-syl',     name:'Syllogisms',       status:'QUEUED',   cat:'F', skill:'Aristotelian syllogistic reasoning',         format:'true-false',      gen:true,  offline:true,  license:'Apache 2.0',  source:'github.com/open-thought/reasoning-gym',  notes:'Part of Reasoning-Gym' },
+  { id:'rg-prop',    name:'Propositional Logic',status:'QUEUED', cat:'F', skill:'Boolean formula evaluation',                 format:'open-answer',     gen:true,  offline:true,  license:'Apache 2.0',  source:'github.com/open-thought/reasoning-gym',  notes:'Part of Reasoning-Gym' },
+  { id:'rg-circ',    name:'Circuit Logic',    status:'QUEUED',   cat:'F', skill:'Logic gate chain evaluation',                format:'open-answer',     gen:true,  offline:true,  license:'Apache 2.0',  source:'github.com/open-thought/reasoning-gym',  notes:'Part of Reasoning-Gym' },
+  { id:'rg-self',    name:'Self-Referential Logic',status:'QUEUED',cat:'F',skill:'Liar paradox / self-referential reasoning', format:'open-answer',     gen:true,  offline:true,  license:'Apache 2.0',  source:'github.com/open-thought/reasoning-gym',  notes:'Part of Reasoning-Gym' },
+  { id:'prontoqa',   name:'ProntoQA',         status:'QUEUED',   cat:'F', skill:'Formal multi-step proof chain tracing',      format:'true-false',      gen:true,  offline:true,  license:'MIT',         source:'github.com/asaparov/prontoqa',           notes:'Fictional entities prevent shortcutting; hop depth configurable; ICLR 2023' },
+  { id:'ruletaker',  name:'RuleTaker',        status:'QUEUED',   cat:'F', skill:'Rule-following deduction in prose English',  format:'true-false',      gen:true,  offline:true,  license:'Apache 2.0',  source:'github.com/allenai/ruletaker',           notes:'Problog backend; True/False/Unknown; readable English rules' },
+  { id:'folio',      name:'FOLIO',            status:'QUEUED',   cat:'F', skill:'First-order logic in fluent English',        format:'true-false',      gen:false, offline:true,  license:'CC-BY 4.0',   source:'github.com/Yale-LILY/FOLIO',             notes:'1,430 expert-written items; use as challenge/expert mode; EMNLP 2024' },
+  // Category G
+  { id:'zebra',      name:'ZebraLogic / Logic Grid',status:'QUEUED',cat:'G',skill:'Multi-entity constraint satisfaction',    format:'fill-grid',       gen:true,  offline:true,  license:'MIT',         source:'github.com/tuchandra/zebra + allenai/ZebraLogicBench',notes:'z3-solver backend; 2×2 trivial → 6×6 very hard; interactive grid UI needed' },
+  { id:'rg-zebra',   name:'Zebra Puzzles (RG)',status:'QUEUED',   cat:'G', skill:'Multi-entity constraint satisfaction',       format:'open-answer',     gen:true,  offline:true,  license:'Apache 2.0',  source:'github.com/open-thought/reasoning-gym',  notes:'Part of Reasoning-Gym; text-only variant' },
+  // Category H
+  { id:'cladder',    name:'CLadder',          status:'QUEUED',   cat:'H', skill:'Causal / counterfactual reasoning (Pearl hierarchy)',format:'multiple-choice',gen:true,offline:true,license:'MIT',      source:'github.com/causalNLP/cladder',           notes:'Rungs 1/2/3; offline generator + 10K questions; expert human ~85%; NeurIPS 2023' },
+  // Category I
+  { id:'stepgame',   name:'StepGame',         status:'QUEUED',   cat:'I', skill:'Text-only multi-hop spatial reasoning',      format:'multiple-choice', gen:true,  offline:true,  license:'Research',    source:'github.com/ZhengxiangShi/StepGame',      notes:'8 directions; k=1–10 hop depth; 50K pre-generated; AAAI 2022' },
+  // Category J
+  { id:'clutrr',     name:'CLUTRR',           status:'QUEUED',   cat:'J', skill:'Multi-hop kinship/relational chain reasoning',format:'open-answer',    gen:true,  offline:true,  license:'CC-BY-NC',    source:'github.com/facebookresearch/clutrr',     notes:'k-hop difficulty; non-commercial license — flag if distributing; EMNLP 2019' },
+  // Category K
+  { id:'logiqav2',   name:'LogiQA 2.0',       status:'QUEUED',   cat:'K', skill:'Informal argument analysis (LSAT-style)',    format:'multiple-choice', gen:false, offline:true,  license:'Research',    source:'github.com/csitfun/LogiQA2.0',           notes:'35K questions; 4 subtypes: deduction, abduction, induction, assumption; IEEE TASLP 2023' },
+  { id:'arlsat',     name:'AR-LSAT',          status:'QUEUED',   cat:'K', skill:'Informal argument analysis (LSAT-style)',    format:'multiple-choice', gen:false, offline:true,  license:'MIT',         source:'github.com/LogiTorch/logitorch',         notes:'2,046 real LSAT items via LogiTorch library; AAAI 2022' },
+  // Category L
+  { id:'rg-wl',      name:'Word Ladder',      status:'QUEUED',   cat:'L', skill:'Sequential linguistic transformation',       format:'open-answer',     gen:true,  offline:true,  license:'Apache 2.0',  source:'github.com/open-thought/reasoning-gym',  notes:'Part of Reasoning-Gym; single-letter word chains' },
+  { id:'rg-sr',      name:'Sentence Reordering',status:'QUEUED', cat:'L', skill:'Temporal / sequential ordering',             format:'open-answer',     gen:true,  offline:true,  license:'Apache 2.0',  source:'github.com/open-thought/reasoning-gym',  notes:'Part of Reasoning-Gym' },
+  // Category M
+  { id:'rg-cd',      name:'Countdown / 24-Game',status:'QUEUED', cat:'M', skill:'Arithmetic target-finding under constraints',format:'open-answer',    gen:true,  offline:true,  license:'Apache 2.0',  source:'github.com/open-thought/reasoning-gym',  notes:'Part of Reasoning-Gym' },
+  { id:'rg-crypt',   name:'Cryptarithmetic',  status:'QUEUED',   cat:'M', skill:'Substitution arithmetic (letter→digit)',      format:'open-answer',     gen:true,  offline:true,  license:'Apache 2.0',  source:'github.com/open-thought/reasoning-gym',  notes:'Part of Reasoning-Gym' },
+  { id:'rg-numseq',  name:'Number Sequences', status:'QUEUED',   cat:'M', skill:'Inductive rule discovery from sequences',    format:'open-answer',     gen:true,  offline:true,  license:'Apache 2.0',  source:'github.com/open-thought/reasoning-gym',  notes:'Part of Reasoning-Gym' },
+  { id:'mathnet',    name:'MathNet',          status:'QUEUED',   cat:'M', skill:'Olympiad-level mathematical reasoning',      format:'open-answer',     gen:false, offline:true,  license:'MIT',         source:'github.com/ShadeAlsha/MathNet',          notes:'30K+ problems, 143 competitions, 1985–2025; filter for text-only; ICLR 2026' },
+  // Shelved
+  { id:'visulogic',  name:'VisuLogic',        status:'SHELVED',  cat:'N', skill:'Multi-step relational visual reasoning',     format:'multiple-choice', gen:false, offline:false, license:'Research',    source:'huggingface.co/datasets/VisuLogic/VisuLogic', notes:'Blocker: live HuggingFace API for images; broken base64 display. Revisit when offline mirror exists.' },
+  { id:'timepuzzle', name:'Time Puzzles',     status:'SHELVED',  cat:'N', skill:'Temporal / chronological constraint reasoning',format:'open-answer',  gen:true,  offline:true,  license:'Unknown',     source:'arxiv.org/abs/2601.07148',               notes:'Blocker: no public code as of 2026-04-26. Revisit when generator released.' },
+  // Rejected
+  { id:'gsm8k',      name:'GSM8K',            status:'REJECTED', cat:'O', skill:'Multi-step arithmetic word problems',        format:'open-answer',     gen:false, offline:true,  license:'MIT',         source:'github.com/openai/grade-school-math',    notes:'Static 8.5K dataset; Reasoning-Gym arithmetic generators are strictly superior (infinite)' },
+  { id:'omnimath',   name:'OmniMath',         status:'REJECTED', cat:'O', skill:'Olympiad math',                              format:'open-answer',     gen:false, offline:true,  license:'Research',    source:'github.com/KbsdJames/Omni-MATH',         notes:'4K problems, subset of MathNet which has 30K+' },
+  { id:'riddlesense',name:'RiddleSense',      status:'REJECTED', cat:'O', skill:'Commonsense riddles',                        format:'multiple-choice', gen:false, offline:true,  license:'MIT',         source:'github.com/INK-USC/RiddleSense',         notes:'5.7K finite riddles; once seen = known; no renewable depth' },
+  { id:'winogrande', name:'WinoGrande',       status:'REJECTED', cat:'O', skill:'Commonsense coreference resolution',         format:'multiple-choice', gen:false, offline:true,  license:'Apache 2.0',  source:'github.com/allenai/winogrande',          notes:'44K but finite/non-renewable; narrow skill; low depth ceiling' },
+  { id:'enigmata',   name:'Enigmata',         status:'REJECTED', cat:'O', skill:'Mixed reasoning (overlaps Reasoning-Gym)',   format:'open-answer',     gen:true,  offline:true,  license:'Research',    source:'github.com/BytedTsinghua-SIA/Enigmata',  notes:'Overlaps Reasoning-Gym substantially; less mature tooling' },
+];
+
+const COGNITIVE_SKILLS = [
+  { skill:'Abstract visual pattern recognition',          status:'LIVE',    coveredBy:['I-RAVEN','PGM','MARVEL'] },
+  { skill:'Analogical transformation (visual)',           status:'LIVE',    coveredBy:['Visual Analogy'] },
+  { skill:'3D spatial scene understanding',               status:'LIVE',    coveredBy:['ACRE','CLEVR'] },
+  { skill:'Causal scene reasoning (visual)',              status:'LIVE',    coveredBy:['ACRE'] },
+  { skill:'Grid rule induction (open-ended)',             status:'LIVE',    coveredBy:['ARC-AGI-1','ARC-AGI-2','ARC-AGI-3'] },
+  { skill:'Concept learning from examples',               status:'LIVE',    coveredBy:['Bongard-LOGO','PuzzleVQA'] },
+  { skill:'Interactive structured logic games',           status:'LIVE',    coveredBy:['RLP / Simon Tatham'] },
+  { skill:'Syllogistic / propositional logic',            status:'QUEUED',  coveredBy:['Reasoning-Gym (knights_knaves, syllogisms, propositional_logic)'] },
+  { skill:'Formal proof chain tracing',                   status:'QUEUED',  coveredBy:['ProntoQA','RuleTaker'] },
+  { skill:'First-order logic in fluent English',          status:'QUEUED',  coveredBy:['FOLIO'] },
+  { skill:'Constraint satisfaction (logic grid)',         status:'QUEUED',  coveredBy:['ZebraLogic'] },
+  { skill:'Causal / counterfactual reasoning',            status:'QUEUED',  coveredBy:['CLadder'] },
+  { skill:'Text-only spatial reasoning',                  status:'QUEUED',  coveredBy:['StepGame'] },
+  { skill:'Multi-hop relational reasoning',               status:'QUEUED',  coveredBy:['CLUTRR'] },
+  { skill:'Informal argument analysis',                   status:'QUEUED',  coveredBy:['LogiQA 2.0','AR-LSAT'] },
+  { skill:'Word / linguistic manipulation',               status:'QUEUED',  coveredBy:['Reasoning-Gym (word_ladder, sentence_reordering)'] },
+  { skill:'Arithmetic combinatorics',                     status:'QUEUED',  coveredBy:['Reasoning-Gym (countdown, cryptarithmetic)'] },
+  { skill:'Olympiad-level mathematical reasoning',        status:'QUEUED',  coveredBy:['MathNet'] },
+  { skill:'Temporal / chronological reasoning',           status:'OPEN',    coveredBy:[] },
+  { skill:'Cipher / cryptographic reasoning',             status:'OPEN',    coveredBy:[] },
+  { skill:'Probabilistic / Bayesian reasoning',           status:'OPEN',    coveredBy:[] },
+  { skill:'Epistemic / theory-of-mind reasoning',         status:'OPEN',    coveredBy:[] },
+  { skill:'Game theory / strategic reasoning',            status:'OPEN',    coveredBy:[] },
+  { skill:'Mechanical / physical intuition (language)',   status:'OPEN',    coveredBy:[] },
+  { skill:'Narrative coherence / story consistency',      status:'OPEN',    coveredBy:[] },
+  { skill:'Analogical reasoning (language-only)',         status:'OPEN',    coveredBy:[] },
+  { skill:'Musical / rhythmic pattern reasoning',         status:'OPEN',    coveredBy:[] },
+  { skill:'Economic / resource reasoning',                status:'OPEN',    coveredBy:[] },
+];
+
+const RESEARCH_LOG_DATA = [
+  {
+    date: '2026-04-26',
+    engine: 'claude-sonnet-4-6',
+    researcher: 'phyto99',
+    domain: 'General survey — all cognitive domains',
+    scope: 'broad',
+    finds: ['Reasoning-Gym (40+ types)','CLadder','StepGame','ZebraLogic','ProntoQA','RuleTaker','FOLIO','MathNet','LogiQA 2.0','AR-LSAT','CLUTRR'],
+    rejected: ['GSM8K (static, RG is better)','OmniMath (subset of MathNet)','RiddleSense (no depth)','CRT (no generator)','Enigmata (overlaps RG)','WinoGrande (finite, narrow)','SpatialBench (image-only)'],
+    shelved: ['Time Puzzles (no code yet)'],
+    openGaps: ['Temporal / chronological reasoning','Cipher / cryptographic reasoning','Musical / rhythmic pattern reasoning','Game theory / strategic reasoning','Probabilistic / Bayesian reasoning','Epistemic / theory-of-mind reasoning','Mechanical / physical intuition','Narrative coherence','Analogical reasoning (language-only)','Economic / resource reasoning'],
+    nextAngle: 'Search specifically for Bayesian reasoning generators. Search for epistemic logic / theory-of-mind puzzle generators. Check Reasoning-Gym full 105-task inventory for hidden coverage of remaining gaps.',
+  }
+];
+
+// ── Render stats ──────────────────────────────────────────────────────────────
+function renderStats() {
+  const live     = REGISTRY.filter(r => r.status === 'LIVE').length;
+  const queued   = REGISTRY.filter(r => r.status === 'QUEUED').length;
+  const shelved  = REGISTRY.filter(r => r.status === 'SHELVED').length;
+  const open     = COGNITIVE_SKILLS.filter(s => s.status === 'OPEN').length;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat live"><div class="num">${live}</div><div class="lbl">Live</div></div>
+    <div class="stat queued"><div class="num">${queued}</div><div class="lbl">Queued</div></div>
+    <div class="stat shelved"><div class="num">${shelved}</div><div class="lbl">Shelved</div></div>
+    <div class="stat open"><div class="num">${open}</div><div class="lbl">Open Gaps</div></div>
+  `;
+}
+
+// ── Coverage map ──────────────────────────────────────────────────────────────
+function renderCoverage() {
+  const grid = document.getElementById('coverage-grid');
+  grid.innerHTML = COGNITIVE_SKILLS.map(s => {
+    const cls = s.status === 'LIVE' ? 'live' : s.status === 'QUEUED' ? 'queued' : 'open';
+    const badge = `<span class="badge badge-${s.status === 'OPEN' ? 'OPEN' : s.status === 'QUEUED' ? 'QUEUED' : 'LIVE'}">${s.status}</span>`;
+    const covered = s.coveredBy.length ? `<div class="skill-covered">${s.coveredBy.join(', ')}</div>` : `<div class="skill-covered" style="color:var(--open)">No coverage — research target</div>`;
+    return `<div class="skill-card ${cls}">${badge}<div><div class="skill-name">${s.skill}</div>${covered}</div></div>`;
+  }).join('');
+}
+
+// ── Registry ──────────────────────────────────────────────────────────────────
+const CAT_NAMES = {
+  A:'Abstract Visual Pattern Recognition', B:'3D Scene Understanding',
+  C:'Grid / Rule Induction', D:'Concept Learning from Examples',
+  E:'Interactive Logic Puzzles', F:'Deductive / Formal Logic (Language)',
+  G:'Constraint Satisfaction (Language)', H:'Causal & Counterfactual Reasoning',
+  I:'Spatial Reasoning (Language)', J:'Relational / Compositional Reasoning',
+  K:'Argument Analysis (Informal Logic)', L:'Word / Linguistic Puzzles',
+  M:'Arithmetic & Mathematical Reasoning', N:'Shelved', O:'Rejected'
+};
+let currentFilter = 'ALL';
+
+function renderRegistry(query='', filter='ALL') {
+  const tbody = document.getElementById('registry-body');
+  const q = query.toLowerCase();
+  let html = '';
+  let lastCat = null;
+  const shown = REGISTRY.filter(r => {
+    const matchFilter = filter === 'ALL' || r.status === filter;
+    const matchQuery  = !q || r.name.toLowerCase().includes(q) || r.skill.toLowerCase().includes(q) || r.source.toLowerCase().includes(q) || r.notes.toLowerCase().includes(q);
+    return matchFilter && matchQuery;
+  });
+  shown.forEach(r => {
+    if (r.cat !== lastCat) {
+      html += `<tr class="cat-header"><td colspan="6">Category ${r.cat} — ${CAT_NAMES[r.cat]}</td></tr>`;
+      lastCat = r.cat;
+    }
+    const sourceLink = r.source.startsWith('github.com') || r.source.startsWith('huggingface') || r.source.startsWith('arxiv') || r.source.startsWith('chiark')
+      ? `<a href="https://${r.source}" target="_blank">${r.source.split('/').slice(0,2).join('/')}</a>`
+      : `<span style="color:var(--muted)">${r.source.substring(0,30)}</span>`;
+    const lic = r.license.includes('NC') ? `<span style="color:var(--queued)">${r.license}</span>` : `<span style="color:var(--muted)">${r.license}</span>`;
+    html += `<tr>
+      <td><span class="badge badge-${r.status}">${r.status}</span></td>
+      <td class="name">${r.name}</td>
+      <td style="font-size:12px;color:var(--muted);max-width:200px">${r.skill}</td>
+      <td style="font-size:12px;color:var(--muted)">${r.format}</td>
+      <td class="source">${sourceLink}<br>${lic}</td>
+      <td class="notes">${r.notes}</td>
+    </tr>`;
+  });
+  if (!html) html = `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">No matches</td></tr>`;
+  tbody.innerHTML = html;
+}
+
+function filterRegistry() {
+  renderRegistry(document.getElementById('search-input').value, currentFilter);
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filterRegistry();
+}
+
+// ── Research Log ──────────────────────────────────────────────────────────────
+function renderLog() {
+  const container = document.getElementById('log-container');
+  container.innerHTML = [...RESEARCH_LOG_DATA].reverse().map(e => `
+    <div class="log-entry">
+      <div class="log-meta">
+        <span class="log-date">${e.date}</span>
+        <span class="log-engine">${e.engine}</span>
+        <span class="log-researcher">@${e.researcher}</span>
+        <span style="color:var(--muted);font-size:12px">${e.scope} survey</span>
+      </div>
+      <div class="log-domain"><strong>Domain:</strong> ${e.domain}</div>
+      <div class="log-section-label">Finds → QUEUED</div>
+      <div class="log-finds">${e.finds.map(f=>`<span class="find-chip">${f}</span>`).join('')}</div>
+      <div class="log-section-label">Rejected</div>
+      <div class="log-finds">${e.rejected.map(f=>`<span class="reject-chip">${f}</span>`).join('')}</div>
+      <div class="log-section-label">Remaining Open Gaps After This Search</div>
+      <div class="log-finds">${e.openGaps.map(g=>`<span class="gap-chip">${g}</span>`).join('')}</div>
+      <div class="log-section-label">Next Search Angle</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px;font-style:italic">${e.nextAngle}</div>
+    </div>
+  `).join('');
+}
+
+// ── Dedup Checker ─────────────────────────────────────────────────────────────
+function runChecker() {
+  const q = document.getElementById('checker-input').value.toLowerCase().trim();
+  const out = document.getElementById('checker-results');
+  if (q.length < 2) { out.innerHTML = ''; return; }
+
+  const hits = [];
+
+  // Check registry
+  REGISTRY.filter(r => r.name.toLowerCase().includes(q) || r.skill.toLowerCase().includes(q) || r.notes.toLowerCase().includes(q))
+    .forEach(r => {
+      const cls = r.status === 'LIVE' ? 'live' : r.status === 'QUEUED' ? '' : '';
+      hits.push(`<div class="checker-hit ${cls}">
+        <span class="badge badge-${r.status}">${r.status}</span>
+        <strong style="margin-left:8px">${r.name}</strong>
+        <span style="color:var(--muted);margin-left:8px;font-size:12px">${r.skill}</span>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">${r.notes}</div>
+      </div>`);
+    });
+
+  // Check coverage map open gaps
+  COGNITIVE_SKILLS.filter(s => s.status === 'OPEN' && s.skill.toLowerCase().includes(q))
+    .forEach(s => hits.push(`<div class="checker-hit open">
+      <span class="badge badge-OPEN">OPEN GAP</span>
+      <strong style="margin-left:8px">${s.skill}</strong>
+      <span style="color:var(--open);margin-left:8px;font-size:12px">No coverage yet — this is a research target</span>
+    </div>`));
+
+  // Check research log
+  RESEARCH_LOG_DATA.filter(e => e.domain.toLowerCase().includes(q) || e.openGaps.some(g=>g.toLowerCase().includes(q)) || e.finds.some(f=>f.toLowerCase().includes(q)))
+    .forEach(e => hits.push(`<div class="checker-hit log">
+      <span style="color:var(--accent);font-size:12px">Research Log — ${e.date} | ${e.engine} | @${e.researcher}</span>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">Domain: ${e.domain}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">Next angle: ${e.nextAngle}</div>
+    </div>`));
+
+  if (!hits.length) {
+    out.innerHTML = `<div class="checker-none">✓ No existing coverage or past research found for "${q}" — this looks like new territory.</div>`;
+  } else {
+    out.innerHTML = hits.join('');
+  }
+}
+
+// ── Open gaps list (for invent tab) ──────────────────────────────────────────
+function renderOpenGaps() {
+  const el = document.getElementById('open-gaps-list');
+  const open = COGNITIVE_SKILLS.filter(s => s.status === 'OPEN');
+  el.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:6px">${open.map(s=>`<span class="gap-chip" style="font-size:12px;padding:4px 10px;cursor:default" title="No coverage">${s.skill}</span>`).join('')}</div>`;
+}
+
+// ── Generate log entry ────────────────────────────────────────────────────────
+function generateLogEntry() {
+  const d     = v('ls-date') || 'YYYY-MM-DD';
+  const eng   = v('ls-engine') || 'engine-name';
+  const res   = v('ls-researcher') || 'username';
+  const dom   = v('ls-domain') || 'Domain description';
+  const scope = v('ls-scope');
+  const finds = v('ls-finds').split(',').map(s=>s.trim()).filter(Boolean);
+  const rej   = v('ls-rejected');
+  const gaps  = v('ls-gaps').split('\n').map(s=>s.trim()).filter(Boolean);
+  const next  = v('ls-next');
+
+  const out = `## ${d} | ${eng} | ${res}
+**Domain searched:** ${dom}
+**Prompt scope:** ${scope}
+**Finds (add to registry):** ${finds.join(', ') || '—'}
+**Rejected:** ${rej || '—'}
+**Remaining open gaps in this domain after this search:**
+${gaps.map(g=>'- '+g).join('\n') || '- (none identified)'}
+**Recommended next search angle:** ${next || '—'}`;
+
+  showOutput('log-output', 'log-copy-btn', out);
+}
+
+// ── Generate proposal ─────────────────────────────────────────────────────────
+function generateProposal() {
+  const status = v('pp-status');
+  const name   = v('pp-name') || 'Name';
+  const cat    = v('pp-category');
+  const skill  = v('pp-skill');
+  const source = v('pp-source');
+  const lic    = v('pp-license');
+  const fmt    = v('pp-format');
+  const gen    = v('pp-gen');
+  const off    = v('pp-offline');
+  const diff   = v('pp-difficulty');
+  const notes  = v('pp-notes');
+
+  const out =
+`| \`[${status}]\` | **${name}** | ${source} (${lic}) | ${notes || skill} |
+
+Cognitive skill: ${skill}
+Format: ${fmt} | Generatable: ${gen} | Offline: ${off}
+Difficulty axis: ${diff}`;
+
+  showOutput('proposal-output', 'proposal-copy-btn', out);
+}
+
+// ── Generate invention ────────────────────────────────────────────────────────
+function generateInvention() {
+  const name   = v('inv-name') || 'NewPuzzleType';
+  const skill  = v('inv-skill');
+  const why    = v('inv-why');
+  const fmt    = v('inv-format');
+  const gen    = v('inv-gen');
+  const diff   = v('inv-difficulty');
+  const prior  = v('inv-prior');
+  const cplx   = v('inv-complexity');
+  const deps   = v('inv-deps');
+
+  const out =
+`## [PROPOSED] ${name}
+
+**Cognitive skill trained:** ${skill}
+
+**Why this gap matters:** ${why}
+
+**Format:**
+${fmt}
+
+**Generation approach:**
+${gen}
+
+**Difficulty axis:**
+${diff}
+
+**Prior art:**
+${prior}
+
+**Estimated implementation complexity:** ${cplx}
+**Dependencies:** ${deps || 'None'}`;
+
+  showOutput('invention-output', 'invention-copy-btn', out);
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function v(id) { return document.getElementById(id).value.trim(); }
+
+function showOutput(boxId, btnId, text) {
+  const box = document.getElementById(boxId);
+  box.textContent = text;
+  box.style.display = 'block';
+  document.getElementById(btnId).style.display = 'inline-block';
+}
+
+function copyOutput(boxId) {
+  const text = document.getElementById(boxId).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById(boxId.replace('-output','-copy-btn')).textContent = 'Copied!';
+    setTimeout(() => { try { document.getElementById(boxId.replace('-output','-copy-btn')).textContent = 'Copy to Clipboard'; } catch(e){} }, 1500);
+  });
+}
+
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── Propose status toggle ─────────────────────────────────────────────────────
+document.addEventListener('change', e => {
+  if (e.target.id === 'pp-status') {
+    document.getElementById('pp-blocker-row').style.display = e.target.value === 'SHELVED' ? 'block' : 'none';
+  }
+});
+
+// ── Set today's date ──────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('ls-date').value = today;
+  renderStats();
+  renderCoverage();
+  renderRegistry();
+  renderLog();
+  renderOpenGaps();
+});
+</script>
+</body>
+</html>

@@ -240,6 +240,10 @@ def rlp_reset():
 def index():
     return render_template('app_v2.html')
 
+@app.route('/contribute')
+def contribute():
+    return render_template('contribute.html')
+
 @app.route('/api/get_puzzle', methods=['GET', 'POST'])
 def get_puzzle():
     try:
