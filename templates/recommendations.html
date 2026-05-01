@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recommendations</title>
+<style>
+  :root {
+    --bg: #0e0e0e; --surface: #181818; --surface2: #222;
+    --border: #2e2e2e; --text: #e8e8e8; --muted: #888;
+    --accent: #4a9eff; --done: #4caf50; --todo: #ff9800;
+    --critical: #f44336; --idea: #9c27b0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.6; padding: 28px 24px; }
+  h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 28px; }
+  h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 28px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  .item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 8px; border-left: 3px solid var(--todo); }
+  .item.critical { border-left-color: var(--critical); }
+  .item.idea     { border-left-color: var(--idea); }
+  .item.done     { border-left-color: var(--done); opacity: .5; }
+  .item-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  .item-body  { color: var(--muted); font-size: 13px; }
+  .item-body code { background: var(--surface2); padding: 1px 5px; border-radius: 3px; font-family: monospace; font-size: 12px; color: #ccc; }
+  .badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; text-transform: uppercase; letter-spacing: .04em; }
+  .badge-critical { background: #3a1010; color: var(--critical); }
+  .badge-todo     { background: #3a2a0a; color: var(--todo); }
+  .badge-idea     { background: #2a1a3a; color: var(--idea); }
+  .badge-done     { background: #1b3a1e; color: var(--done); }
+  .options { margin-top: 8px; padding-left: 14px; }
+  .options li { font-size: 12px; color: var(--muted); margin-bottom: 3px; }
+  .options li strong { color: var(--text); }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<h1>Technical Recommendations</h1>
+<p class="sub">Pending improvements. Toggle with the button in the main app.</p>
+
+<h2>Rendering</h2>
+
+<div class="item critical">
+  <div class="item-title"><span class="badge badge-critical">Critical</span> Raven renderer — SVG rewrite for mobile + retina</div>
+  <div class="item-body">
+    Current pipeline: OpenCV numpy arrays at <code>IMAGE_SIZE=160px</code> → PNG → CSS scaled to 150px.
+    Non-integer scale ratio (0.9375×) with <code>image-rendering: pixelated</code> causes irregular pixel rows.
+    On mobile, the 480px fixed grid overflows 375px viewports. Retina screens (2×/3× DPR) make PNG sources look soft.
+    <br><br>
+    <strong>Recommended fix:</strong> Rewrite <code>rendering.py</code> shape logic as SVG. Server returns JSON shape descriptors; frontend renders as inline <code>&lt;svg&gt;</code>. Resolution-independent, responsive, tiny payload, zero scaling artifacts at any DPR.
+    <ul class="options">
+      <li><strong>SVG (recommended):</strong> ~200 lines JS, rewrite shape drawing. Perfect everywhere.</li>
+      <li><strong>480px render + responsive CSS:</strong> Change <code>IMAGE_SIZE=480</code>, use percentage-based grid. Good enough on most devices, no rewrite.</li>
+      <li><strong>160px display at 160px CSS:</strong> Easiest fix for desktop only; doesn't solve mobile.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="item done">
+  <div class="item-title"><span class="badge badge-done">Done</span> Remove Left_Right / Up_Down divider line</div>
+  <div class="item-body">
+    <code>render_structure()</code> was drawing a 1px white line at panel midpoint for two-zone layouts. Removed — function now returns blank canvas for all layout modes.
+  </div>
+</div>
+
+<h2>New Puzzle Types</h2>
+
+<div class="item idea">
+  <div class="item-title"><span class="badge badge-idea">Idea</span> Color-based abstract matrix generator</div>
+  <div class="item-body">
+    I-RAVEN and PGM both use grayscale fill as their "color" attribute. No published color-first RPM generator found.
+    <br><br>
+    <strong>Recommended approach:</strong> Extend the PGM generator to use HSL hue as a primary rule attribute — hue progressions, color XOR/AND rules across the matrix. All the rule machinery already exists; swap grayscale values for hue values in rendering. Would produce visually distinct, vibrant puzzles with color as the core reasoning dimension.
+  </div>
+</div>
+
+<div class="item todo">
+  <div class="item-title"><span class="badge badge-todo">Queued</span> Integrate Reasoning-Gym (40+ verbal/logic puzzle types)</div>
+  <div class="item-body">
+    <code>pip install reasoning-gym</code> — Apache 2.0. Covers knights &amp; knaves, syllogisms, propositional logic, word ladders, cryptarithmetic, number sequences, zebra puzzles, and more. Each task type becomes a separate generator mode. Integration effort: low.
+    <br><br>
+    Start with: <code>knights_knaves</code>, <code>zebra_puzzles</code>, <code>syllogisms</code>, <code>propositional_logic</code>, <code>word_ladder</code>.
+  </div>
+</div>
+
+<div class="item todo">
+  <div class="item-title"><span class="badge badge-todo">Queued</span> CLadder — causal &amp; counterfactual reasoning</div>
+  <div class="item-body">
+    <a href="https://github.com/causalNLP/cladder" target="_blank">github.com/causalNLP/cladder</a> — MIT. Pearl's causal hierarchy (Rungs 1/2/3): association → intervention → counterfactual. Unique cognitive skill not covered by any existing puzzle type. Expert human accuracy ~85% — real depth ceiling.
+  </div>
+</div>
+
+<div class="item todo">
+  <div class="item-title"><span class="badge badge-todo">Queued</span> StepGame — text-only multi-hop spatial reasoning</div>
+  <div class="item-body">
+    <a href="https://github.com/ZhengxiangShi/StepGame" target="_blank">github.com/ZhengxiangShi/StepGame</a>. "A is upper-left of B. B is above C. Where is A relative to C?" No images — pure language spatial inference. k=1–10 hop depth. 50K pre-generated items available.
+  </div>
+</div>
+
+<div class="item todo">
+  <div class="item-title"><span class="badge badge-todo">Queued</span> ZebraLogic — constraint satisfaction logic grid</div>
+  <div class="item-body">
+    Python generator with z3-solver backend (<code>pip install z3-solver</code>). 2×2 (trivial) → 6×6 (very hard). Interactive grid fill UI needed — similar complexity to Simon Tatham integration. 1K starter set at <a href="https://huggingface.co/datasets/allenai/ZebraLogicBench" target="_blank">allenai/ZebraLogicBench</a>.
+  </div>
+</div>
+
+<h2>Infrastructure</h2>
+
+<div class="item todo">
+  <div class="item-title"><span class="badge badge-todo">Todo</span> Proper server restart script</div>
+  <div class="item-body">
+    Current problem: multiple zombie processes accumulate on port 5010 across restarts. Need a <code>restart.bat</code> (or integrate into unified_server.py) that finds and kills the existing PID before rebinding. Consider using <code>SO_REUSEPORT</code> or storing the PID in a lockfile.
+  </div>
+</div>
+
+<div class="item todo">
+  <div class="item-title"><span class="badge badge-todo">Todo</span> PrAE — convert to proper git submodule</div>
+  <div class="item-body">
+    <code>PrAE/</code> was committed as an embedded git repo (has its own <code>.git</code>). Contents won't clone with the outer repo. Convert to <code>git submodule add &lt;url&gt; PrAE</code> once the upstream URL is confirmed.
+  </div>
+</div>
+
+<div class="item idea">
+  <div class="item-title"><span class="badge badge-idea">Idea</span> Score reset button in UI</div>
+  <div class="item-body">
+    Score percentage is stored in JS state — survives server restarts, only clears on hard refresh. A visible reset button would be cleaner than expecting users to know about <code>Ctrl+Shift+R</code>.
+  </div>
+</div>
+
+</body>
+</html>

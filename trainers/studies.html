@@ -1,0 +1,677 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Studies — Craetio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Cinzel:wght@400;600&family=Fraunces:ital,wght@1,300;1,400&display=swap" rel="stylesheet">
+<script src="theme.js"></script>
+<style>
+:root{--bg:#08080e;--surface:#0f0f1a;--card:#161623;--border:#252538;--text:#dde0f5;--muted:#6e7099;--bright:#f0f2ff;--accent:#3730a3;--accent2:#4338ca}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:15px;line-height:1.6;min-height:100vh}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:var(--surface)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+h1,h2,h3{font-family:'Cinzel',serif;color:var(--bright);line-height:1.2}
+h1{font-size:1.6rem;font-weight:600}h2{font-size:1.15rem;font-weight:600}h3{font-size:.95rem;font-weight:400}
+a{color:var(--accent2);text-decoration:none}a:hover{text-decoration:underline}
+.topbar{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);padding:.6rem 1.25rem;display:flex;align-items:center;gap:.75rem}
+.topbar-logo{font-family:'Cinzel',serif;font-size:.95rem;font-weight:700;color:var(--bright);text-decoration:none}
+.topbar-spacer{flex:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;padding:.4rem .9rem;border-radius:6px;font-family:'IBM Plex Sans',sans-serif;font-size:.8125rem;font-weight:500;cursor:pointer;border:1px solid transparent;transition:all .2s;text-decoration:none;white-space:nowrap}
+.btn-ghost{background:transparent;color:var(--text);border-color:transparent}.btn-ghost:hover{border-color:var(--border);background:var(--surface)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}.btn-primary:hover{background:var(--accent2)}
+.btn-outline{background:transparent;color:var(--text);border-color:var(--border)}.btn-outline:hover{border-color:var(--accent2);color:var(--bright)}
+.btn-sm{padding:.25rem .6rem;font-size:.75rem}
+.badge{display:inline-flex;align-items:center;padding:.15rem .55rem;border-radius:999px;font-size:.72rem;font-weight:500;background:var(--surface);border:1px solid var(--border);color:var(--muted)}
+.badge-accent{background:rgba(67,56,202,.2);border-color:rgba(67,56,202,.4);color:#a5b4fc}
+.badge-green{background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.3);color:#4ade80}
+.badge-yellow{background:rgba(251,191,36,.15);border-color:rgba(251,191,36,.3);color:#fbbf24}
+.badge-red{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.3);color:#f87171}
+.badge-blue{background:rgba(59,130,246,.15);border-color:rgba(59,130,246,.3);color:#93c5fd}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.25rem;transition:border-color .2s}
+.card2{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem}
+.container{max-width:1100px;margin:0 auto;padding:0 1.25rem}
+.layout{display:grid;grid-template-columns:240px 1fr;gap:1.5rem;align-items:start;padding:2rem 0 4rem}
+@media(max-width:768px){.layout{grid-template-columns:1fr}.sidebar{display:none}.sidebar.open{display:block;position:fixed;inset:0;z-index:200;background:var(--bg);padding:1.5rem;overflow-y:auto}}
+.sidebar{position:sticky;top:72px}
+.sidebar-section{margin-bottom:1.5rem}
+.sidebar-title{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.5rem;font-weight:600}
+.filter-btn{display:block;width:100%;text-align:left;padding:.4rem .7rem;border-radius:5px;font-size:.8125rem;color:var(--muted);background:transparent;border:none;cursor:pointer;transition:all .15s}
+.filter-btn:hover{background:var(--surface);color:var(--text)}
+.filter-btn.active{background:rgba(67,56,202,.2);color:var(--bright);font-weight:500}
+.filter-btn .count{float:right;font-size:.7rem;color:var(--muted);font-family:'IBM Plex Mono',monospace}
+.search-box{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:.875rem;padding:.45rem .75rem;outline:none;transition:border-color .2s;margin-bottom:1rem}
+.search-box:focus{border-color:var(--accent2)}
+.search-box::placeholder{color:var(--muted)}
+.study-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:.75rem;transition:border-color .2s}
+.study-card:hover{border-color:rgba(67,56,202,.4)}
+.study-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.75rem;flex-wrap:wrap}
+.study-id{font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--muted)}
+.study-meta{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem}
+.meta-item{font-size:.8rem;color:var(--muted)}
+.meta-item strong{color:var(--text);font-weight:500}
+.study-desc{font-size:.875rem;color:var(--text);line-height:1.65}
+.study-desc strong{color:var(--bright);font-weight:600}
+.study-link{display:inline-flex;align-items:center;gap:.3rem;font-size:.8rem;color:var(--accent2);margin-top:.75rem;text-decoration:none}
+.study-link:hover{text-decoration:underline}
+.study-link svg{width:12px;height:12px;flex-shrink:0}
+.evidence-bar{display:flex;gap:2px;margin-top:.5rem}
+.evidence-pip{width:8px;height:8px;border-radius:2px;background:var(--border)}
+.evidence-pip.filled{background:var(--accent2)}
+.evidence-pip.filled.strong{background:#4ade80}
+.evidence-pip.filled.moderate{background:#fbbf24}
+.evidence-pip.filled.weak{background:#f87171}
+.stats-row{display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:2rem}
+.stat-block{text-align:center}
+.stat-label{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.2rem}
+.stat-value{font-family:'IBM Plex Mono',monospace;font-size:1.4rem;font-weight:500;color:var(--bright)}
+.section-header{display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem}
+.section-header h2{font-size:1rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.section-header hr{flex:1;border:none;border-top:1px solid var(--border)}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1.5rem}
+.tab{padding:.55rem 1rem;font-size:.875rem;font-weight:500;color:var(--muted);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .2s}
+.tab:hover{color:var(--text)}.tab.active{color:var(--bright);border-bottom-color:var(--accent2);background:rgba(67,56,202,.15)}
+.exercise-evidence-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:.6rem;display:flex;align-items:center;gap:1rem;cursor:pointer;transition:border-color .2s}
+.exercise-evidence-card:hover{border-color:rgba(67,56,202,.4)}
+.ex-icon{font-size:1.5rem;flex-shrink:0;width:36px;text-align:center}
+.ex-info{flex:1;min-width:0}
+.ex-name{font-weight:600;color:var(--bright);font-size:.9rem}
+.ex-cats{font-size:.75rem;color:var(--muted);margin-top:.15rem}
+.ex-evidence{flex-shrink:0;text-align:right}
+.evidence-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.2rem}
+.evidence-score{font-family:'IBM Plex Mono',monospace;font-size:1rem;font-weight:600}
+.score-strong{color:#4ade80}.score-moderate{color:#fbbf24}.score-weak{color:#f87171}.score-none{color:var(--muted)}
+.conduct-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-top:2rem}
+.conduct-step{display:flex;gap:1rem;margin-bottom:1.25rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border)}
+.conduct-step:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.step-num{width:28px;height:28px;border-radius:50%;background:rgba(67,56,202,.25);border:1px solid rgba(67,56,202,.4);color:#a5b4fc;font-size:.8rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:.1rem}
+.step-content h3{font-family:'IBM Plex Sans',sans-serif;font-size:.9rem;font-weight:600;color:var(--bright);margin-bottom:.3rem}
+.step-content p{font-size:.85rem;color:var(--muted);line-height:1.6}
+.step-content ul{font-size:.85rem;color:var(--muted);line-height:1.7;padding-left:1.2rem}
+.template-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-top:.75rem;font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:var(--text);line-height:1.7;white-space:pre-wrap}
+.results-table{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:.75rem}
+.results-table th{text-align:left;padding:.5rem .75rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border);font-weight:600}
+.results-table td{padding:.5rem .75rem;border-bottom:1px solid rgba(37,37,56,.5);color:var(--text)}
+.results-table tr:last-child td{border-bottom:none}
+.results-table tr:hover td{background:rgba(67,56,202,.05)}
+.no-results{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:.9rem}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .3s ease both}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;background:var(--border);border-radius:2px;outline:none;padding:0;border:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent2);cursor:pointer;border:2px solid var(--bg)}
+.slider-stops{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:3px}
+.slider-stop{cursor:pointer}.slider-stop:hover{color:var(--text)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;max-width:480px;width:100%;max-height:90vh;overflow-y:auto}
+.modal-title{font-family:'Cinzel',serif;font-size:1.1rem;color:var(--bright);margin-bottom:1rem}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="index.html" class="btn btn-ghost btn-sm">← Hub</a>
+  <a href="index.html" class="topbar-logo">Craetio</a>
+  <div class="topbar-spacer"></div>
+  <button class="btn btn-ghost btn-sm" id="mobile-filter-btn" style="display:none">☰ Filter</button>
+  <button class="btn btn-ghost btn-sm" id="settings-btn">⚙</button>
+</div>
+
+<div class="container">
+  <div style="padding:2rem 0 1rem">
+    <h1 style="margin-bottom:.4rem">Research Database</h1>
+    <p style="color:var(--muted);font-size:.9rem;max-width:600px">81 studies backing the training methods. Filter by category, search by keyword, or browse by exercise to see what the evidence says.</p>
+  </div>
+
+  <div class="tabs" id="main-tabs">
+    <button class="tab active" data-tab="studies">Studies</button>
+    <button class="tab" data-tab="exercises">By Exercise</button>
+    <button class="tab" data-tab="conduct">Conduct Your Own</button>
+  </div>
+
+  <!-- STUDIES TAB -->
+  <div id="tab-studies">
+    <div class="layout">
+      <aside class="sidebar" id="sidebar">
+        <input type="search" class="search-box" id="search-input" placeholder="Search studies…">
+        <div class="sidebar-section">
+          <div class="sidebar-title">Category</div>
+          <button class="filter-btn active" data-cat="all">All <span class="count" id="count-all"></span></button>
+          <button class="filter-btn" data-cat="cognitive-control-training">Cognitive Control <span class="count" id="count-cct"></span></button>
+          <button class="filter-btn" data-cat="relational-reasoning-training">Relational Reasoning <span class="count" id="count-rrt"></span></button>
+          <button class="filter-btn" data-cat="working-memory-training">Working Memory <span class="count" id="count-wmt"></span></button>
+          <button class="filter-btn" data-cat="relational-frame-theory">Relational Frame Theory <span class="count" id="count-rft"></span></button>
+          <button class="filter-btn" data-cat="inhibitory-control">Inhibitory Control <span class="count" id="count-ic"></span></button>
+          <button class="filter-btn" data-cat="executive-function-training">Executive Function <span class="count" id="count-eft"></span></button>
+          <button class="filter-btn" data-cat="executive-attention">Executive Attention <span class="count" id="count-ea"></span></button>
+          <button class="filter-btn" data-cat="far-analogy-training">Far Analogy <span class="count" id="count-fat"></span></button>
+          <button class="filter-btn" data-cat="creative-problem-solving">Creative Problem Solving <span class="count" id="count-cps"></span></button>
+          <button class="filter-btn" data-cat="multiple-object-tracking">Multiple Object Tracking <span class="count" id="count-mot"></span></button>
+          <button class="filter-btn" data-cat="impulsivity-mood-wm">Impulsivity / Mood <span class="count" id="count-imp"></span></button>
+          <button class="filter-btn" data-cat="aposner">aPOSNER <span class="count" id="count-ap"></span></button>
+          <button class="filter-btn" data-cat="warm-ups">Warm-Ups <span class="count" id="count-wu"></span></button>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-title">Control Type</div>
+          <button class="filter-btn" data-ctrl="active">Active control</button>
+          <button class="filter-btn" data-ctrl="passive">Passive control</button>
+          <button class="filter-btn" data-ctrl="rct">RCT / Randomized</button>
+          <button class="filter-btn" data-ctrl="review">Review / Meta</button>
+        </div>
+      </aside>
+
+      <main>
+        <div class="stats-row" id="stats-row">
+          <div class="stat-block"><div class="stat-label">Showing</div><div class="stat-value" id="showing-count">81</div></div>
+          <div class="stat-block"><div class="stat-label">Categories</div><div class="stat-value">14</div></div>
+          <div class="stat-block"><div class="stat-label">Total N</div><div class="stat-value">~12k</div></div>
+          <div class="stat-block"><div class="stat-label">RCTs</div><div class="stat-value">~60%</div></div>
+        </div>
+        <div id="studies-list"></div>
+      </main>
+    </div>
+  </div>
+
+  <!-- BY EXERCISE TAB -->
+  <div id="tab-exercises" style="display:none;padding-bottom:3rem">
+    <p style="color:var(--muted);font-size:.875rem;margin-bottom:1.5rem">Each exercise mapped to its backing study categories. Click to filter the studies view.</p>
+    <div id="exercise-evidence-list"></div>
+  </div>
+
+  <!-- CONDUCT YOUR OWN TAB -->
+  <div id="tab-conduct" style="display:none;padding-bottom:3rem">
+    <div style="max-width:720px">
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:1.5rem">A practical guide to running your own cognitive training study — from design to analysis. No lab required.</p>
+
+      <div class="conduct-section">
+        <h2 style="margin-bottom:1.25rem;font-size:1rem;letter-spacing:.04em">Study Design Framework</h2>
+
+        <div class="conduct-step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h3>Define your question</h3>
+            <p>Pick one exercise and one measurable outcome. Vague questions produce uninterpretable results.</p>
+            <div class="template-box">Question template:
+"Does [X sessions/week] of [exercise] over [N weeks]
+improve [specific outcome] compared to [control condition]
+in [population]?"
+
+Example:
+"Does 4 sessions/week of EFT over 6 weeks improve
+Stroop interference scores compared to a passive control
+in adults aged 18–35?"</div>
+          </div>
+        </div>
+
+        <div class="conduct-step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h3>Choose your design</h3>
+            <ul>
+              <li><strong style="color:var(--bright)">Within-subjects (A→B):</strong> Same person does pre-test, trains, does post-test. Simple, small N needed. Confound: practice effects.</li>
+              <li><strong style="color:var(--bright)">Between-subjects (RCT):</strong> Random assignment to training vs control. Gold standard. Needs 2× the participants.</li>
+              <li><strong style="color:var(--bright)">Active control:</strong> Control group does a different cognitive task (e.g. arithmetic instead of EFT). Rules out placebo/motivation effects.</li>
+              <li><strong style="color:var(--bright)">Passive control:</strong> Control group does nothing. Easier to run, weaker evidence.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="conduct-step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h3>Pre-register your hypothesis</h3>
+            <p>Write down your prediction before collecting data. Use OSF (osf.io) — free, takes 5 minutes. This prevents HARKing (Hypothesizing After Results are Known) and makes your study credible.</p>
+            <div class="template-box">Pre-registration template (OSF):
+Title: [Study name]
+Hypothesis: [Training group will show X% improvement on Y measure]
+Primary outcome: [Specific test, e.g. Stroop interference in ms]
+Secondary outcomes: [e.g. N-back accuracy, self-reported focus]
+Sample size: [N per group, with power calculation if possible]
+Analysis plan: [paired t-test / ANCOVA / mixed ANOVA]
+Exclusion criteria: [e.g. <80% session completion]</div>
+          </div>
+        </div>
+
+        <div class="conduct-step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h3>Measurement battery</h3>
+            <p>Use validated, free cognitive tests. Measure before and after training. Include at least one <em>transfer</em> measure (different from the trained task).</p>
+            <table class="results-table">
+              <thead><tr><th>Construct</th><th>Free Test</th><th>What it measures</th></tr></thead>
+              <tbody>
+                <tr><td>Fluid intelligence</td><td>Raven's Progressive Matrices (free online)</td><td>Abstract reasoning, IQ proxy</td></tr>
+                <tr><td>Working memory</td><td>Digit Span (forward + backward)</td><td>Short-term storage + manipulation</td></tr>
+                <tr><td>Inhibitory control</td><td>Stroop Color-Word Test</td><td>Response inhibition, interference</td></tr>
+                <tr><td>Cognitive flexibility</td><td>Trail Making Test B</td><td>Task switching speed</td></tr>
+                <tr><td>Processing speed</td><td>Symbol Digit Modalities Test</td><td>Psychomotor speed</td></tr>
+                <tr><td>Attention</td><td>Sustained Attention to Response Task (SART)</td><td>Vigilance, mind-wandering</td></tr>
+                <tr><td>Verbal ability</td><td>Vocabulary test (SAT-style)</td><td>Crystallized intelligence</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="conduct-step">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <h3>Training protocol</h3>
+            <p>Consistency matters more than intensity. Based on the studies in this database:</p>
+            <ul>
+              <li>Minimum effective dose: <strong style="color:var(--bright)">3–4 sessions/week, 15–30 min each</strong></li>
+              <li>Minimum duration: <strong style="color:var(--bright)">4–6 weeks</strong> (most studies use 8–12)</li>
+              <li>Adaptive difficulty: tasks should stay at ~80% accuracy (not too easy, not too hard)</li>
+              <li>Log every session: date, duration, performance score, any notes</li>
+            </ul>
+            <div class="template-box">Session log template:
+Date | Exercise | Duration | Score/Accuracy | Level | Notes
+2025-01-15 | EFT | 22 min | 84% | L3 | felt distracted
+2025-01-17 | EFT | 25 min | 89% | L3 | better focus
+...</div>
+          </div>
+        </div>
+
+        <div class="conduct-step">
+          <div class="step-num">6</div>
+          <div class="step-content">
+            <h3>Sample size</h3>
+            <p>Use G*Power (free) or this rule of thumb:</p>
+            <ul>
+              <li>Within-subjects, medium effect (d=0.5): <strong style="color:var(--bright)">N=27</strong> for 80% power</li>
+              <li>Between-subjects, medium effect (d=0.5): <strong style="color:var(--bright)">N=52 per group</strong> for 80% power</li>
+              <li>Pilot study (proof of concept): <strong style="color:var(--bright)">N=10–15</strong> is fine — just be honest about limitations</li>
+            </ul>
+            <p style="margin-top:.5rem">Most studies in this database used N=20–50. Smaller is fine for a personal or classroom study — just don't overclaim.</p>
+          </div>
+        </div>
+
+        <div class="conduct-step">
+          <div class="step-num">7</div>
+          <div class="step-content">
+            <h3>Analysis</h3>
+            <p>You don't need SPSS. Use free tools:</p>
+            <ul>
+              <li><strong style="color:var(--bright)">JASP</strong> (jasp-stats.org) — free, GUI, Bayesian + frequentist</li>
+              <li><strong style="color:var(--bright)">R + ggplot2</strong> — free, reproducible, publication-quality</li>
+              <li><strong style="color:var(--bright)">Google Sheets</strong> — fine for t-tests and basic stats</li>
+            </ul>
+            <div class="template-box">Basic analysis plan:
+1. Check normality (Shapiro-Wilk)
+2. Pre-test equivalence between groups (t-test or Mann-Whitney)
+3. Primary analysis: paired t-test (within) or ANCOVA with pre-test as covariate (between)
+4. Effect size: Cohen's d (small=0.2, medium=0.5, large=0.8)
+5. Report: mean ± SD, t-statistic, p-value, 95% CI, Cohen's d
+6. Visualize: box plots with individual data points (not just bar charts)</div>
+          </div>
+        </div>
+
+        <div class="conduct-step">
+          <div class="step-num">8</div>
+          <div class="step-content">
+            <h3>Report your results honestly</h3>
+            <p>Whether positive or null, your results are valuable. Null results prevent others from wasting time. Report:</p>
+            <ul>
+              <li>Exact p-values (not just "p&lt;0.05")</li>
+              <li>Effect sizes with confidence intervals</li>
+              <li>Dropout rate and reasons</li>
+              <li>Any protocol deviations</li>
+              <li>Limitations (small N, no active control, self-selected sample, etc.)</li>
+            </ul>
+            <p style="margin-top:.5rem">Share on OSF, Reddit (r/cognitivescience), or submit to <em>PLOS ONE</em> (open access, accepts replications).</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card2" style="margin-top:1.5rem">
+        <h3 style="font-family:'IBM Plex Sans',sans-serif;font-size:.9rem;font-weight:600;color:var(--bright);margin-bottom:.5rem">Quick-start: 6-week personal study</h3>
+        <p style="font-size:.85rem;color:var(--muted);line-height:1.7">Pick one exercise. Take the Stroop test and digit span test (free online) as your pre-measures. Train 4×/week for 6 weeks, logging every session. Retest. Calculate Cohen's d. That's a real study. If you do it with 10+ people and pre-register, it's publishable.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="modal-overlay" id="settings-modal" style="display:none">
+  <div class="modal">
+    <div class="modal-title">Appearance</div>
+    <div style="margin-bottom:1rem">
+      <label style="font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);display:block;margin-bottom:.5rem">Tint</label>
+      <input type="range" id="tint-slider" min="0" max="100" value="50" step="1">
+      <div class="slider-stops">
+        <span class="slider-stop" data-tint="0">Lichess</span>
+        <span class="slider-stop" data-tint="50">Pure</span>
+        <span class="slider-stop" data-tint="100">Discord</span>
+      </div>
+    </div>
+    <div style="margin-bottom:1.25rem">
+      <label style="font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);display:block;margin-bottom:.5rem">Brightness</label>
+      <input type="range" id="brightness-slider" min="0" max="100" value="33" step="1">
+      <div class="slider-stops">
+        <span class="slider-stop" data-bright="0">⬛ Amoled</span>
+        <span class="slider-stop" data-bright="33">☾ Dark</span>
+        <span class="slider-stop" data-bright="66">◑ Ash</span>
+        <span class="slider-stop" data-bright="100">☀ Light</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:.5rem;margin-top:.5rem" id="swatches"></div>
+    <div style="text-align:right;margin-top:1rem">
+      <button class="btn btn-ghost btn-sm" id="close-settings">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="studies-data.js"></script>
+<script>
+// ── Theme ──────────────────────────────────────────────────────────────────
+if (window.THEME) THEME.init();
+else {
+  const saved = JSON.parse(localStorage.getItem('neurevo_theme') || '{"tint":50,"brightness":33}');
+  document.documentElement.style.setProperty('--bg','#08080e');
+}
+
+// ── Exercise metadata ──────────────────────────────────────────────────────
+const EXERCISES = [
+  { id:'eft',              icon:'🧠', name:'Executive Function',       file:'eft.html' },
+  { id:'ltm',              icon:'🗂️', name:'Long Term Memory Recall',  file:'ltm.html' },
+  { id:'analogy-trainer',  icon:'🔗', name:'Far Analogy',              file:'analogy-trainer.html' },
+  { id:'cognitive-flexibility', icon:'🔄', name:'Cognitive Flexibility', file:'cognitive-flexibility.html' },
+  { id:'relational-integration', icon:'🕸️', name:'Relational Integration', file:'relational-integration.html' },
+  { id:'executive-attention', icon:'🎯', name:'Executive Attention',   file:'executive-attention.html' },
+  { id:'stop-signal-task', icon:'🛑', name:'Stop Signal Task',         file:'stop-signal-task.html' },
+  { id:'visual-filtering', icon:'👁️', name:'Visual Filtering',         file:'visual-filtering.html' },
+  { id:'spatial-rotation', icon:'🔷', name:'Spatial Rotation',         file:'spatial-rotation.html' },
+  { id:'running-memory',   icon:'🏃', name:'Running Memory',           file:'running-memory.html' },
+  { id:'complex-span',     icon:'📊', name:'Complex Span',             file:'complex-span.html' },
+  { id:'inhibitory-control', icon:'⛔', name:'Inhibitory Control',     file:'inhibitory-control.html' },
+  { id:'dichotic-listening', icon:'🎧', name:'Dichotic Listening',     file:'dichotic-listening.html' },
+  { id:'vocabulary-builder', icon:'📚', name:'Vocabulary Builder',     file:'vocabulary-builder.html' },
+  { id:'kvashchev',        icon:'💡', name:'Kvashchev Problem Solving', file:'kvashchev.html' },
+  { id:'if-then-planning', icon:'📋', name:'If-Then Planning',         file:'if-then-planning.html' },
+];
+
+// ── Evidence scoring ───────────────────────────────────────────────────────
+function getEvidenceScore(exerciseId) {
+  const cats = EXERCISE_STUDY_MAP[exerciseId] || [];
+  if (!cats.length) return { score: 0, label: 'No data', cls: 'score-none', studies: [] };
+  const relevant = STUDIES.filter(s => cats.includes(s.category));
+  if (!relevant.length) return { score: 0, label: 'No data', cls: 'score-none', studies: [] };
+
+  // Score: count studies, weight by control type
+  let points = 0;
+  relevant.forEach(s => {
+    const ctrl = s.controlGroup.toLowerCase();
+    const desc = s.description.toLowerCase();
+    const isReview = ctrl.includes('review') || ctrl.includes('meta') || ctrl.includes('various') || ctrl.includes('synthesize') || s.sampleSize.toLowerCase().includes('review');
+    const isRCT = ctrl.includes('random') || ctrl.includes('rct') || desc.includes('randomized') || desc.includes('randomised');
+    const isActive = ctrl.includes('active');
+    if (isReview) points += 3;
+    else if (isRCT && isActive) points += 4;
+    else if (isRCT) points += 3;
+    else if (isActive) points += 2;
+    else points += 1;
+  });
+
+  const maxPossible = relevant.length * 4;
+  const pct = points / maxPossible;
+  let label, cls;
+  if (pct >= 0.65) { label = 'Strong'; cls = 'score-strong'; }
+  else if (pct >= 0.35) { label = 'Moderate'; cls = 'score-moderate'; }
+  else { label = 'Emerging'; cls = 'score-weak'; }
+
+  return { score: relevant.length, label, cls, studies: relevant, pct };
+}
+
+// ── Render studies list ────────────────────────────────────────────────────
+let activeCat = 'all';
+let activeCtrl = null;
+let searchQuery = '';
+
+function renderStudies() {
+  const list = document.getElementById('studies-list');
+  let filtered = STUDIES;
+
+  if (activeCat !== 'all') filtered = filtered.filter(s => s.category === activeCat);
+  if (activeCtrl) {
+    filtered = filtered.filter(s => {
+      const ctrl = s.controlGroup.toLowerCase();
+      const desc = s.description.toLowerCase();
+      if (activeCtrl === 'active') return ctrl.includes('active');
+      if (activeCtrl === 'passive') return ctrl.includes('passive');
+      if (activeCtrl === 'rct') return ctrl.includes('random') || desc.includes('randomized') || desc.includes('randomised');
+      if (activeCtrl === 'review') return ctrl.includes('various') || ctrl.includes('review') || s.sampleSize.toLowerCase().includes('review') || s.sampleSize.toLowerCase().includes('meta');
+      return true;
+    });
+  }
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    filtered = filtered.filter(s =>
+      s.description.toLowerCase().includes(q) ||
+      s.category.toLowerCase().includes(q) ||
+      s.id.toLowerCase().includes(q) ||
+      s.doi.toLowerCase().includes(q)
+    );
+  }
+
+  document.getElementById('showing-count').textContent = filtered.length;
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="no-results">No studies match your filters.</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(s => {
+    const catLabel = CATEGORY_LABELS[s.category] || s.category;
+    const ctrl = s.controlGroup.toLowerCase();
+    const desc = s.description.toLowerCase();
+    const isReview = s.sampleSize.toLowerCase().includes('review') || s.sampleSize.toLowerCase().includes('meta') || ctrl.includes('various');
+    const isRCT = ctrl.includes('random') || desc.includes('randomized') || desc.includes('randomised');
+    const isActive = ctrl.includes('active');
+
+    let ctrlBadge = '';
+    if (isReview) ctrlBadge = '<span class="badge badge-blue">Review/Meta</span>';
+    else if (isRCT && isActive) ctrlBadge = '<span class="badge badge-green">RCT + Active Control</span>';
+    else if (isRCT) ctrlBadge = '<span class="badge badge-yellow">RCT</span>';
+    else if (isActive) ctrlBadge = '<span class="badge badge-yellow">Active Control</span>';
+    else ctrlBadge = '<span class="badge">Passive Control</span>';
+
+    // Clean description
+    const cleanDesc = s.description
+      .replace(/^['"`]|['"`]$/g, '')
+      .replace(/\\n/g, ' ')
+      .replace(/\\t/g, ' ')
+      .replace(/\\'/g, "'")
+      .replace(/\\"/g, '"')
+      .trim();
+
+    return `<div class="study-card fade-in">
+      <div class="study-header">
+        <div>
+          <span class="badge badge-accent" style="margin-bottom:.4rem">${catLabel}</span>
+          <div class="study-id">${s.id}</div>
+        </div>
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap;justify-content:flex-end">${ctrlBadge}</div>
+      </div>
+      <div class="study-meta">
+        <div class="meta-item"><strong>N:</strong> ${s.sampleSize}</div>
+        <div class="meta-item" style="margin-left:.75rem"><strong>Control:</strong> ${s.controlGroup}</div>
+      </div>
+      <div class="study-desc">${cleanDesc}</div>
+      ${s.link ? `<a href="${s.link}" target="_blank" rel="noopener" class="study-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        ${s.doi || s.link}
+      </a>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── Update category counts ─────────────────────────────────────────────────
+function updateCounts() {
+  const catMap = {};
+  STUDIES.forEach(s => { catMap[s.category] = (catMap[s.category] || 0) + 1; });
+  document.getElementById('count-all').textContent = STUDIES.length;
+  document.getElementById('count-cct').textContent = catMap['cognitive-control-training'] || 0;
+  document.getElementById('count-rrt').textContent = catMap['relational-reasoning-training'] || 0;
+  document.getElementById('count-wmt').textContent = catMap['working-memory-training'] || 0;
+  document.getElementById('count-rft').textContent = catMap['relational-frame-theory'] || 0;
+  document.getElementById('count-ic').textContent  = catMap['inhibitory-control'] || 0;
+  document.getElementById('count-eft').textContent = catMap['executive-function-training'] || 0;
+  document.getElementById('count-ea').textContent  = catMap['executive-attention'] || 0;
+  document.getElementById('count-fat').textContent = catMap['far-analogy-training'] || 0;
+  document.getElementById('count-cps').textContent = catMap['creative-problem-solving'] || 0;
+  document.getElementById('count-mot').textContent = catMap['multiple-object-tracking'] || 0;
+  document.getElementById('count-imp').textContent = catMap['impulsivity-mood-wm'] || 0;
+  document.getElementById('count-ap').textContent  = catMap['aposner'] || 0;
+  document.getElementById('count-wu').textContent  = catMap['warm-ups'] || 0;
+}
+
+// ── Render exercise evidence ───────────────────────────────────────────────
+function renderExerciseEvidence() {
+  const list = document.getElementById('exercise-evidence-list');
+  const sorted = [...EXERCISES].sort((a, b) => {
+    const ea = getEvidenceScore(a.id);
+    const eb = getEvidenceScore(b.id);
+    return eb.score - ea.score;
+  });
+
+  list.innerHTML = sorted.map(ex => {
+    const ev = getEvidenceScore(ex.id);
+    const cats = (EXERCISE_STUDY_MAP[ex.id] || []).map(c => CATEGORY_LABELS[c] || c).join(', ');
+    const pips = Math.min(ev.score, 8);
+    const pipHtml = Array.from({length: 8}, (_, i) => {
+      const filled = i < pips;
+      const cls = filled ? `evidence-pip filled ${ev.label === 'Strong' ? 'strong' : ev.label === 'Moderate' ? 'moderate' : 'weak'}` : 'evidence-pip';
+      return `<div class="${cls}"></div>`;
+    }).join('');
+
+    return `<div class="exercise-evidence-card" onclick="filterByExercise('${ex.id}')">
+      <div class="ex-icon">${ex.icon}</div>
+      <div class="ex-info">
+        <div class="ex-name">${ex.name}</div>
+        <div class="ex-cats">${cats || 'No mapped studies'}</div>
+        <div class="evidence-bar">${pipHtml}</div>
+      </div>
+      <div class="ex-evidence">
+        <div class="evidence-label">Studies</div>
+        <div class="evidence-score ${ev.cls}">${ev.score}</div>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:.1rem">${ev.label}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterByExercise(exId) {
+  const cats = EXERCISE_STUDY_MAP[exId] || [];
+  if (!cats.length) return;
+  // Switch to studies tab and filter by first category
+  switchTab('studies');
+  activeCat = cats[0];
+  document.querySelectorAll('.filter-btn[data-cat]').forEach(b => {
+    b.classList.toggle('active', b.dataset.cat === activeCat);
+  });
+  renderStudies();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Tab switching ──────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.getElementById('tab-studies').style.display   = name === 'studies'  ? '' : 'none';
+  document.getElementById('tab-exercises').style.display = name === 'exercises' ? '' : 'none';
+  document.getElementById('tab-conduct').style.display   = name === 'conduct'   ? '' : 'none';
+}
+
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => switchTab(t.dataset.tab));
+});
+
+// ── Filter buttons ─────────────────────────────────────────────────────────
+document.querySelectorAll('.filter-btn[data-cat]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn[data-cat]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeCat = btn.dataset.cat;
+    activeCtrl = null;
+    document.querySelectorAll('.filter-btn[data-ctrl]').forEach(b => b.classList.remove('active'));
+    renderStudies();
+  });
+});
+
+document.querySelectorAll('.filter-btn[data-ctrl]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const same = activeCtrl === btn.dataset.ctrl;
+    document.querySelectorAll('.filter-btn[data-ctrl]').forEach(b => b.classList.remove('active'));
+    activeCtrl = same ? null : btn.dataset.ctrl;
+    if (!same) btn.classList.add('active');
+    renderStudies();
+  });
+});
+
+// ── Search ─────────────────────────────────────────────────────────────────
+document.getElementById('search-input').addEventListener('input', e => {
+  searchQuery = e.target.value.trim();
+  renderStudies();
+});
+
+// ── Settings ───────────────────────────────────────────────────────────────
+document.getElementById('settings-btn').addEventListener('click', () => {
+  const modal = document.getElementById('settings-modal');
+  modal.style.display = 'flex';
+  if (window.THEME) {
+    const { tint, brightness } = THEME.load();
+    document.getElementById('tint-slider').value = tint;
+    document.getElementById('brightness-slider').value = brightness;
+    updateSwatches(tint, brightness);
+  }
+});
+document.getElementById('close-settings').addEventListener('click', () => {
+  document.getElementById('settings-modal').style.display = 'none';
+});
+document.getElementById('settings-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('settings-modal'))
+    document.getElementById('settings-modal').style.display = 'none';
+});
+
+let curTint = 50, curBright = 33;
+function updateSwatches(t, b) {
+  if (!window.THEME) return;
+  const vars = THEME.computeVars(t, b);
+  const sw = document.getElementById('swatches');
+  sw.innerHTML = ['--bg','--surface','--card','--border','--accent2'].map((v,i) => {
+    const labels = ['bg','surf','card','bdr','acc'];
+    return `<div title="${labels[i]}" class="swatch" style="background:${vars[v]}"></div>`;
+  }).join('');
+}
+document.getElementById('tint-slider').addEventListener('input', e => {
+  curTint = +e.target.value;
+  if (window.THEME) { THEME.update(curTint, curBright); updateSwatches(curTint, curBright); }
+});
+document.getElementById('brightness-slider').addEventListener('input', e => {
+  curBright = +e.target.value;
+  if (window.THEME) { THEME.update(curTint, curBright); updateSwatches(curTint, curBright); }
+});
+document.querySelectorAll('.slider-stop[data-tint]').forEach(el => {
+  el.addEventListener('click', () => {
+    curTint = +el.dataset.tint;
+    document.getElementById('tint-slider').value = curTint;
+    if (window.THEME) { THEME.update(curTint, curBright); updateSwatches(curTint, curBright); }
+  });
+});
+document.querySelectorAll('.slider-stop[data-bright]').forEach(el => {
+  el.addEventListener('click', () => {
+    curBright = +el.dataset.bright;
+    document.getElementById('brightness-slider').value = curBright;
+    if (window.THEME) { THEME.update(curTint, curBright); updateSwatches(curTint, curBright); }
+  });
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────
+updateCounts();
+renderStudies();
+renderExerciseEvidence();
+
+if (window.THEME) {
+  const { tint, brightness } = THEME.load();
+  curTint = tint; curBright = brightness;
+}
+</script>
+</body>
+</html>

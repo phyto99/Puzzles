@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Kvashchev Problem Solving — Craetio</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="theme.js"></script>
+<script src="ai-call.js"></script>
+<style>
+:root{--bg:#080808;--surface:#0f0f0f;--card:#161616;--border:#252525;--text:#dde0f5;--muted:#6e7099;--bright:#f0f2ff;--accent:#3730a3;--accent2:#4338ca}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:15px;line-height:1.6;min-height:100vh;transition:background-color .25s,color .25s}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--surface)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+h1{font-family:'Cinzel',serif;color:var(--bright);font-size:1.4rem;font-weight:600}
+h2{font-family:'Cinzel',serif;color:var(--bright);font-size:1rem;font-weight:600}
+.bar{position:sticky;top:0;z-index:99;background:var(--surface);border-bottom:1px solid var(--border);padding:.55rem 1.2rem;display:flex;align-items:center;gap:.6rem;transition:background-color .25s,border-color .25s}
+.logo{font-family:'Cinzel',serif;font-size:.9rem;font-weight:700;color:var(--bright)}.sp{flex:1}
+.btn{display:inline-flex;align-items:center;gap:.3rem;padding:.38rem .85rem;border-radius:6px;font-size:.8125rem;font-weight:500;cursor:pointer;border:1px solid transparent;transition:all .18s;background:transparent;color:var(--muted);font-family:inherit}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.bp{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important}.bp:hover:not(:disabled){background:var(--accent2)!important;border-color:var(--accent2)!important}
+.bg:hover{border-color:var(--border);background:var(--surface);color:var(--text)}
+.bo{color:var(--text);border-color:var(--border)}.bo:hover:not(:disabled){border-color:var(--accent2);color:var(--bright)}
+.bsm{padding:.22rem .55rem;font-size:.775rem}
+.wrap{max-width:700px;margin:0 auto;padding:1.75rem 1.2rem 4rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.2rem;margin-bottom:1rem;transition:background-color .25s,border-color .25s}
+.card2{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.9rem;transition:background-color .25s,border-color .25s}
+.slbl{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.5rem;display:block}
+input,textarea,select{background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:inherit;font-size:.875rem;padding:.45rem .7rem;width:100%;outline:none;transition:border-color .18s,background-color .25s}
+input:focus,textarea:focus,select:focus{border-color:var(--accent2)}
+input::placeholder,textarea::placeholder{color:var(--muted)}
+label{font-size:.775rem;font-weight:500;color:var(--muted);display:block;margin-bottom:.25rem}
+.badge{display:inline-flex;align-items:center;padding:.1rem .45rem;border-radius:999px;font-size:.7rem;font-weight:500;background:var(--surface);border:1px solid var(--border);color:var(--muted)}
+.ba{background:rgba(67,56,202,.18);border-color:rgba(67,56,202,.4);color:#a5b4fc}
+.sol-item{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:.65rem .85rem;font-size:.875rem;line-height:1.55;margin-bottom:.45rem;transition:background-color .25s,border-color .25s}
+.bar-track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;background:var(--accent2);border-radius:3px;transition:width .5s}
+.fb-cell{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.85rem .5rem;text-align:center;transition:background-color .25s,border-color .25s}
+.ebox{background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.22);border-radius:7px;padding:.55rem .85rem;color:#f87171;font-size:.84rem;margin-bottom:.75rem}
+.spin{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent2);border-radius:50%;animation:sp .7s linear infinite;display:inline-block;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+.hidden{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+input[type=range]{-webkit-appearance:none;appearance:none;height:4px;background:var(--border);border-radius:2px;outline:none;padding:0;border:none;width:100%}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent2);cursor:pointer;border:2px solid var(--bg);transition:background .2s}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent2);cursor:pointer;border:2px solid var(--bg)}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <span class="logo">Craetio</span>
+  <div class="sp"></div>
+  <button class="btn bg bsm" id="btn-key">🔑 API Key</button>
+  <button class="btn bg bsm" id="btn-set">⚙ Appearance</button>
+</div>
+<div id="no-key-banner" style="background:rgba(239,68,68,.08);border-bottom:1px solid rgba(239,68,68,.2);padding:.5rem 1.2rem;font-size:.8rem;color:#f87171;display:flex;align-items:center;gap:.75rem">
+  No API key set — click <strong style="cursor:pointer;text-decoration:underline" onclick="document.getElementById('keymodal').style.display='flex'">🔑 API Key</strong> to add yours (OpenAI, OpenRouter, or any compatible provider).
+</div>
+
+<div class="wrap">
+  <div style="margin-bottom:1.5rem">
+    <h1>Kvashchev Problem Solving</h1>
+    <p style="font-size:.875rem;color:var(--muted);margin-top:.35rem">Develop creative problem-solving skills — generate solutions, receive AI feedback, track progress</p>
+  </div>
+
+  <div role="status" aria-live="polite" aria-atomic="true" id="sr-announce" class="sr-only"></div>
+
+  <!-- WELCOME -->
+  <section id="phase-welcome" aria-label="Session setup">
+    <div class="card">
+      <span class="slbl">Session Setup</span>
+      <p style="font-size:.875rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">Choose a thinking principle, domain, and difficulty. Generate at least <strong style="color:var(--bright)">5 unique solutions</strong> to unlock feedback.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.9rem;margin-bottom:1rem">
+        <div>
+          <label for="principle">Principle</label>
+          <select id="principle">
+            <option value="Originality">Originality</option>
+            <option value="Flexibility">Flexibility</option>
+            <option value="Exploration">Exploration</option>
+            <option value="Reorganization">Reorganization</option>
+            <option value="Elaboration">Elaboration</option>
+            <option value="Means-Ends Analysis">Means-Ends Analysis</option>
+          </select>
+        </div>
+        <div>
+          <label for="domain">Domain</label>
+          <select id="domain">
+            <option value="General">General</option>
+            <option value="Science">Science</option>
+            <option value="Mathematics">Mathematics</option>
+            <option value="Engineering">Engineering</option>
+            <option value="Business">Business</option>
+            <option value="Arts">Arts</option>
+            <option value="Social Sciences">Social Sciences</option>
+          </select>
+        </div>
+        <div>
+          <label for="difficulty">Difficulty</label>
+          <select id="difficulty">
+            <option value="foundational">Foundational</option>
+            <option value="intermediate" selected>Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
+        </div>
+      </div>
+      <div id="welcome-err" class="ebox hidden" role="alert"></div>
+      <button class="btn bp" id="start-btn" onclick="startSession()">
+        <span id="start-spin" class="spin hidden" aria-hidden="true"></span>
+        Start Session
+      </button>
+    </div>
+  </section>
+
+  <!-- PROBLEM -->
+  <section id="phase-problem" class="hidden" aria-label="Problem solving" aria-live="polite">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.75rem;margin-bottom:1rem">
+        <div>
+          <span class="badge ba" id="principle-badge">Originality</span>
+          <div style="font-size:.75rem;color:var(--muted);margin-top:.5rem" id="domain-diff"></div>
+        </div>
+        <div style="text-align:right" aria-live="polite">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:2.2rem;font-weight:500;color:var(--bright);line-height:1" id="sol-count">0</div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem">/ 5 solutions</div>
+        </div>
+      </div>
+
+      <span class="slbl">Problem</span>
+      <div class="card2" id="problem-display" tabindex="0" style="font-size:.9rem;line-height:1.7;border-left:2px solid var(--accent2);border-radius:0 8px 8px 0;padding-left:1rem;margin-bottom:1rem"></div>
+
+      <div id="constraints-wrap" class="hidden" style="margin-bottom:.85rem">
+        <div style="font-size:.72rem;color:var(--muted);margin-bottom:.4rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em">Constraints</div>
+        <div id="constraints-list" style="display:flex;flex-wrap:wrap;gap:.35rem"></div>
+      </div>
+
+      <div id="hints-wrap" class="hidden">
+        <button class="btn bo bsm" id="hints-btn" onclick="toggleHints()" aria-expanded="false" aria-controls="hints-body">Show Hints</button>
+        <div id="hints-body" class="hidden" role="region" aria-label="Hints" style="background:rgba(67,56,202,.07);border:1px solid rgba(67,56,202,.22);border-radius:7px;padding:.65rem .85rem;margin-top:.5rem;font-size:.875rem;color:var(--text);line-height:1.65"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="slbl">Your Solutions</span>
+      <div id="solutions-list" aria-live="polite" aria-label="Submitted solutions"></div>
+
+      <div id="eval-wrap" class="hidden" style="margin-bottom:1rem" aria-live="polite">
+        <div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.65rem">Last Evaluation</div>
+        <div style="display:flex;flex-direction:column;gap:.45rem">
+          <div style="display:flex;align-items:center;gap:.75rem">
+            <span style="font-size:.775rem;color:var(--muted);width:130px;flex-shrink:0">Originality</span>
+            <div class="bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0" aria-label="Originality"><div class="bar-fill" id="ev-orig" style="width:0%"></div></div>
+            <span style="font-size:.775rem;color:var(--bright);width:16px;text-align:right;font-family:'IBM Plex Mono',monospace" id="ev-orig-v">0</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.75rem">
+            <span style="font-size:.775rem;color:var(--muted);width:130px;flex-shrink:0">Completeness</span>
+            <div class="bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0" aria-label="Completeness"><div class="bar-fill" id="ev-comp" style="width:0%"></div></div>
+            <span style="font-size:.775rem;color:var(--bright);width:16px;text-align:right;font-family:'IBM Plex Mono',monospace" id="ev-comp-v">0</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.75rem">
+            <span style="font-size:.775rem;color:var(--muted);width:130px;flex-shrink:0">Feasibility</span>
+            <div class="bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0" aria-label="Feasibility"><div class="bar-fill" id="ev-feas" style="width:0%"></div></div>
+            <span style="font-size:.775rem;color:var(--bright);width:16px;text-align:right;font-family:'IBM Plex Mono',monospace" id="ev-feas-v">0</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.75rem">
+            <span style="font-size:.775rem;color:var(--muted);width:130px;flex-shrink:0">Divergent Thinking</span>
+            <div class="bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0" aria-label="Divergent Thinking"><div class="bar-fill" id="ev-div" style="width:0%"></div></div>
+            <span style="font-size:.775rem;color:var(--bright);width:16px;text-align:right;font-family:'IBM Plex Mono',monospace" id="ev-div-v">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:.75rem">
+        <label for="sol-input">Add a solution <span style="font-weight:400;color:var(--muted)">(be specific and detailed)</span></label>
+        <textarea id="sol-input" rows="4" placeholder="Describe your solution here…" aria-describedby="sol-hint"></textarea>
+        <div id="sol-hint" class="sr-only">Write at least a sentence describing your solution in detail.</div>
+      </div>
+
+      <div id="sol-err" class="ebox hidden" role="alert"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:.6rem">
+        <button class="btn bp" id="submit-sol-btn" onclick="submitSolution()">
+          <span id="submit-sol-spin" class="spin hidden" aria-hidden="true"></span>
+          Submit Solution
+        </button>
+        <button class="btn bo" id="feedback-btn" onclick="getFeedback()" disabled>
+          <span id="fb-spin" class="spin hidden" aria-hidden="true"></span>
+          <span id="fb-btn-label">Get Feedback</span>
+        </button>
+      </div>
+      <div id="fb-btn-hint" style="font-size:.775rem;color:var(--muted);margin-top:.5rem" aria-live="polite">Submit 5 solutions to unlock feedback.</div>
+    </div>
+  </section>
+
+  <!-- FEEDBACK -->
+  <section id="phase-feedback" class="hidden" aria-label="Session feedback" aria-live="polite">
+    <div class="card">
+      <span class="slbl">Session Feedback</span>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.65rem;margin-bottom:1.1rem">
+        <div class="fb-cell"><div style="font-family:'IBM Plex Mono',monospace;font-size:1.75rem;font-weight:500;color:var(--bright);line-height:1" id="fb-orig">0</div><div style="font-size:.72rem;color:var(--muted);margin-top:.35rem">Originality</div></div>
+        <div class="fb-cell"><div style="font-family:'IBM Plex Mono',monospace;font-size:1.75rem;font-weight:500;color:var(--bright);line-height:1" id="fb-comp">0</div><div style="font-size:.72rem;color:var(--muted);margin-top:.35rem">Completeness</div></div>
+        <div class="fb-cell"><div style="font-family:'IBM Plex Mono',monospace;font-size:1.75rem;font-weight:500;color:var(--bright);line-height:1" id="fb-feas">0</div><div style="font-size:.72rem;color:var(--muted);margin-top:.35rem">Feasibility</div></div>
+        <div class="fb-cell"><div style="font-family:'IBM Plex Mono',monospace;font-size:1.75rem;font-weight:500;color:var(--bright);line-height:1" id="fb-div">0</div><div style="font-size:.72rem;color:var(--muted);margin-top:.35rem">Divergent</div></div>
+      </div>
+
+      <div id="fb-strengths-wrap" class="hidden" style="margin-bottom:.9rem">
+        <div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#4ade80;margin-bottom:.4rem">Strengths</div>
+        <ul id="fb-strengths" style="list-style:none;font-size:.875rem;color:var(--text)"></ul>
+      </div>
+      <div id="fb-blindspots-wrap" class="hidden" style="margin-bottom:.9rem">
+        <div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#f87171;margin-bottom:.4rem">Blind Spots</div>
+        <ul id="fb-blindspots" style="list-style:none;font-size:.875rem;color:var(--text)"></ul>
+      </div>
+      <div id="fb-questions-wrap" class="hidden" style="margin-bottom:.9rem">
+        <div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#a5b4fc;margin-bottom:.4rem">Questions to Consider</div>
+        <ul id="fb-questions" style="list-style:none;font-size:.875rem;color:var(--text)"></ul>
+      </div>
+      <div id="fb-general" style="font-size:.875rem;color:var(--muted);line-height:1.65"></div>
+
+      <div style="display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1rem">
+        <button class="btn bp" onclick="continueSolving()">Continue Solving</button>
+        <button class="btn bo" onclick="newSession()">New Session</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="slbl">All Your Solutions</span>
+      <div id="fb-solutions" role="list"></div>
+    </div>
+  </section>
+</div>
+
+<!-- Appearance modal -->
+<div id="setmodal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;padding:1rem">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:11px;padding:1.4rem;max-width:340px;width:100%;transition:background-color .25s,border-color .25s">
+    <div style="font-family:'Cinzel',serif;font-size:.95rem;color:var(--bright);margin-bottom:1rem">Appearance</div>
+    <label>Tint</label>
+    <input type="range" id="ts" min="0" max="100" value="50" style="margin-bottom:.2rem">
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:.9rem">
+      <span style="cursor:pointer" onclick="setTint(0)">Lichess</span>
+      <span style="cursor:pointer" onclick="setTint(50)">Pure</span>
+      <span style="cursor:pointer" onclick="setTint(100)">Discord</span>
+    </div>
+    <label>Brightness</label>
+    <input type="range" id="bs" min="0" max="100" value="33" style="margin-bottom:.2rem">
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:1rem">
+      <span style="cursor:pointer" onclick="setBr(0)">AMOLED</span>
+      <span style="cursor:pointer" onclick="setBr(33)">Dark</span>
+      <span style="cursor:pointer" onclick="setBr(66)">Ash</span>
+      <span style="cursor:pointer" onclick="setBr(100)">Light</span>
+    </div>
+    <button class="btn bg bsm" onclick="closeSet()" style="float:right">Close</button>
+  </div>
+</div>
+
+<script>
+let st = { currentProblem: null, solutions: [], evaluation: null, feedback: null, phase: 'welcome' };
+let _tint = 50, _br = 33;
+
+const $ = id => document.getElementById(id);
+const show = id => $(id).classList.remove('hidden');
+const hide = id => $(id).classList.add('hidden');
+const setErr = (id, msg) => { $(id).textContent = msg; show(id); };
+const clearErr = id => hide(id);
+const announce = msg => { $('sr-announce').textContent = ''; setTimeout(() => $('sr-announce').textContent = msg, 50); };
+const setLoading = (btnId, spinId, on) => { $(btnId).disabled = on; $(spinId).classList.toggle('hidden', !on); };
+
+// ── Theme ─────────────────────────────────────────────────────────────────
+function initTheme() {
+  const s = THEME.init();
+  _tint = s.tint; _br = s.brightness;
+  $('ts').value = _tint; $('bs').value = _br;
+  $('ts').addEventListener('input', e => { _tint = +e.target.value; THEME.update(_tint, _br); });
+  $('bs').addEventListener('input', e => { _br = +e.target.value; THEME.update(_tint, _br); });
+}
+function setTint(v) { _tint = v; $('ts').value = v; THEME.update(_tint, _br); }
+function setBr(v) { _br = v; $('bs').value = v; THEME.update(_tint, _br); }
+
+$('btn-set').addEventListener('click', () => { $('setmodal').style.display = 'flex'; });
+function closeSet() { $('setmodal').style.display = 'none'; }
+$('setmodal').addEventListener('click', e => { if (e.target === $('setmodal')) closeSet(); });
+
+// callAI is provided by ai-call.js
+
+// ── AI functions ──────────────────────────────────────────────────────────
+async function generateProblem(principle, domain, difficulty, minSolutions = 5) {
+  return await callAI('generateProblem', { principle, domain, difficulty, minSolutions });
+}
+
+async function evaluateSolution(problem, user_response, expected_solutions) {
+  const raw = await callAI('evaluateSolution', { problem, user_response, expected_solutions });
+  const wc = user_response.split(/\s+/).filter(w => w.length > 0).length;
+  const text = user_response.toLowerCase().trim();
+  const trivial = [/^(okay|ok|nah|nope|no|yes|yeah|yep|idk|maybe|probably|perhaps|i guess|i think|dunno)$/i, /^(sure|alright|fine|whatever|cool|nice|good|bad)$/i];
+  const isTrivial = wc < 20 || trivial.some(p => p.test(text)) || text.length < 30;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const o = clamp(raw.originality || 5, 0, 10), c = clamp(raw.completeness || 5, 0, 10);
+  const f = clamp(raw.feasibility || 5, 0, 10), d = clamp(raw.divergentThinking || 5, 0, 10);
+  return { ...raw, originality: isTrivial ? Math.min(2, o) : o, completeness: isTrivial ? Math.min(2, c) : c, feasibility: isTrivial ? Math.min(2, f) : f, divergentThinking: isTrivial ? Math.min(2, d) : d };
+}
+
+async function generateFeedback(problem, solutions, evaluation, principle, minSolutions) {
+  const all_solutions = solutions.map((s, i) => `${i + 1}. ${s.text}`).join('\n');
+  return await callAI('generateFeedback', {
+    problem, all_solutions,
+    evaluation_scores: JSON.stringify(evaluation || {}),
+    principle,
+    target_solutions_remaining: Math.max(0, minSolutions - solutions.length)
+  });
+}
+
+// ── Session ───────────────────────────────────────────────────────────────
+async function startSession() {
+  const principle = $('principle').value, domain = $('domain').value, difficulty = $('difficulty').value;
+  clearErr('welcome-err'); setLoading('start-btn', 'start-spin', true); announce('Generating problem…');
+  try {
+    const r = await generateProblem(principle, domain, difficulty, 5);
+    st.currentProblem = { id: `p-${Date.now()}`, problem: r.problem, constraints: r.constraints || [], hints: r.hints || [], expectedSolutions: r.expectedSolutions || [], principle, domain, difficulty, minSolutions: 5 };
+    st.solutions = []; st.evaluation = null; st.feedback = null; st.phase = 'problem';
+    renderPhase(); announce('Problem ready. Generate at least 5 solutions.');
+  } catch (e) { setErr('welcome-err', e.message); announce('Error: ' + e.message); }
+  finally { setLoading('start-btn', 'start-spin', false); }
+}
+
+async function submitSolution() {
+  const text = $('sol-input').value.trim();
+  clearErr('sol-err');
+  if (!text) { setErr('sol-err', 'Please write a solution.'); return; }
+  if (text.split(/\s+/).filter(Boolean).length < 5) { setErr('sol-err', 'Please write a more detailed solution.'); return; }
+  setLoading('submit-sol-btn', 'submit-sol-spin', true);
+
+  const sol = { id: `s-${Date.now()}`, text, submittedAt: new Date() };
+  st.solutions = [...st.solutions, sol];
+  $('sol-input').value = '';
+  renderSolutions(); updateCount(); updateFbBtn();
+
+  if (st.solutions.length === 1 || st.solutions.length % 3 === 0) {
+    try {
+      const ev = await evaluateSolution(st.currentProblem.problem, sol.text, st.currentProblem.expectedSolutions);
+      st.evaluation = ev; renderEval(ev);
+      announce(`Solution ${st.solutions.length} evaluated. Originality: ${ev.originality}/10, Divergent: ${ev.divergentThinking}/10.`);
+    } catch (e) { console.warn('Eval error:', e); }
+  } else {
+    announce(`Solution ${st.solutions.length} submitted.`);
+  }
+
+  setLoading('submit-sol-btn', 'submit-sol-spin', false);
+  $('sol-input').focus();
+}
+
+async function getFeedback() {
+  if (st.solutions.length < 5) return;
+  setLoading('feedback-btn', 'fb-spin', true); announce('Generating feedback…');
+  try {
+    const fb = await generateFeedback(
+      st.currentProblem.problem, st.solutions,
+      st.evaluation || { originality: 5, completeness: 5, feasibility: 5, divergentThinking: 5, strengths: [], blindSpots: [], probingQuestions: [] },
+      st.currentProblem.principle, st.currentProblem.minSolutions
+    );
+    st.feedback = fb; st.phase = 'feedback'; renderPhase(); announce('Feedback ready.');
+  } catch (e) { setErr('sol-err', e.message); announce('Error: ' + e.message); }
+  finally { setLoading('feedback-btn', 'fb-spin', false); }
+}
+
+function continueSolving() { st.phase = 'problem'; renderPhase(); $('sol-input').focus(); }
+function newSession() { st = { currentProblem: null, solutions: [], evaluation: null, feedback: null, phase: 'welcome' }; renderPhase(); }
+
+// ── Rendering ─────────────────────────────────────────────────────────────
+function renderPhase() {
+  ['welcome','problem','feedback'].forEach(p => $(`phase-${p}`).classList.toggle('hidden', st.phase !== p));
+  if (st.phase === 'problem') renderProblem();
+  if (st.phase === 'feedback') renderFeedback();
+}
+
+function renderProblem() {
+  const p = st.currentProblem;
+  $('principle-badge').textContent = p.principle;
+  $('domain-diff').textContent = `${p.domain} · ${p.difficulty}`;
+  $('problem-display').textContent = p.problem;
+
+  if (p.constraints?.length) {
+    show('constraints-wrap');
+    $('constraints-list').innerHTML = p.constraints.map(c =>
+      `<span class="badge ba">${c}</span>`
+    ).join('');
+  }
+  if (p.hints?.length) {
+    show('hints-wrap');
+    $('hints-body').innerHTML = p.hints.map((h, i) => `<div${i ? ' style="margin-top:.5rem"' : ''}><strong>Hint ${i+1}:</strong> ${h}</div>`).join('');
+  }
+  renderSolutions(); updateCount(); updateFbBtn();
+  if (st.evaluation) renderEval(st.evaluation);
+  $('problem-display').focus();
+}
+
+function renderSolutions() {
+  const el = $('solutions-list');
+  if (!st.solutions.length) {
+    el.innerHTML = '<div style="font-size:.875rem;color:var(--muted);font-style:italic;margin-bottom:.75rem">No solutions yet — add your first below.</div>';
+    return;
+  }
+  el.innerHTML = st.solutions.map((s, i) =>
+    `<div class="sol-item" role="listitem"><span style="font-size:.72rem;font-weight:600;color:#a5b4fc;margin-right:.5rem;font-family:\'IBM Plex Mono\',monospace">#${i+1}</span>${s.text}</div>`
+  ).join('');
+}
+
+function updateCount() {
+  const n = st.solutions.length;
+  $('sol-count').textContent = n;
+  $('sol-count').setAttribute('aria-label', `${n} of 5 solutions submitted`);
+}
+
+function updateFbBtn() {
+  const n = st.solutions.length, need = Math.max(0, 5 - n);
+  $('feedback-btn').disabled = n < 5;
+  $('fb-btn-hint').textContent = need > 0 ? `Submit ${need} more solution${need !== 1 ? 's' : ''} to unlock feedback.` : 'Ready for feedback.';
+}
+
+function renderEval(ev) {
+  show('eval-wrap');
+  setBar('ev-orig', 'ev-orig-v', ev.originality);
+  setBar('ev-comp', 'ev-comp-v', ev.completeness);
+  setBar('ev-feas', 'ev-feas-v', ev.feasibility);
+  setBar('ev-div', 'ev-div-v', ev.divergentThinking);
+}
+
+function setBar(fillId, valId, score) {
+  const s = Math.max(0, Math.min(10, score || 0));
+  $(fillId).style.width = `${s * 10}%`;
+  $(fillId).parentElement.setAttribute('aria-valuenow', s);
+  $(valId).textContent = s;
+}
+
+function renderFeedback() {
+  const fb = st.feedback;
+  $('fb-orig').textContent = Math.round(fb.originality ?? 0);
+  $('fb-comp').textContent = Math.round(fb.completeness ?? 0);
+  $('fb-feas').textContent = Math.round(fb.feasibility ?? 0);
+  $('fb-div').textContent = Math.round(fb.divergentThinking ?? 0);
+
+  renderFbList('fb-strengths-wrap', 'fb-strengths', fb.strengths || []);
+  renderFbList('fb-blindspots-wrap', 'fb-blindspots', fb.blindSpots || fb.blind_spots || []);
+  renderFbList('fb-questions-wrap', 'fb-questions', fb.probingQuestions || fb.probing_questions || []);
+  $('fb-general').textContent = fb.generalFeedback || fb.general_feedback || '';
+
+  $('fb-solutions').innerHTML = st.solutions.map((s, i) =>
+    `<div class="sol-item" role="listitem"><span style="font-size:.72rem;font-weight:600;color:#a5b4fc;margin-right:.5rem;font-family:'IBM Plex Mono',monospace">#${i+1}</span>${s.text}</div>`
+  ).join('');
+
+  $('phase-feedback').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderFbList(wrapId, listId, items) {
+  if (items.length) {
+    show(wrapId);
+    $(listId).innerHTML = items.map(s => `<li style="padding-left:.75rem;margin-bottom:.25rem">• ${s}</li>`).join('');
+  } else { hide(wrapId); }
+}
+
+function toggleHints() {
+  const body = $('hints-body'), btn = $('hints-btn'), isHidden = body.classList.contains('hidden');
+  body.classList.toggle('hidden', !isHidden);
+  btn.setAttribute('aria-expanded', String(isHidden));
+  btn.textContent = isHidden ? 'Hide Hints' : 'Show Hints';
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────
+initTheme();
+// banner visibility managed by ai-call.js DOMContentLoaded
+</script>
+</body>
+</html>

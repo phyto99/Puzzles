@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Vocabulary Builder — Craetio</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="theme.js"></script>
+<script src="ai-call.js"></script>
+<style>
+:root{--bg:#080808;--surface:#0f0f0f;--card:#161616;--border:#252525;--text:#dde0f5;--muted:#6e7099;--bright:#f0f2ff;--accent:#3730a3;--accent2:#4338ca}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:15px;line-height:1.6;min-height:100vh;transition:background-color .25s,color .25s}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--surface)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+h1{font-family:'Cinzel',serif;color:var(--bright);font-size:1.4rem;font-weight:600}
+h2{font-family:'Cinzel',serif;color:var(--bright);font-size:1rem;font-weight:600}
+.bar{position:sticky;top:0;z-index:99;background:var(--surface);border-bottom:1px solid var(--border);padding:.55rem 1.2rem;display:flex;align-items:center;gap:.6rem;transition:background-color .25s,border-color .25s}
+.logo{font-family:'Cinzel',serif;font-size:.9rem;font-weight:700;color:var(--bright)}.sp{flex:1}
+.btn{display:inline-flex;align-items:center;gap:.3rem;padding:.38rem .85rem;border-radius:6px;font-size:.8125rem;font-weight:500;cursor:pointer;border:1px solid transparent;transition:all .18s;background:transparent;color:var(--muted);font-family:inherit}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.bp{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important}.bp:hover:not(:disabled){background:var(--accent2)!important;border-color:var(--accent2)!important}
+.bg:hover{border-color:var(--border);background:var(--surface);color:var(--text)}
+.bo{color:var(--text);border-color:var(--border)}.bo:hover{border-color:var(--accent2);color:var(--bright)}
+.bsm{padding:.22rem .55rem;font-size:.775rem}
+.wrap{max-width:700px;margin:0 auto;padding:1.75rem 1.2rem 4rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.2rem;margin-bottom:1rem;transition:background-color .25s,border-color .25s}
+.card2{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.9rem;transition:background-color .25s,border-color .25s}
+.slbl{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.5rem;display:block}
+input,textarea,select{background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:inherit;font-size:.875rem;padding:.45rem .7rem;width:100%;outline:none;transition:border-color .18s,background-color .25s}
+input:focus,textarea:focus,select:focus{border-color:var(--accent2)}
+input::placeholder,textarea::placeholder{color:var(--muted)}
+label{font-size:.775rem;font-weight:500;color:var(--muted);display:block;margin-bottom:.25rem}
+.badge{display:inline-flex;align-items:center;padding:.1rem .45rem;border-radius:999px;font-size:.7rem;font-weight:500;background:var(--surface);border:1px solid var(--border);color:var(--muted)}
+.ba{background:rgba(67,56,202,.18);border-color:rgba(67,56,202,.4);color:#a5b4fc}
+.pbar{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.pfill{height:100%;background:var(--accent2);border-radius:2px;transition:width .3s}
+.word-chip{display:inline-flex;padding:.2rem .55rem;border-radius:999px;font-size:.775rem;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);transition:all .15s;user-select:none;font-family:inherit}
+.word-chip:hover{border-color:var(--accent2);color:var(--text)}
+.word-chip[aria-pressed=true]{background:rgba(67,56,202,.2);border-color:rgba(67,56,202,.5);color:#a5b4fc}
+.words-scroll{display:flex;flex-wrap:wrap;gap:.35rem;max-height:9rem;overflow-y:auto;padding:.2rem 0;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.hi{background:rgba(67,56,202,.25);border-radius:3px;padding:1px 3px;color:#a5b4fc;font-weight:600}
+.qo{width:100%;text-align:left;padding:.55rem .85rem;border-radius:7px;border:2px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:.875rem;transition:all .15s;margin-bottom:.35rem;display:block;font-family:inherit}
+.qo:hover:not(:disabled){border-color:var(--accent2);background:rgba(67,56,202,.07)}
+.qo.sel{border-color:var(--accent2);background:rgba(67,56,202,.1)}
+.qo.correct{border-color:#4ade80;background:rgba(34,197,94,.09);color:#4ade80}
+.qo.wrong{border-color:#f87171;background:rgba(239,68,68,.09);color:#f87171}
+.qo.reveal{border-color:#4ade80;background:rgba(34,197,94,.05)}
+.qo:disabled{cursor:default}
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:1.1rem}
+.tab{padding:.48rem .85rem;font-size:.8rem;font-weight:500;color:var(--muted);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .18s;font-family:inherit}
+.tab:hover{color:var(--text)}.tab.on{color:var(--bright);border-bottom-color:var(--accent2);background:rgba(67,56,202,.13)}
+.ebox{background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.22);border-radius:7px;padding:.55rem .85rem;color:#f87171;font-size:.84rem;margin-bottom:.75rem}
+.spin{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent2);border-radius:50%;animation:sp .7s linear infinite;display:inline-block;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+.hidden{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+input[type=range]{-webkit-appearance:none;appearance:none;height:4px;background:var(--border);border-radius:2px;outline:none;padding:0;border:none;width:100%}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent2);cursor:pointer;border:2px solid var(--bg);transition:background .2s}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent2);cursor:pointer;border:2px solid var(--bg)}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <span class="logo">Craetio</span>
+  <div class="sp"></div>
+  <button class="btn bg bsm" id="btn-key">🔑 API Key</button>
+  <button class="btn bg bsm" id="btn-set">⚙ Appearance</button>
+</div>
+<div id="no-key-banner" style="background:rgba(239,68,68,.08);border-bottom:1px solid rgba(239,68,68,.2);padding:.5rem 1.2rem;font-size:.8rem;color:#f87171;display:flex;align-items:center;gap:.75rem">
+  No API key set — click <strong style="cursor:pointer;text-decoration:underline" onclick="document.getElementById('keymodal').style.display='flex'">🔑 API Key</strong> to add yours (OpenAI, OpenRouter, or any compatible provider).
+</div>
+
+<div class="wrap">
+  <div style="margin-bottom:1.5rem">
+    <h1>Vocabulary Builder</h1>
+    <p style="font-size:.875rem;color:var(--muted);margin-top:.35rem">Build SAT vocabulary through AI-generated passages, quizzes, and writing practice</p>
+  </div>
+
+  <div role="status" aria-live="polite" aria-atomic="true" id="sr-announce" class="sr-only"></div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab on" role="tab" id="tab-read" aria-selected="true" aria-controls="panel-read" onclick="switchTab('read')">Reading &amp; Quiz</button>
+    <button class="tab" role="tab" id="tab-write" aria-selected="false" aria-controls="panel-write" onclick="switchTab('write')">Writing Practice</button>
+  </div>
+
+  <!-- READING PANEL -->
+  <div id="panel-read" role="tabpanel" aria-labelledby="tab-read">
+
+    <section id="setup-phase" aria-label="Session setup">
+      <div class="card">
+        <span class="slbl">Select Target Words</span>
+        <p style="font-size:.8rem;color:var(--muted);margin-bottom:.75rem">Choose 2–8 SAT words, or quick-select:</p>
+        <div style="display:flex;flex-wrap:wrap;gap:.45rem;margin-bottom:.9rem">
+          <button class="btn bp bsm" onclick="selectRandom(5)">Random 5</button>
+          <button class="btn bp bsm" onclick="selectRandom(8)">Random 8</button>
+          <button class="btn bo bsm" onclick="clearSelection()">Clear</button>
+        </div>
+        <div class="words-scroll" id="words-grid" role="group" aria-label="Word list"></div>
+      </div>
+
+      <div class="card">
+        <span class="slbl">Options</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.9rem">
+          <div><label for="difficulty">Difficulty</label>
+            <select id="difficulty">
+              <option value="easy">Easy</option>
+              <option value="moderate" selected>Moderate</option>
+              <option value="difficult">Difficult</option>
+            </select></div>
+          <div><label for="pass-length">Passage length</label>
+            <select id="pass-length">
+              <option value="200">Short (~200 words)</option>
+              <option value="300" selected>Medium (~300 words)</option>
+              <option value="500">Long (~500 words)</option>
+            </select></div>
+        </div>
+      </div>
+
+      <div id="setup-err" class="ebox hidden" role="alert"></div>
+      <button class="btn bp" id="start-btn" onclick="startSession()">
+        <span id="start-spin" class="spin hidden" aria-hidden="true"></span>
+        Generate Passage
+      </button>
+    </section>
+
+    <section id="reading-phase" class="hidden" aria-label="Passage">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem">
+          <span class="slbl" style="margin-bottom:0">Passage</span>
+          <div id="word-tags" style="display:flex;flex-wrap:wrap;gap:.35rem"></div>
+        </div>
+        <div class="card2" id="passage-text" tabindex="0" style="font-size:.875rem;line-height:1.75;margin-bottom:1rem"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:.6rem">
+          <button class="btn bp" id="quiz-btn" onclick="startQuiz()">
+            <span id="quiz-spin" class="spin hidden" aria-hidden="true"></span>
+            Take Quiz
+          </button>
+          <button class="btn bo" onclick="resetToSetup()">New Passage</button>
+        </div>
+        <div id="quiz-gen-err" class="ebox hidden" role="alert" style="margin-top:.6rem"></div>
+      </div>
+    </section>
+
+    <section id="quiz-phase" class="hidden" aria-label="Quiz">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <span class="slbl" style="margin-bottom:0">Quiz</span>
+          <span id="score-badge" class="badge ba hidden" aria-live="polite"></span>
+        </div>
+        <div id="quiz-qs" role="list"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.5rem">
+          <button class="btn bp" id="submit-quiz-btn" onclick="submitQuiz()">Submit Answers</button>
+          <button class="btn bo" onclick="resetToSetup()">New Session</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- WRITING PANEL -->
+  <div id="panel-write" role="tabpanel" aria-labelledby="tab-write" class="hidden">
+
+    <section id="writing-setup" aria-label="Writing setup">
+      <div class="card">
+        <span class="slbl">Select Words to Practice</span>
+        <p style="font-size:.8rem;color:var(--muted);margin-bottom:.75rem">AI will give you a prompt using these words.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:.45rem;margin-bottom:.9rem">
+          <button class="btn bp bsm" onclick="selectRandomWriting(5)">Random 5</button>
+          <button class="btn bo bsm" onclick="clearWritingWords()">Clear</button>
+        </div>
+        <div class="words-scroll" id="writing-grid" role="group"></div>
+      </div>
+      <div id="writing-setup-err" class="ebox hidden" role="alert"></div>
+      <button class="btn bp" id="prompt-btn" onclick="getWritingPrompt()">
+        <span id="prompt-spin" class="spin hidden" aria-hidden="true"></span>
+        Get Writing Prompt
+      </button>
+    </section>
+
+    <section id="writing-phase" class="hidden" aria-label="Writing practice">
+      <div class="card">
+        <span class="slbl">Your Prompt</span>
+        <div class="card2" id="prompt-display" tabindex="0" style="font-size:.875rem;line-height:1.7;margin-bottom:1rem"></div>
+        <label for="writing-resp">Your response</label>
+        <div style="position:relative">
+          <textarea id="writing-resp" rows="7" placeholder="Write your paragraph here…" oninput="updateWordCount()" aria-describedby="wc-label"></textarea>
+          <span id="wc-label" aria-live="polite" style="position:absolute;bottom:.5rem;right:.75rem;font-size:.7rem;color:var(--muted);pointer-events:none">0 words</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.75rem">
+          <button class="btn bp" id="submit-writing-btn" onclick="submitWriting()">
+            <span id="submit-writing-spin" class="spin hidden" aria-hidden="true"></span>
+            Get Feedback
+          </button>
+          <button class="btn bo" onclick="resetWriting()">New Prompt</button>
+        </div>
+        <div id="writing-err" class="ebox hidden" role="alert" style="margin-top:.5rem"></div>
+      </div>
+
+      <div id="writing-fb-section" class="hidden">
+        <div class="card" aria-live="polite">
+          <span class="slbl">AI Feedback</span>
+          <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
+            <div id="fb-score" aria-label="Score" style="font-family:'IBM Plex Mono',monospace;font-size:2.5rem;font-weight:500;color:var(--bright);line-height:1">0</div>
+            <div style="flex:1">
+              <div style="font-size:.75rem;color:var(--muted);margin-bottom:.3rem">out of 100</div>
+              <div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="score-prog">
+                <div class="pfill" id="score-fill" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
+          <div id="fb-body"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- Appearance modal -->
+<div id="setmodal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;padding:1rem">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:11px;padding:1.4rem;max-width:340px;width:100%;transition:background-color .25s,border-color .25s">
+    <div style="font-family:'Cinzel',serif;font-size:.95rem;color:var(--bright);margin-bottom:1rem">Appearance</div>
+    <label>Tint</label>
+    <input type="range" id="ts" min="0" max="100" value="50" style="margin-bottom:.2rem">
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:.9rem">
+      <span style="cursor:pointer" onclick="setTint(0)">Lichess</span>
+      <span style="cursor:pointer" onclick="setTint(50)">Pure</span>
+      <span style="cursor:pointer" onclick="setTint(100)">Discord</span>
+    </div>
+    <label>Brightness</label>
+    <input type="range" id="bs" min="0" max="100" value="33" style="margin-bottom:.2rem">
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:1rem">
+      <span style="cursor:pointer" onclick="setBr(0)">AMOLED</span>
+      <span style="cursor:pointer" onclick="setBr(33)">Dark</span>
+      <span style="cursor:pointer" onclick="setBr(66)">Ash</span>
+      <span style="cursor:pointer" onclick="setBr(100)">Light</span>
+    </div>
+    <button class="btn bg bsm" onclick="closeSet()" style="float:right">Close</button>
+  </div>
+</div>
+
+<script>
+const SAT_WORDS = ["abase","abate","abdicate","abduct","aberration","abet","abhor","abide","abject","abjure","abnegation","abort","abridge","abrogate","abscond","absolution","abstain","abstruse","accede","accentuate","accessible","acclaim","accolade","accommodating","accord","accost","accretion","acerbic","acquiesce","acrimony","acumen","acute","adamant","adept","adhere","admonish","adorn","adroit","adulation","adumbrate","adverse","advocate","aerial","aesthetic","affable","affinity","affluent","affront","aggrandize","aggregate","aggrieved","agile","agnostic","agriculture","aisle","alacrity","alias","allay","allege","alleviate","allocate","aloof","altercation","amalgamate","ambiguous","ambivalent","ameliorate","amenable","amenity","amiable","amicable","amorous","amorphous","anachronistic","analgesic","analogous","anarchist","anathema","anecdote","anesthesia","anguish","animated","annex","annul","anomaly","anonymous","antagonism","antecedent","antediluvian","anthology","antipathy","antiquated","antiseptic","antithesis","anxiety","apathetic","apocryphal","appalling","appease","appraise","apprehend","approbation","appropriate","aquatic","arable","arbiter","arbitrary","arbitration","arboreal","arcane","archaic","archetypal","ardor","arid","arrogate","artifact","artisan","ascertain","ascetic","ascribe","aspersion","aspire","assail","assess","assiduous","assuage","astute","asylum","atone","atrophy","attain","attribute","atypical","audacious","audible","augment","auspicious","austere","avarice","avenge","aversion","balk","ballad","banal","bane","bard","bashful","battery","beguile","behemoth","benevolent","benign","bequeath","berate","bereft","beseech","bias","bilk","blandish","blemish","blight","boisterous","bombastic","boon","bourgeois","brazen","brusque","buffet","burnish","buttress","cacophony","cadence","cajole","calamity","calibrate","callous","calumny","camaraderie","candor","canny","canvas","capacious","capitulate","capricious","captivate","carouse","carp","catalog","catalyze","caucus","caustic","cavort","censure","cerebral","chaos","chastise","cherish","chide","choreography","chronicle","chronological","circuitous","circumlocution","circumscribed","circumspect","circumvent","clairvoyant","clamor","clandestine","cleave","clemency","clergy","cloying","coagulate","coalesce","cobbler","coerce","cogent","cognizant","coherent","collateral","colloquial","collusion","colossus","combustion","commendation","commensurate","commodious","compelling","compensate","complacency","complement","compliant","complicit","compliment","compound","comprehensive","compress","compunction","concede","conciliatory","concise","concoct","concomitant","concord","condolence","condone","conduit","confection","confidant","conflagration","confluence","conformist","confound","congeal","congenial","congregation","congruity","connive","consecrate","consensus","consign","consolation","consonant","constituent","constrain","construe","consummate","consumption","contemporaneous","contentious","contravene","contrite","contusion","conundrum","convene","convention","convivial","convoluted","copious","cordial","coronation","corpulence","corroborate","corrosive","cosmopolitan","counteract","coup","covet","covert","credulity","crescendo","criteria","culmination","culpable","cultivate","cumulative","cunning","cupidity","cursory","curt","curtail","daunting","dearth","debacle","debase","debauch","debunk","decorous","decry","deface","defamatory","defer","deferential","defile","deft","defunct","delegate","deleterious","deliberate","delineate","demagogue","demarcation","demean","demure","denigrate","denounce","deplore","depravity","deprecate","derelict","deride","derivative","desecrate","desiccated","desolate","despondent","despot","destitute","deter","devious","dialect","diaphanous","didactic","diffident","diffuse","dilatory","diligent","diminutive","dirge","disaffected","disavow","discern","disclose","discomfit","discordant","discrepancy","discretion","discursive","disdain","disgruntled","disheartened","disparage","disparate","dispatch","dispel","disperse","disrepute","dissemble","disseminate","dissent","dissipate","dissonance","dissuade","distend","dither","divine","divisive","divulge","docile","dogmatic","dormant","dour","dubious","duplicity","duress","dynamic","ebullient","eclectic","ecstatic","edict","efface","effervescent","efficacious","effrontery","effulgent","egregious","elaborate","elated","elegy","elicit","eloquent","elucidate","elude","emaciated","embellish","embezzle","emend","eminent","emollient","emote","empathy","empirical","emulate","enamor","encore","encumber","enervate","enfranchise","engender","enigmatic","enmity","ennui","entail","enthrall","ephemeral","epistolary","epitome","equanimity","equivocal","erudite","eschew","esoteric","espouse","ethereal","etymology","euphoric","evanescent","evince","exacerbate","exalt","exasperate","excavate","exculpate","excursion","execrable","exhort","exigent","exonerate","exorbitant","expedient","expiate","expunge","expurgate","extant","extol","extraneous","extricate","exult","fabricate","facade","facile","fallacious","fastidious","fathom","fatuous","fecund","felicitous","feral","fervent","fetid","fetter","fickle","fidelity","figurative","flabbergasted","flaccid","flagrant","florid","flout","foil","forage","forbearance","forestall","forlorn","forsake","fortitude","fortuitous","forum","foster","fractious","fraught","frenetic","frivolous","frugal","furtive","garish","garrulous","genial","gluttony","goad","gourmand","grandiloquence","grandiose","gratuitous","gregarious","grievous","guile","hackneyed","hallowed","hapless","harangue","hardy","harrowing","haughty","hedonist","hegemony","heinous","heterogeneous","hiatus","hierarchy","hypocrisy","hypothetical","iconoclast","idiosyncratic","idolatrous","ignominious","illicit","immerse","immutable","impassive","impeccable","impecunious","imperative","imperious","impertinent","impervious","impetuous","impinge","implacable","implement","implicate","implicit","impregnable","impudent","impute","inane","inarticulate","incarnate","incendiary","incessant","inchoate","incisive","inclination","incontrovertible","incorrigible","increment","incumbent","indefatigable","indigenous","indigent","indignation","indolent","indomitable","induce","ineffable","inept","inexorable","inextricable","infamy","infusion","ingenious","ingenuous","inhibit","inimical","iniquity","injunction","innate","innocuous","innovate","innuendo","inoculate","inquisitor","insatiable","insidious","insinuate","insipid","insolent","instigate","insular","insurgent","integral","interject","interlocutor","interminable","intimation","intractable","intransigent","intrepid","inundate","inure","invective","inveterate","inviolable","irascible","iridescent","irreverence","irrevocable","jubilant","judicious","juxtaposition","knell","kudos","laceration","laconic","languid","larceny","largess","latent","laudatory","lavish","legerdemain","lenient","lethargic","liability","libertarian","licentious","limpid","linchpin","lithe","litigant","lucid","luminous","lurid","maelstrom","magnanimous","malediction","malevolent","malleable","mandate","manifest","manifold","maudlin","maverick","mawkish","maxim","meager","medley","mendacious","mercurial","meritorious","metamorphosis","meticulous","mitigate","moderate","modicum","modulate","mollify","morass","mores","morose","multifarious","mundane","munificence","mutable","myriad","nadir","nascent","nebulous","nefarious","negligent","neophyte","nocturnal","noisome","nomadic","nominal","nonchalant","nondescript","notorious","novice","noxious","nuance","nurture","obdurate","obfuscate","oblique","oblivious","obscure","obsequious","obsolete","obstinate","obstreperous","obtuse","odious","officious","ominous","onerous","opulent","oration","ornate","orthodox","oscillate","ostensible","ostentatious","ostracism","pacific","palatable","palette","palliate","pallid","panacea","paradigm","paradox","paragon","paramount","pariah","parody","parsimony","partisan","patent","pathology","pathos","paucity","pejorative","pellucid","penchant","penitent","penultimate","penurious","perfidious","perfunctory","permeate","pernicious","perplex","perspicacity","pert","pertinacious","perusal","pervasive","petulance","philanthropic","phlegmatic","pillage","pinnacle","pithy","pittance","placate","placid","platitude","plaudits","plausible","plenitude","plethora","pliable","poignant","polemic","portent","potable","potentate","pragmatic","precipice","preclude","precocious","predilection","preponderance","prepossessing","presage","prescient","prescribe","presumptuous","pretense","primeval","privation","probity","proclivity","procure","profane","profligate","profuse","promulgate","propagate","propensity","propitious","propriety","prosaic","proscribe","protean","prowess","prudence","prurient","puerile","pugnacious","pulchritude","punctilious","pungent","punitive","putrid","quagmire","quaint","quandary","quell","querulous","quixotic","quotidian","rail","rancid","rancor","rapport","rash","raucous","raze","rebuke","recalcitrant","recapitulate","reciprocate","reclusive","reconcile","rectitude","redoubtable","refract","refurbish","refute","regurgitate","relegate","relish","remedial","remiss","renovate","renown","renunciation","repentant","replete","repose","reprehensible","reprieve","reproach","reprobate","reprove","repudiate","repulse","reputable","requisition","rescind","reservoir","resilient","resolute","resolve","respite","resplendent","restitution","restive","retract","revel","revere","revoke","rhapsodize","ribald","rife","ruminate","ruse","saccharine","sacrosanct","sagacity","salient","salutation","salve","sanctimonious","sanguine","satiate","scathing","scintillating","scrupulous","scurrilous","sedentary","semaphore","seminal","sensual","sensuous","serendipity","serene","servile","sinuous","sobriety","solicitous","solipsistic","soluble","solvent","somnolent","sophomoric","sovereign","speculative","spurious","stagnate","staid","stingy","stoic","stolid","strenuous","strident","stupefy","subjugate","sublime","submissive","succinct","superfluous","surfeit","surmise","surreptitious","surrogate","swarthy","sycophant","tacit","taciturn","tangential","tantamount","tedious","temerity","temperance","tenable","tenuous","terrestrial","timorous","tirade","toady","tome","torpid","torrid","tortuous","tractable","tranquil","transgress","transient","transmute","travesty","tremulous","trenchant","trepidation","trite","truculent","truncate","turgid","turpitude","ubiquitous","umbrage","uncanny","unctuous","undulate","upbraid","usurp","utilitarian","utopia","vacillate","vacuous","validate","vapid","variegated","vehemently","veneer","venerable","venerate","veracity","verbose","verdant","vestige","vex","vicarious","vicissitude","vigilant","vilify","vindicate","vindictive","virtuoso","viscous","vitriolic","vituperate","vivacious","vocation","vociferous","wallow","wane","wanton","whimsical","wily","winsome","wistful","wizened","wrath","yoke","zealous","zenith","zephyr"];
+
+const readWords = new Set(), writeWords = new Set();
+let passage = '', quizQs = [], quizAnswers = {}, writingPrompt = '';
+let _tint = 50, _br = 33;
+
+const $ = id => document.getElementById(id);
+const show = id => $(id).classList.remove('hidden');
+const hide = id => $(id).classList.add('hidden');
+const setErr = (id, msg) => { $(id).textContent = msg; show(id); };
+const clearErr = id => hide(id);
+const announce = msg => { $('sr-announce').textContent = ''; setTimeout(() => $('sr-announce').textContent = msg, 50); };
+const isSAT = w => SAT_WORDS.includes(w.toLowerCase().trim());
+
+// ── Theme ─────────────────────────────────────────────────────────────────
+function initTheme() {
+  const s = THEME.init();
+  _tint = s.tint; _br = s.brightness;
+  $('ts').value = _tint; $('bs').value = _br;
+  $('ts').addEventListener('input', e => { _tint = +e.target.value; THEME.update(_tint, _br); });
+  $('bs').addEventListener('input', e => { _br = +e.target.value; THEME.update(_tint, _br); });
+}
+function setTint(v) { _tint = v; $('ts').value = v; THEME.update(_tint, _br); }
+function setBr(v) { _br = v; $('bs').value = v; THEME.update(_tint, _br); }
+
+// ── Settings modal ────────────────────────────────────────────────────────
+$('btn-set').addEventListener('click', () => { $('setmodal').style.display = 'flex'; });
+function closeSet() { $('setmodal').style.display = 'none'; }
+$('setmodal').addEventListener('click', e => { if (e.target === $('setmodal')) closeSet(); });
+
+// callAI is provided by ai-call.js
+
+// ── AI functions ──────────────────────────────────────────────────────────
+async function generateText(targetLength, targetWords, difficulty) {
+  const valid = targetWords.filter(isSAT);
+  if (!valid.length) throw new Error('No valid SAT words provided.');
+  const { text } = await callAI('generateText', { targetLength, targetWords: valid, difficulty });
+  if (!text?.trim()) throw new Error('Empty response from API');
+  return text.trim();
+}
+
+async function generateQuizQs(text, n = 5) {
+  const { questions } = await callAI('generateQuizQuestions', { text, numQuestions: n });
+  if (questions?.length) return questions;
+  return text.split(/[.!?]+/).filter(s => s.trim().length > 20).slice(0, n)
+    .filter(s => s.trim().split(/\s+/).length >= 5)
+    .map((s, i) => ({
+      id: `q-fb-${i}`,
+      question: `What is mentioned: "${s.trim().substring(0, 50)}…"?`,
+      options: ['Clearly stated','Implied but not stated','Not mentioned','Unclear'],
+      correctAnswer: 1
+    }));
+}
+
+async function generatePrompt(words) {
+  const valid = words.filter(isSAT);
+  if (!valid.length) return 'Write a short paragraph about a topic of your choice.';
+  const { prompt } = await callAI('generateWritingPrompt', { targetWords: valid });
+  return prompt?.trim() || `Write a short paragraph using: ${valid.join(', ')}.`;
+}
+
+async function getWritingFeedback(userWriting, prompt, targetWords) {
+  const valid = targetWords.filter(isSAT);
+  const wc = userWriting.trim().split(/\s+/).filter(Boolean).length;
+  const used = valid.filter(w => new RegExp(`\\b${w}\\b`, 'i').test(userWriting)).length;
+  const { feedback } = await callAI('getWritingFeedback', { userWriting, prompt, targetWords: valid });
+  if (wc < 25 && used === 0 && (feedback.score ?? 0) > 30) {
+    feedback.score = Math.min(feedback.score ?? 0, 25);
+    feedback.suggestions = ['Response too short and missing target words.', ...(feedback.suggestions ?? [])];
+  }
+  return feedback;
+}
+
+// ── Grids ─────────────────────────────────────────────────────────────────
+function buildGrids() {
+  buildGrid('words-grid', [...SAT_WORDS].sort(() => Math.random() - 0.5).slice(0, 120), readWords);
+  buildGrid('writing-grid', [...SAT_WORDS].sort(() => Math.random() - 0.5).slice(0, 120), writeWords);
+}
+
+function buildGrid(id, words, set) {
+  const g = $(id); g.innerHTML = '';
+  words.forEach(w => {
+    const btn = document.createElement('button');
+    btn.className = 'word-chip'; btn.textContent = w;
+    btn.setAttribute('aria-pressed', 'false');
+    btn.addEventListener('click', () => {
+      if (set.has(w)) { set.delete(w); btn.setAttribute('aria-pressed', 'false'); announce(`${w} deselected`); }
+      else {
+        if (set.size >= 8) { announce('Max 8 words.'); return; }
+        set.add(w); btn.setAttribute('aria-pressed', 'true'); announce(`${w} selected. ${set.size} of 8.`);
+      }
+    });
+    g.appendChild(btn);
+  });
+}
+
+function selectRandom(n) {
+  clearSelection();
+  [...SAT_WORDS].sort(() => Math.random() - 0.5).slice(0, n).forEach(w => {
+    readWords.add(w);
+    $('words-grid').querySelectorAll('.word-chip').forEach(c => { if (c.textContent === w) c.setAttribute('aria-pressed', 'true'); });
+  });
+}
+function clearSelection() {
+  readWords.clear();
+  $('words-grid').querySelectorAll('.word-chip').forEach(c => c.setAttribute('aria-pressed', 'false'));
+}
+function selectRandomWriting(n) {
+  clearWritingWords();
+  [...SAT_WORDS].sort(() => Math.random() - 0.5).slice(0, n).forEach(w => {
+    writeWords.add(w);
+    $('writing-grid').querySelectorAll('.word-chip').forEach(c => { if (c.textContent === w) c.setAttribute('aria-pressed', 'true'); });
+  });
+}
+function clearWritingWords() {
+  writeWords.clear();
+  $('writing-grid').querySelectorAll('.word-chip').forEach(c => c.setAttribute('aria-pressed', 'false'));
+}
+
+function setLoading(btnId, spinId, on) { $(btnId).disabled = on; $(spinId).classList.toggle('hidden', !on); }
+
+// ── Session ───────────────────────────────────────────────────────────────
+async function startSession() {
+  const words = [...readWords];
+  if (words.length < 2) { setErr('setup-err', 'Select at least 2 words first.'); return; }
+  clearErr('setup-err'); setLoading('start-btn', 'start-spin', true); announce('Generating passage…');
+  try {
+    passage = await generateText(parseInt($('pass-length').value), words, $('difficulty').value);
+    showReading(passage, words); announce('Passage ready.');
+  } catch (e) { setErr('setup-err', e.message); }
+  finally { setLoading('start-btn', 'start-spin', false); }
+}
+
+function showReading(text, words) {
+  hide('setup-phase'); show('reading-phase');
+  let html = text;
+  words.forEach(w => { html = html.replace(new RegExp(`\\b(${w})\\b`, 'gi'), '<mark class="hi">$1</mark>'); });
+  $('passage-text').innerHTML = html;
+  $('word-tags').innerHTML = words.map(w => `<span class="badge ba">${w}</span>`).join('');
+  $('passage-text').focus();
+}
+
+async function startQuiz() {
+  clearErr('quiz-gen-err'); setLoading('quiz-btn', 'quiz-spin', true);
+  try {
+    quizQs = await generateQuizQs(passage, 5); quizAnswers = {};
+    renderQuiz(quizQs); hide('reading-phase'); show('quiz-phase');
+    $('quiz-phase').scrollIntoView({ behavior: 'smooth', block: 'start' }); announce('Quiz ready.');
+  } catch (e) { setErr('quiz-gen-err', e.message); }
+  finally { setLoading('quiz-btn', 'quiz-spin', false); }
+}
+
+function renderQuiz(qs) {
+  const c = $('quiz-qs'); c.innerHTML = '';
+  qs.forEach((q, qi) => {
+    const div = document.createElement('div'); div.setAttribute('role', 'listitem'); div.style.marginBottom = '1rem';
+    div.innerHTML = `<div style="font-size:.875rem;font-weight:500;color:var(--bright);margin-bottom:.5rem" id="ql-${qi}">${qi+1}. ${q.question}</div>`;
+    const grp = document.createElement('div'); grp.setAttribute('role', 'radiogroup'); grp.setAttribute('aria-labelledby', `ql-${qi}`);
+    q.options.forEach((opt, oi) => {
+      const btn = document.createElement('button'); btn.className = 'qo'; btn.textContent = opt;
+      btn.dataset.qi = qi; btn.dataset.oi = oi; btn.setAttribute('aria-pressed', 'false');
+      btn.addEventListener('click', () => {
+        if (quizAnswers[qi] !== undefined) return;
+        quizAnswers[qi] = oi;
+        grp.querySelectorAll('.qo').forEach((b, i) => { b.classList.remove('sel'); if (i === oi) b.classList.add('sel'); b.setAttribute('aria-pressed', String(i === oi)); });
+      });
+      grp.appendChild(btn);
+    });
+    div.appendChild(grp); c.appendChild(div);
+  });
+}
+
+function submitQuiz() {
+  let correct = 0;
+  quizQs.forEach((q, qi) => {
+    const chosen = quizAnswers[qi];
+    $('quiz-qs').querySelectorAll(`.qo[data-qi="${qi}"]`).forEach((btn, oi) => {
+      btn.disabled = true; btn.classList.remove('sel');
+      if (oi === q.correctAnswer && chosen !== q.correctAnswer) btn.classList.add('reveal');
+      if (chosen === oi) { btn.classList.add(oi === q.correctAnswer ? 'correct' : 'wrong'); if (oi === q.correctAnswer) correct++; }
+    });
+  });
+  $('score-badge').textContent = `${correct} / ${quizQs.length}`; show('score-badge');
+  $('submit-quiz-btn').textContent = 'Submitted'; $('submit-quiz-btn').disabled = true;
+  announce(`Score: ${correct}/${quizQs.length}`);
+}
+
+function resetToSetup() {
+  show('setup-phase'); hide('reading-phase'); hide('quiz-phase');
+  hide('score-badge'); $('submit-quiz-btn').textContent = 'Submit Answers'; $('submit-quiz-btn').disabled = false;
+  passage = ''; quizQs = []; quizAnswers = {};
+}
+
+// ── Writing ───────────────────────────────────────────────────────────────
+async function getWritingPrompt() {
+  const words = [...writeWords];
+  if (!words.length) { setErr('writing-setup-err', 'Select at least 1 word first.'); return; }
+  clearErr('writing-setup-err'); setLoading('prompt-btn', 'prompt-spin', true);
+  try {
+    writingPrompt = await generatePrompt(words);
+    $('prompt-display').textContent = writingPrompt;
+    hide('writing-setup'); show('writing-phase'); hide('writing-fb-section');
+    $('writing-resp').value = ''; updateWordCount(); $('prompt-display').focus();
+  } catch (e) { setErr('writing-setup-err', e.message); }
+  finally { setLoading('prompt-btn', 'prompt-spin', false); }
+}
+
+function updateWordCount() {
+  const v = $('writing-resp').value;
+  const n = v.trim() ? v.trim().split(/\s+/).filter(Boolean).length : 0;
+  $('wc-label').textContent = `${n} word${n !== 1 ? 's' : ''}`;
+}
+
+async function submitWriting() {
+  const text = $('writing-resp').value;
+  if (!text.trim()) { setErr('writing-err', 'Write something first.'); return; }
+  clearErr('writing-err'); setLoading('submit-writing-btn', 'submit-writing-spin', true);
+  try {
+    const fb = await getWritingFeedback(text, writingPrompt, [...writeWords]);
+    renderWritingFeedback(fb); announce(`Score: ${fb.score ?? 0}/100`);
+  } catch (e) { setErr('writing-err', e.message); }
+  finally { setLoading('submit-writing-btn', 'submit-writing-spin', false); }
+}
+
+function renderWritingFeedback(fb) {
+  show('writing-fb-section');
+  const score = Math.max(0, Math.min(100, fb.score ?? 0));
+  $('fb-score').textContent = score; $('score-fill').style.width = `${score}%`;
+  $('score-prog').setAttribute('aria-valuenow', score);
+  const strengths = fb.strengths ?? [], suggestions = fb.suggestions ?? [];
+  let html = '';
+  if (strengths.length) {
+    html += `<div style="margin-bottom:.75rem"><div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#4ade80;margin-bottom:.4rem">Strengths</div>`;
+    html += `<ul style="list-style:none">${strengths.map(s => `<li style="font-size:.875rem;color:var(--text);padding-left:.75rem;margin-bottom:.2rem">• ${s}</li>`).join('')}</ul></div>`;
+  }
+  if (suggestions.length) {
+    html += `<div><div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#fbbf24;margin-bottom:.4rem">Suggestions</div>`;
+    html += `<ul style="list-style:none">${suggestions.map(s => `<li style="font-size:.875rem;color:var(--text);padding-left:.75rem;margin-bottom:.2rem">• ${s}</li>`).join('')}</ul></div>`;
+  }
+  $('fb-body').innerHTML = html;
+  $('writing-fb-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetWriting() {
+  show('writing-setup'); hide('writing-phase'); hide('writing-fb-section');
+  $('writing-resp').value = ''; updateWordCount(); writingPrompt = '';
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  ['read', 'write'].forEach(t => {
+    const btn = $(`tab-${t}`), panel = $(`panel-${t}`), active = t === tab;
+    btn.setAttribute('aria-selected', String(active)); btn.classList.toggle('on', active);
+    panel.classList.toggle('hidden', !active);
+  });
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────
+initTheme();
+buildGrids();
+// banner visibility managed by ai-call.js DOMContentLoaded
+</script>
+</body>
+</html>

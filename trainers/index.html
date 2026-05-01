@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Craetio Trainers</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="theme.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:15px;line-height:1.6;min-height:100vh;transition:background-color .25s,color .25s}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--surface)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+h1{font-family:'Cinzel',serif;color:var(--bright);font-size:1.6rem;font-weight:600}
+.wrap{max-width:620px;margin:0 auto;padding:2.5rem 1.2rem 4rem}
+.grid{display:flex;flex-direction:column;gap:.75rem;margin-top:1.8rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.2rem 1.3rem;text-decoration:none;color:var(--text);display:flex;align-items:center;gap:1rem;transition:border-color .18s,background-color .18s}
+.card:hover{border-color:var(--accent2);background:var(--surface)}
+.card-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.card-title{font-family:'Cinzel',serif;font-size:.95rem;font-weight:600;color:var(--bright);margin-bottom:.15rem}
+.card-desc{font-size:.8rem;color:var(--muted);line-height:1.45}
+.badge{display:inline-flex;padding:.1rem .45rem;border-radius:999px;font-size:.7rem;font-weight:500;background:rgba(67,56,202,.15);border:1px solid rgba(67,56,202,.3);color:#a5b4fc;margin-left:.4rem;vertical-align:middle}
+.arrow{margin-left:auto;color:var(--muted);font-size:1.1rem;flex-shrink:0}
+.divider{border:none;border-top:1px solid var(--border);margin:1.5rem 0}
+.section-label{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.6rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div style="margin-bottom:.4rem">
+    <h1>Craetio Trainers</h1>
+    <p style="color:var(--muted);font-size:.875rem;margin-top:.3rem">Cognitive training tools extracted from Craetio</p>
+  </div>
+
+  <hr class="divider">
+
+  <div class="section-label">Training Tools</div>
+  <div class="grid">
+
+    <a href="far-analogy-trainer.html" class="card">
+      <div class="card-icon" style="background:rgba(99,102,241,.15)">🔗</div>
+      <div>
+        <div class="card-title">Far Analogy Trainer <span class="badge">new</span></div>
+        <div class="card-desc">Generate connections between distant domains. Type your answer, learn the abstract relation, build relational schemas. 1,065 analogy pairs with spaced repetition.</div>
+      </div>
+      <span class="arrow">›</span>
+    </a>
+
+    <a href="vocabulary-builder.html" class="card">
+      <div class="card-icon" style="background:rgba(59,130,246,.15)">📖</div>
+      <div>
+        <div class="card-title">Vocabulary Builder</div>
+        <div class="card-desc">SAT-level vocabulary training. Spaced repetition with AI-generated example sentences and contextual definitions.</div>
+      </div>
+      <span class="arrow">›</span>
+    </a>
+
+    <a href="kvashchev.html" class="card">
+      <div class="card-icon" style="background:rgba(16,185,129,.15)">🧩</div>
+      <div>
+        <div class="card-title">Kvashchev Problem Solving</div>
+        <div class="card-desc">Open-ended divergent thinking tasks based on the Kvashchev battery. Generate multiple solutions, get AI feedback on fluency and originality.</div>
+      </div>
+      <span class="arrow">›</span>
+    </a>
+
+  </div>
+
+  <hr class="divider">
+
+  <div class="section-label">Reference</div>
+  <div class="grid">
+
+    <a href="studies.html" class="card">
+      <div class="card-icon" style="background:rgba(245,158,11,.15)">📚</div>
+      <div>
+        <div class="card-title">Research Studies</div>
+        <div class="card-desc">Annotated bibliography of cognitive training research — working memory, far analogy, executive function, and more.</div>
+      </div>
+      <span class="arrow">›</span>
+    </a>
+
+  </div>
+</div>
+<script>document.addEventListener('DOMContentLoaded', () => THEME.init());</script>
+</body>
+</html>

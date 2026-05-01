@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>PPDE — Problem Generator — Craetio</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="theme.js"></script>
+<script src="ai-call.js"></script>
+<style>
+:root{--bg:#080808;--surface:#0f0f0f;--card:#161616;--border:#252525;--text:#dde0f5;--muted:#6e7099;--bright:#f0f2ff;--accent:#3730a3;--accent2:#4338ca}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:15px;line-height:1.6;min-height:100vh;transition:background-color .25s,color .25s}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--surface)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+h1{font-family:'Cinzel',serif;color:var(--bright);font-size:1.4rem;font-weight:600}
+.bar{position:sticky;top:0;z-index:99;background:var(--surface);border-bottom:1px solid var(--border);padding:.55rem 1.2rem;display:flex;align-items:center;gap:.6rem;transition:background-color .25s,border-color .25s}
+.logo{font-family:'Cinzel',serif;font-size:.9rem;font-weight:700;color:var(--bright)}.sp{flex:1}
+.btn{display:inline-flex;align-items:center;gap:.3rem;padding:.38rem .85rem;border-radius:6px;font-size:.8125rem;font-weight:500;cursor:pointer;border:1px solid transparent;transition:all .18s;background:transparent;color:var(--muted);font-family:inherit}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.bp{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important}.bp:hover:not(:disabled){background:var(--accent2)!important;border-color:var(--accent2)!important}
+.bg:hover{border-color:var(--border);background:var(--surface);color:var(--text)}
+.bo{color:var(--text);border-color:var(--border)}.bo:hover:not(:disabled){border-color:var(--accent2);color:var(--bright)}
+.bsm{padding:.22rem .55rem;font-size:.775rem}
+.wrap{max-width:700px;margin:0 auto;padding:1.75rem 1.2rem 4rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.2rem;margin-bottom:1rem;transition:background-color .25s,border-color .25s}
+.slbl{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.5rem;display:block}
+.ebox{background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.22);border-radius:7px;padding:.55rem .85rem;color:#f87171;font-size:.84rem;margin-bottom:.75rem}
+.spin{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent2);border-radius:50%;animation:sp .7s linear infinite;display:inline-block;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+.hidden{display:none!important}
+input[type=range]{-webkit-appearance:none;appearance:none;height:4px;background:var(--border);border-radius:2px;outline:none;padding:0;border:none;width:100%}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent2);cursor:pointer;border:2px solid var(--bg);transition:background .2s}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent2);cursor:pointer;border:2px solid var(--bg)}
+
+/* ── CHIPS ── */
+.section{margin-bottom:1.1rem}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{padding:4px 10px;font-size:.8rem;font-family:'IBM Plex Sans',sans-serif;cursor:pointer;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);transition:all .1s;white-space:nowrap;line-height:1.5}
+.chip:hover{border-color:rgba(67,56,202,.4);color:var(--text)}
+.chip.active{background:rgba(67,56,202,.18);border-color:rgba(67,56,202,.4);color:#a5b4fc;font-weight:500}
+.chip.preset{font-size:.775rem;font-style:italic}
+
+/* ── OUTPUT ── */
+.param-strip{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:1rem;padding-bottom:.9rem;border-bottom:1px solid var(--border)}
+.param-tag{font-size:.72rem;padding:2px 6px;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-family:'IBM Plex Mono',monospace;white-space:nowrap}
+.problem-text{font-family:Georgia,'Times New Roman',serif;font-size:.9375rem;line-height:1.9;color:var(--text);white-space:pre-wrap;word-break:break-word;min-height:24px}
+.cursor{display:inline-block;width:7px;height:13px;background:var(--muted);vertical-align:text-bottom;animation:blink .9s step-end infinite;margin-left:2px}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.action-row{display:flex;gap:8px;margin-top:1rem;padding-top:.9rem;border-top:1px solid var(--border);flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <span class="logo">Craetio</span>
+  <div class="sp"></div>
+  <button class="btn bg bsm" id="btn-key">🔑 API Key</button>
+  <button class="btn bg bsm" id="btn-set">⚙ Appearance</button>
+</div>
+<div id="no-key-banner" style="background:rgba(239,68,68,.08);border-bottom:1px solid rgba(239,68,68,.2);padding:.5rem 1.2rem;font-size:.8rem;color:#f87171;display:flex;align-items:center;gap:.75rem">
+  No API key set — click <strong style="cursor:pointer;text-decoration:underline" onclick="_aipOpen()">🔑 API Key</strong> to add yours (OpenRouter, OpenAI, Anthropic, or any compatible provider).
+</div>
+
+<div class="wrap">
+  <div style="margin-bottom:1.5rem">
+    <div style="font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">PPDE</div>
+    <h1>Psycho-Practical Problem Dynamics</h1>
+    <p style="font-size:.875rem;color:var(--muted);margin-top:.35rem">Complete unified generator — all axes, all formats. Hover chips for descriptions. Select 1–3 roots, one of each other axis, then generate.</p>
+  </div>
+
+  <!-- Presets -->
+  <div class="section">
+    <span class="slbl">Presets — in the spirit of the originals</span>
+    <div class="chips" id="presets"></div>
+  </div>
+
+  <!-- Roots -->
+  <div class="section">
+    <span class="slbl">Philosophical roots — select 1 to 3</span>
+    <div class="chips" id="roots"></div>
+  </div>
+
+  <!-- Frame -->
+  <div class="section">
+    <span class="slbl">Epistemic frame — what kind of gap is at the center</span>
+    <div class="chips" id="frames"></div>
+  </div>
+
+  <!-- Info State -->
+  <div class="section">
+    <span class="slbl">Information architecture — how much the solver knows they don't know</span>
+    <div class="chips" id="infoStates"></div>
+  </div>
+
+  <!-- Medium -->
+  <div class="section">
+    <span class="slbl">Transmission medium — through which sense information arrives</span>
+    <div class="chips" id="media"></div>
+  </div>
+
+  <!-- Shape -->
+  <div class="section">
+    <span class="slbl">Solution shape — what kind of answer would count</span>
+    <div class="chips" id="shapes"></div>
+  </div>
+
+  <!-- Topology -->
+  <div class="section">
+    <span class="slbl">Constraint topology — the shape of what is forbidden</span>
+    <div class="chips" id="topologies"></div>
+  </div>
+
+  <!-- Format -->
+  <div class="section">
+    <span class="slbl">Delivery format — the pedagogical structure</span>
+    <div class="chips" id="formats"></div>
+  </div>
+
+  <!-- Affect -->
+  <div class="section">
+    <span class="slbl">Affective target — the experience the problem should cultivate</span>
+    <div class="chips" id="affects"></div>
+  </div>
+
+  <!-- Principle -->
+  <div class="section">
+    <span class="slbl">Deep generative principle — embedded structurally</span>
+    <div class="chips" id="principles"></div>
+  </div>
+
+  <!-- Generate -->
+  <div style="margin:1.25rem 0">
+    <button class="btn bp" id="genBtn" onclick="generate()">
+      <span id="gen-spin" class="spin hidden" aria-hidden="true"></span>
+      Generate problem ↗
+    </button>
+  </div>
+
+  <div id="errorMsg" class="ebox hidden"></div>
+
+  <!-- Output -->
+  <div id="outputBox" class="card hidden">
+    <div class="param-strip" id="paramStrip"></div>
+    <div class="problem-text" id="problemText"></div>
+    <div class="action-row hidden" id="actionRow">
+      <button class="btn bo bsm" onclick="copyText()">Copy</button>
+      <button class="btn bo bsm" onclick="seedFromResidue()">Seed from residue ↗</button>
+      <button class="btn bo bsm" onclick="generate()">Regenerate same axes ↗</button>
+    </div>
+  </div>
+</div>
+
+<!-- Appearance modal -->
+<div id="setmodal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;padding:1rem">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:11px;padding:1.4rem;max-width:340px;width:100%;transition:background-color .25s,border-color .25s">
+    <div style="font-family:'Cinzel',serif;font-size:.95rem;color:var(--bright);margin-bottom:1rem">Appearance</div>
+    <label style="font-size:.775rem;font-weight:500;color:var(--muted);display:block;margin-bottom:.25rem">Tint</label>
+    <input type="range" id="ts" min="0" max="100" value="50" style="margin-bottom:.2rem">
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:.9rem">
+      <span style="cursor:pointer" onclick="setTint(0)">Lichess</span>
+      <span style="cursor:pointer" onclick="setTint(50)">Pure</span>
+      <span style="cursor:pointer" onclick="setTint(100)">Discord</span>
+    </div>
+    <label style="font-size:.775rem;font-weight:500;color:var(--muted);display:block;margin-bottom:.25rem">Brightness</label>
+    <input type="range" id="bs" min="0" max="100" value="33" style="margin-bottom:.2rem">
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:1rem">
+      <span style="cursor:pointer" onclick="setBr(0)">AMOLED</span>
+      <span style="cursor:pointer" onclick="setBr(33)">Dark</span>
+      <span style="cursor:pointer" onclick="setBr(66)">Ash</span>
+      <span style="cursor:pointer" onclick="setBr(100)">Light</span>
+    </div>
+    <button class="btn bg bsm" onclick="closeSet()" style="float:right">Close</button>
+  </div>
+</div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+
+const ROOTS = [
+  {id:"epistemology",label:"Epistemology"},
+  {id:"phenomenology",label:"Phenomenology"},
+  {id:"logic",label:"Logic & Inference"},
+  {id:"language",label:"Phil. of Language"},
+  {id:"mind",label:"Phil. of Mind"},
+  {id:"ethics",label:"Ethics"},
+  {id:"science",label:"Phil. of Science"},
+  {id:"metaphysics",label:"Metaphysics"},
+  {id:"political",label:"Political Phil."},
+  {id:"aesthetics",label:"Aesthetics"},
+];
+
+const FRAMES = [
+  {id:"presence",label:"Presence",tip:"Something here that shouldn't be"},
+  {id:"absence",label:"Absence",tip:"Something missing that should be"},
+  {id:"timing",label:"Timing",tip:"Sequence is the key"},
+  {id:"motive",label:"Motive",tip:"Why the optimal thing was done"},
+  {id:"equivalence",label:"Equivalence",tip:"Different things are structurally identical"},
+  {id:"inversion",label:"Inversion",tip:"The obvious answer is definitively wrong"},
+  {id:"recursion",label:"Recursion",tip:"The answer is the method"},
+  {id:"indeterminacy",label:"Indeterminacy",tip:"Multiple valid solutions"},
+  {id:"sufficiency",label:"Sufficiency",tip:"All pieces present, nothing resolves"},
+  {id:"contradiction",label:"Contradiction",tip:"Two true things cannot coexist"},
+];
+
+const INFO_STATES = [
+  {id:"A",label:"A — Transparent",tip:"Solver knows exactly what's missing"},
+  {id:"B",label:"B — Opaque",tip:"Something feels unresolved"},
+  {id:"C",label:"C — False Sufficiency",tip:"Missing element was never named as a category"},
+  {id:"D",label:"D — Embedded Contradiction",tip:"Excess produces false solution"},
+  {id:"E",label:"E — Category Confusion",tip:"Problem type genuinely indeterminate"},
+  {id:"F",label:"F — Solver Variable",tip:"Solver's presence changes what can be found"},
+  {id:"G",label:"G — Dynamic State",tip:"Problem changes as it is solved"},
+];
+
+const MEDIA = [
+  {id:"visual",label:"Visual",tip:"What can be seen in the scene"},
+  {id:"auditory",label:"Auditory",tip:"Sound or its conspicuous absence"},
+  {id:"temporal",label:"Temporal",tip:"What duration and pacing implies"},
+  {id:"spatial",label:"Spatial/Geometric",tip:"Physical arrangement implies meaning"},
+  {id:"thermal",label:"Thermal/Tactile",tip:"Temperature, texture, physical state"},
+  {id:"social",label:"Social/Behavioral",tip:"What failure to react implies"},
+  {id:"economic",label:"Economic",tip:"What cost implies about alternatives"},
+  {id:"negative",label:"Negative/Absence",tip:"The dog that didn't bark"},
+  {id:"linguistic",label:"Linguistic",tip:"Word choice, not meaning"},
+  {id:"multisense",label:"Multi-sense",tip:"Solution lives in the intersection"},
+];
+
+const SHAPES = [
+  {id:"single",label:"Single",tip:"Exactly one correct answer"},
+  {id:"double",label:"Double",tip:"Two answers; finding one prevents the other"},
+  {id:"meta",label:"Meta",tip:"The answer is a question, not a statement"},
+  {id:"destructive",label:"Destructive",tip:"Solution destroys one of its own premises"},
+  {id:"cooperative",label:"Cooperative",tip:"Requires another solver's partial info"},
+  {id:"process",label:"Process",tip:"A repeatable procedure, not a fact"},
+  {id:"null",label:"Null",tip:"No answer; proving this is the solution"},
+  {id:"emergent",label:"Emergent",tip:"Appears from collective behavior"},
+  {id:"ambiguous",label:"Ambiguous",tip:"Multiple answers, all revealing"},
+  {id:"regressive",label:"Regressive",tip:"Each answer reveals a deeper question"},
+];
+
+const TOPOLOGIES = [
+  {id:"external",label:"External Wall",tip:"You may not go there"},
+  {id:"internal",label:"Internal Wall",tip:"Self-imposed cognitive constraint"},
+  {id:"temporal_w",label:"Temporal Wall",tip:"You cannot return to that moment"},
+  {id:"categorical",label:"Categorical Wall",tip:"An entire class of solutions forbidden"},
+  {id:"perceptual",label:"Perceptual Wall",tip:"Too familiar to notice as information"},
+  {id:"recursive",label:"Recursive Wall",tip:"Solving creates the constraint"},
+  {id:"cooperative_w",label:"Cooperative Wall",tip:"Constraint exists only for you"},
+  {id:"meta_c",label:"Meta-Constraint",tip:"The rules themselves are what's tested"},
+  {id:"embodied",label:"Embodied",tip:"Solution requires physical demonstration"},
+  {id:"timepressure",label:"Time-Pressure",tip:"Valid solution decays over time"},
+];
+
+const FORMATS = [
+  {id:"yesno",label:"Yes/No Reconstruction",tip:"Students may ask only yes or no to rebuild the hidden narrative"},
+  {id:"spatial",label:"Spatial/Geometric",tip:"A structure with explicit rules — ends with 'Begin.'"},
+  {id:"memory",label:"Memory-Under-Constraint",tip:"Study it, then it is removed"},
+  {id:"silent",label:"Silent Inference",tip:"Flat facts reported like a ship's log — ends with 'Why?'"},
+  {id:"social_f",label:"Social Scenario",tip:"Behavioral scene; find the underlying structure"},
+  {id:"object",label:"Object Arrangement",tip:"The arrangement IS the complete clue"},
+  {id:"temporal_f",label:"Temporal Sequence",tip:"Events presented out of causal order"},
+  {id:"definition",label:"Definition Reversal",tip:"A familiar concept that collapses under examination"},
+  {id:"cooperative_f",label:"Cooperative",tip:"Two roles, different partial information"},
+  {id:"embodied_f",label:"Embodied/Performance",tip:"The doing is the answer; language cannot substitute"},
+];
+
+const AFFECTS = [
+  {id:"vertigo",label:"Vertigo",tip:"The ground shifts — certainty was assumption"},
+  {id:"wonder",label:"Wonder",tip:"The world permanently expands"},
+  {id:"discomfort",label:"Discomfort",tip:"The solver is implicated"},
+  {id:"delight",label:"Delight",tip:"Elegant, almost funny, inevitable"},
+  {id:"dread",label:"Dread",tip:"The answer is deeply uncomfortable"},
+  {id:"compulsion",label:"Compulsion",tip:"Impossible to stop working on"},
+  {id:"humility",label:"Humility",tip:"Knowledge more limited than believed"},
+  {id:"expansion",label:"Expansion",tip:"The category of problem changes forever"},
+];
+
+const PRINCIPLES = [
+  {id:"frame",label:"Frame Problem",tip:"Which facts are relevant? The cut is the problem."},
+  {id:"hermeneutic",label:"Hermeneutic Circle",tip:"Entry point determines everything seen"},
+  {id:"equilibrium",label:"Reflective Equilibrium",tip:"Intuitions and principles in conflict"},
+  {id:"observer",label:"Observer Effect",tip:"Solver's method changes the evidence"},
+  {id:"apophatic",label:"Apophatic",tip:"Only approachable by elimination — never stated directly"},
+];
+
+const PRESETS = [
+  {label:"→ Light Switch",hint:"multi-sense · embodied · State C",roots:["epistemology","phenomenology"],frame:"absence",infoState:"C",medium:"multisense",shape:"process",topology:"perceptual",format:"embodied_f",affect:"delight",principle:"observer"},
+  {label:"→ Package Men",hint:"social · yes/no · State B",roots:["language","political"],frame:"motive",infoState:"B",medium:"social",shape:"single",topology:"categorical",format:"yesno",affect:"compulsion",principle:"hermeneutic"},
+  {label:"→ Nine Dots",hint:"spatial · internal wall · State E",roots:["logic","phenomenology"],frame:"inversion",infoState:"E",medium:"spatial",shape:"single",topology:"internal",format:"spatial",affect:"delight",principle:"frame"},
+  {label:"→ Blindfolded Fold",hint:"memory · time-pressure · State B",roots:["mind","phenomenology"],frame:"timing",infoState:"B",medium:"temporal",shape:"process",topology:"timepressure",format:"memory",affect:"humility",principle:"apophatic"},
+  {label:"→ Silent Ship",hint:"negative · inference · State C",roots:["epistemology","language"],frame:"absence",infoState:"C",medium:"negative",shape:"single",topology:"perceptual",format:"silent",affect:"wonder",principle:"frame"},
+  {label:"→ Max Novelty",hint:"hardest axes · maximum difficulty",roots:["metaphysics","aesthetics"],frame:"contradiction",infoState:"G",medium:"multisense",shape:"destructive",topology:"recursive",format:"definition",affect:"dread",principle:"observer"},
+];
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+
+let state = {
+  roots: ["epistemology","phenomenology"],
+  frame: "absence",
+  infoState: "C",
+  medium: "social",
+  shape: "single",
+  topology: "perceptual",
+  format: "yesno",
+  affect: "compulsion",
+  principle: "frame",
+};
+
+// ─── RENDER CHIPS ────────────────────────────────────────────────────────────
+
+function renderAll() {
+  renderMulti("roots", ROOTS, state.roots, id => toggleRoot(id));
+  renderSingle("frames", FRAMES, state.frame, id => { state.frame = id; renderAll(); });
+  renderSingle("infoStates", INFO_STATES, state.infoState, id => { state.infoState = id; renderAll(); });
+  renderSingle("media", MEDIA, state.medium, id => { state.medium = id; renderAll(); });
+  renderSingle("shapes", SHAPES, state.shape, id => { state.shape = id; renderAll(); });
+  renderSingle("topologies", TOPOLOGIES, state.topology, id => { state.topology = id; renderAll(); });
+  renderSingle("formats", FORMATS, state.format, id => { state.format = id; renderAll(); });
+  renderSingle("affects", AFFECTS, state.affect, id => { state.affect = id; renderAll(); });
+  renderSingle("principles", PRINCIPLES, state.principle, id => { state.principle = id; renderAll(); });
+  renderPresets();
+}
+
+function renderMulti(containerId, items, selectedArr, onClick) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = items.map(item => `
+    <button class="chip${selectedArr.includes(item.id)?' active':''}"
+      title="${item.tip||''}"
+      onclick="(${onClick.toString()})('${item.id}')">${item.label}</button>
+  `).join('');
+}
+
+function renderSingle(containerId, items, selected, onClick) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = items.map(item => `
+    <button class="chip${item.id===selected?' active':''}"
+      title="${item.tip||''}"
+      onclick="(${onClick.toString()})('${item.id}')">${item.label}</button>
+  `).join('');
+}
+
+function renderPresets() {
+  document.getElementById('presets').innerHTML = PRESETS.map((p,i) => `
+    <button class="chip preset" title="${p.hint}" onclick="applyPreset(${i})">${p.label}</button>
+  `).join('');
+}
+
+function toggleRoot(id) {
+  if (state.roots.includes(id)) {
+    if (state.roots.length > 1) state.roots = state.roots.filter(r => r !== id);
+  } else {
+    if (state.roots.length >= 3) state.roots = [...state.roots.slice(1), id];
+    else state.roots = [...state.roots, id];
+  }
+  renderAll();
+}
+
+function applyPreset(i) {
+  const p = PRESETS[i];
+  state = { roots: p.roots, frame: p.frame, infoState: p.infoState, medium: p.medium, shape: p.shape, topology: p.topology, format: p.format, affect: p.affect, principle: p.principle };
+  document.getElementById('outputBox').classList.add('hidden');
+  document.getElementById('errorMsg').classList.add('hidden');
+  renderAll();
+}
+
+// ─── SYSTEM PROMPT ───────────────────────────────────────────────────────────
+
+const SYSTEM_PROMPT = `You are the Psycho-Practical Problem Dynamics engine — the complete generation system for the training curriculum of The Mysterious Benedict Society. You generate ONE novel, structurally irreducible problem per request, instantiating the exact parameters given.
+
+Your problems are in the tradition of: the 3-switch light problem (visual + thermal, state C, absence frame, process answer), the man with the package and left-handed men (yes/no reconstruction, social medium, motive frame, state B), the nine dots (spatial/geometric, internal wall, inversion frame, state E), and folding while blindfolded (memory-under-constraint, temporal wall, time-pressure, state B).
+
+COMPLETE TAXONOMY:
+
+=== PHILOSOPHICAL ROOTS ===
+Epistemology: What can be known, how, by whom. Foundations, justified belief, testimony, Gettier cases (knowing for the wrong reason), calibrated ignorance.
+Phenomenology: Structure of direct experience. Intentionality (mental acts directed at objects). Ready-to-hand vs present-at-hand (tools invisible until broken). Embodied knowing. Bad faith (self-deception). What it is like to be somewhere.
+Logic & Formal Reasoning: Valid inference. Modal logic (necessity vs. possibility). Temporal logic (truth values change over time). Deontic logic (obligation/permission/prohibition overlapping). Paraconsistency (contradictions that don't explode). Fuzzy truth.
+Philosophy of Language: Language games (words mean differently in different communities). Speech acts (saying as doing). Gricean implicature (what is communicated beyond what is said). Indexicality (meaning depends on who/when/where). Vagueness/sorites (heap paradox). Meaning vs. use.
+Philosophy of Mind: Functionalism (same function = same thing?). Qualia (what it is like). Extended mind (is the notebook part of you?). Multiple realizability. Attention and salience (what was filtered?). Mary's Room variants.
+Ethics: Trolley topologies (new geometries of the same structure). Virtue and practical wisdom. Deontological constraints (rules that survive bad outcomes). Consequentialist horizons (right now, wrong in ten years). Moral luck (identical decisions, different outcomes by chance). Agent-relative vs. agent-neutral obligation.
+Philosophy of Science: Falsifiability (what experiment would disprove this?). Underdetermination (multiple theories fit all data — how to choose?). Paradigm shifts (anomalies that don't fit). Inference to best explanation (why simplicity fails). Measurement alteration (studying changes what is studied).
+Metaphysics: Identity over time (Ship of Theseus). Causation and counterfactual. Mereology (when do parts constitute a whole?). Supervenience (high-level change requires low-level change?). Modality and possible worlds (what follows from a world that never existed?).
+Political Philosophy: Legitimacy without consent. Veil of ignorance (design rules without knowing your position). Collective action (individual rationality → collective failure). Authority vs. expertise. Democratic epistemology.
+Aesthetics: Interpretation and intention (does the maker's intent determine meaning?). Forgery (perceptually identical — does origin matter?). Authentic vs. inauthentic experience. Kitsch and genuine emotion. Institutional theory.
+
+=== EPISTEMIC FRAME ===
+Presence — something is here that should not be
+Absence — something is missing that should be here
+Timing — the sequence of events IS the key
+Motive — why did someone do the exactly optimal thing?
+Equivalence — two things appear entirely different but are structurally identical
+Inversion — the obvious answer is definitively wrong; its inverse is right
+Recursion — the answer to the problem IS the method for solving it
+Indeterminacy — multiple valid solutions exist; proving this is the task
+Sufficiency — all pieces are present but no single arrangement resolves anything
+Contradiction — two simultaneously true things cannot coexist; one must yield
+
+=== INFORMATION ARCHITECTURE ===
+State A: Transparent ignorance. Solver knows exactly what they need. Weakest.
+State B: Opaque ignorance. Solver doesn't know what they're missing — only that something feels unresolved.
+State C: False sufficiency. Solver believes they have everything. The missing element was never framed as a category of information at all.
+State D: Embedded contradiction. Too much information. Excess produces a false solution. Real solution requires discarding something that seemed relevant.
+State E: Category confusion. The solver cannot determine what KIND of problem this is for at least 30 seconds of genuine engagement.
+State F: Solver-as-variable. The solver's own presence, assumptions, or investigative actions are a variable that changes what can be found.
+State G: Dynamic state. The problem's state changes as it is being solved.
+
+=== TRANSMISSION MEDIUM ===
+Visual: what can be seen in the scene
+Auditory: what can be heard, or what is conspicuously absent from sound
+Temporal: what the duration, pacing, or sequence of events implies
+Spatial/Geometric: what physical arrangement, orientation, or layout implies
+Thermal/Tactile: temperature, texture, resistance, weight — physical state
+Social/Behavioral: what someone's failure to react, or choice of reaction, implies
+Economic: what the cost, effort, or sacrifice of a choice implies about the unchosen alternatives
+Negative/Absence: the dog that didn't bark; the chair that was empty; the line that was not crossed
+Linguistic: what the specific words chosen (not their meaning, but their selection) imply
+Multi-sense: requires integrating two or more channels simultaneously
+
+=== SOLUTION SHAPE ===
+Single: exactly one correct answer exists and can be stated
+Double: two valid solutions exist; finding one prevents the other; the solver must choose
+Meta: the answer is a question, not a statement
+Destructive: finding the correct solution destroys one of the premises used to find it
+Cooperative: cannot be solved alone; requires another solver's partial information
+Process: the answer is a repeatable procedure, not a fact
+Null: there is no answer; rigorously proving this IS the solution
+Emergent: the answer appears only from collective behavior that no individual controls
+Ambiguous: multiple answers exist, all legitimate, each revealing something different
+Regressive: each answer reveals a deeper question; the recursion is indefinite
+
+=== CONSTRAINT TOPOLOGY ===
+External wall: you may not go there, use that, enter that space
+Internal wall: you cannot think in that direction — the constraint is cognitive, invisible, self-imposed
+Temporal wall: you cannot return to that moment — time has passed; the paper is sealed
+Categorical wall: you may not use that kind of thing; an entire class of solutions is forbidden
+Perceptual wall: you cannot notice that — it is too familiar to perceive as information
+Recursive wall: the act of solving creates the constraint
+Cooperative wall: the constraint exists only for you; another person would face no such barrier
+Meta-constraint: the rules themselves are what is being examined; following them is the error
+Embodied constraint: the solution requires physical demonstration, not verbal statement
+Time-pressure constraint: the valid solution decays over time; deliberation is itself a form of failure
+
+=== DELIVERY FORMAT ===
+Yes/No Reconstruction: Teacher presents a complete scenario with a hidden narrative. Students may ask ONLY yes or no questions. End setup with: "Using only yes or no questions, class —" followed by the question.
+Spatial/Geometric: A visual or physical structure with explicit rules for manipulation. End with "Begin."
+Memory-Under-Constraint: The solver studies something for a precisely stated time, then it is removed. The problem begins AFTER removal.
+Silent Inference: Minimal flat reportorial facts. Stated like a police report or ship's log. End with "Why?" on its own line.
+Social Scenario: A behavioral scene with multiple actors, described with anthropological flatness. Ask for the underlying structure.
+Object Arrangement: Physical objects in a specific spatial arrangement. The arrangement IS the complete clue.
+Temporal Sequence: Events presented out of order. Solver reconstructs the actual sequence.
+Definition Reversal: A familiar concept presented for examination. Its definition, when rigorously applied, collapses or inverts.
+Cooperative: Two roles clearly marked. Each receives different partial information.
+Embodied/Performance: The solver must DO something physically — not say something.
+
+=== AFFECTIVE TARGET ===
+Vertigo: the ground shifts — what felt certain is revealed as assumption
+Wonder: something beautiful is revealed about an ordinary overlooked thing
+Discomfort: the problem implicates the solver's own assumptions or identity
+Delight: the solution is elegant, almost funny, feels inevitable and impossible simultaneously
+Dread: the implications of the correct answer are deeply uncomfortable
+Compulsion: impossible to stop working on; the solver loses track of time
+Humility: the solver discovers their knowledge extends less far than they believed
+Expansion: the category of what counts as a problem changes irreversibly
+
+=== DEEP GENERATIVE PRINCIPLES ===
+Frame Problem: No finite set of rules specifies which facts are relevant. The cut IS the problem.
+Hermeneutic Circle: Understanding a part requires the whole; entry point determines everything seen.
+Reflective Equilibrium: Intuitions and principles conflict. The adjustment process IS the problem.
+Observer Effect: The solver's approach to investigation is a variable that changes what they find.
+Apophatic: The answer can only be approached by stating what it is not.
+
+=== ANTI-PHOTOGRAPHIC-MEMORY REQUIREMENTS ===
+Embed at least one:
+- Category resistance: the problem type is genuinely indeterminate for 30+ seconds
+- Answer instability: two valid routes arrive at different but equally correct answers
+- Residue: after solving, something remains unresolved — explicitly named
+- Active forgetting: the solver must DISCARD apparently relevant information
+- Process over content: memorizing the answer teaches nothing about the next problem
+
+=== OUTPUT FORMAT — FOLLOW EXACTLY ===
+
+[ROMAN NUMERAL]. [EVOCATIVE TITLE — 2-5 words, never descriptive of the solution]
+
+[Optional: A single italicized line functioning as epigraph — not explanation, but orientation. Use sparingly.]
+
+[THE PROBLEM SETUP — minimum necessary words. Do not name the type. Do not telegraph the solution. Be flat, precise, observational. No mystery-novel language. The strangeness must emerge from the facts, not from how they are framed.]
+
+[THE QUESTION — one question only. Non-leading and open. For yes/no format: "Using only yes or no questions, class — [question]." For spatial: end with "Begin." For silent inference: just "Why?" on its own line.]
+
+[TEACHER'S NOTE: (optional — only for the most structurally complex) One sentence only. Reveals something about the problem's STRUCTURE, not its solution.]
+
+Residue: [One sentence naming what remains unresolved after the solution is found. Always present.]
+
+Generate ONE problem only. No preamble. No explanation after. Follow the format exactly.`;
+
+// ─── BUILD PROMPT ────────────────────────────────────────────────────────────
+
+function buildPrompt() {
+  const rootNames = state.roots.map(id => ROOTS.find(r => r.id === id)?.label).join(" + ");
+  const get = (arr, id) => arr.find(x => x.id === id);
+  return `Generate a problem with these exact parameters:
+
+PHILOSOPHICAL ROOTS: ${rootNames}
+EPISTEMIC FRAME: ${get(FRAMES, state.frame)?.label} — ${get(FRAMES, state.frame)?.tip}
+INFORMATION ARCHITECTURE: ${get(INFO_STATES, state.infoState)?.label} — ${get(INFO_STATES, state.infoState)?.tip}
+TRANSMISSION MEDIUM: ${get(MEDIA, state.medium)?.label} — ${get(MEDIA, state.medium)?.tip}
+SOLUTION SHAPE: ${get(SHAPES, state.shape)?.label} — ${get(SHAPES, state.shape)?.tip}
+CONSTRAINT TOPOLOGY: ${get(TOPOLOGIES, state.topology)?.label} — ${get(TOPOLOGIES, state.topology)?.tip}
+DELIVERY FORMAT: ${get(FORMATS, state.format)?.label} — ${get(FORMATS, state.format)?.tip}
+AFFECTIVE TARGET: ${get(AFFECTS, state.affect)?.label} — ${get(AFFECTS, state.affect)?.tip}
+DEEP PRINCIPLE: ${get(PRINCIPLES, state.principle)?.label} — ${get(PRINCIPLES, state.principle)?.tip}
+
+Generate the problem now. Follow the output format exactly. No preamble.`;
+}
+
+// ─── GENERATE ────────────────────────────────────────────────────────────────
+
+const ENDPOINTS = {
+  openrouter: 'https://openrouter.ai/api/v1/chat/completions',
+  openai:     'https://api.openai.com/v1/chat/completions',
+  anthropic:  'https://api.anthropic.com/v1/messages',
+  gemini:     'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+  groq:       'https://api.groq.com/openai/v1/chat/completions',
+  ollama:     'http://localhost:11434/v1/chat/completions',
+};
+const DEFAULT_MODELS = {
+  openrouter: 'anthropic/claude-sonnet-4-5',
+  openai:     'gpt-4o',
+  anthropic:  'claude-3-5-sonnet-20241022',
+  gemini:     'gemini-2.0-flash',
+  groq:       'llama-3.3-70b-versatile',
+  ollama:     'llama3.2',
+};
+
+async function generate() {
+  const cfg = window.getAICfg ? window.getAICfg() : {};
+  const key = cfg.key || '';
+  const provider = cfg.provider || 'openrouter';
+
+  if (!key && provider !== 'ollama') {
+    showError('No API key set. Click "🔑 API Key" in the top bar.');
+    return;
+  }
+
+  const btn = document.getElementById('genBtn');
+  const spin = document.getElementById('gen-spin');
+  const errEl = document.getElementById('errorMsg');
+  const outputBox = document.getElementById('outputBox');
+  const textEl = document.getElementById('problemText');
+  const actionRow = document.getElementById('actionRow');
+
+  btn.disabled = true;
+  spin.classList.remove('hidden');
+  errEl.classList.add('hidden');
+  outputBox.classList.remove('hidden');
+  actionRow.classList.add('hidden');
+  textEl.innerHTML = '<span class="cursor"></span>';
+
+  const strip = document.getElementById('paramStrip');
+  const tags = [
+    state.roots.map(id => ROOTS.find(r => r.id === id)?.label).join(' · '),
+    FRAMES.find(f => f.id === state.frame)?.label,
+    INFO_STATES.find(s => s.id === state.infoState)?.label,
+    MEDIA.find(m => m.id === state.medium)?.label,
+    SHAPES.find(s => s.id === state.shape)?.label,
+    TOPOLOGIES.find(t => t.id === state.topology)?.label,
+    FORMATS.find(f => f.id === state.format)?.label,
+    AFFECTS.find(a => a.id === state.affect)?.label,
+    PRINCIPLES.find(p => p.id === state.principle)?.label,
+  ];
+  strip.innerHTML = tags.map(t => `<span class="param-tag">${t}</span>`).join('');
+
+  const endpoint = provider === 'custom' ? (cfg.endpoint || ENDPOINTS.openrouter) : (ENDPOINTS[provider] || ENDPOINTS.openrouter);
+  const model = cfg.model || DEFAULT_MODELS[provider] || 'anthropic/claude-sonnet-4-5';
+  const isAnthropic = provider === 'anthropic';
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (isAnthropic) {
+    headers['x-api-key'] = key;
+    headers['anthropic-version'] = '2023-06-01';
+    headers['anthropic-dangerous-direct-browser-access'] = 'true';
+  } else {
+    headers['Authorization'] = `Bearer ${key || 'ollama'}`;
+    if (provider === 'openrouter') {
+      headers['HTTP-Referer'] = window.location.href;
+      headers['X-Title'] = 'PPDE Problem Generator';
+    }
+  }
+
+  const body = isAnthropic
+    ? { model, max_tokens: 1200, stream: true, system: SYSTEM_PROMPT, messages: [{ role: 'user', content: buildPrompt() }] }
+    : { model, stream: true, max_tokens: 1200, messages: [{ role: 'system', content: SYSTEM_PROMPT }, { role: 'user', content: buildPrompt() }] };
+
+  try {
+    const res = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify(body) });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`HTTP ${res.status}: ${err}`);
+    }
+
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '', full = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split('\n'); buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const raw = line.slice(6).trim();
+        if (raw === '[DONE]') continue;
+        try {
+          const parsed = JSON.parse(raw);
+          const delta = isAnthropic
+            ? parsed.delta?.text
+            : parsed.choices?.[0]?.delta?.content;
+          if (delta) {
+            full += delta;
+            textEl.textContent = full;
+            textEl.insertAdjacentHTML('beforeend', '<span class="cursor"></span>');
+          }
+        } catch {}
+      }
+    }
+
+    textEl.textContent = full;
+    window._lastOutput = full;
+    actionRow.classList.remove('hidden');
+
+  } catch (e) {
+    showError('Generation failed: ' + e.message);
+    outputBox.classList.add('hidden');
+  } finally {
+    btn.disabled = false;
+    spin.classList.add('hidden');
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+function copyText() {
+  const text = window._lastOutput || '';
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target;
+    btn.textContent = 'Copied';
+    setTimeout(() => btn.textContent = 'Copy', 1800);
+  });
+}
+
+function seedFromResidue() {
+  const fi = FRAMES.findIndex(f => f.id === state.frame);
+  const si = INFO_STATES.findIndex(s => s.id === state.infoState);
+  state.frame = FRAMES[(fi + 1) % FRAMES.length].id;
+  state.infoState = INFO_STATES[(si + 2) % INFO_STATES.length].id;
+  document.getElementById('outputBox').classList.add('hidden');
+  renderAll();
+}
+
+// ─── THEME ───────────────────────────────────────────────────────────────────
+
+let _tint = 50, _br = 33;
+
+function initTheme() {
+  const s = THEME.init();
+  _tint = s.tint; _br = s.brightness;
+  document.getElementById('ts').value = _tint;
+  document.getElementById('bs').value = _br;
+  document.getElementById('ts').addEventListener('input', e => { _tint = +e.target.value; THEME.update(_tint, _br); });
+  document.getElementById('bs').addEventListener('input', e => { _br = +e.target.value; THEME.update(_tint, _br); });
+}
+function setTint(v) { _tint = v; document.getElementById('ts').value = v; THEME.update(_tint, _br); }
+function setBr(v) { _br = v; document.getElementById('bs').value = v; THEME.update(_tint, _br); }
+
+document.getElementById('btn-set').addEventListener('click', () => { document.getElementById('setmodal').style.display = 'flex'; });
+function closeSet() { document.getElementById('setmodal').style.display = 'none'; }
+document.getElementById('setmodal').addEventListener('click', e => { if (e.target === document.getElementById('setmodal')) closeSet(); });
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+initTheme();
+renderAll();
+// banner visibility managed by ai-call.js DOMContentLoaded
+</script>
+</body>
+</html>

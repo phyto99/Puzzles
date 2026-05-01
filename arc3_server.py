@@ -92,12 +92,14 @@ def new_session(game_id: str) -> dict:
     return _build_response(sid, frame_raw)
 
 
-def step_session(session_id: str, action: int) -> dict:
+def step_session(session_id: str, action: int, data: dict | None = None) -> dict:
+    from arcengine import GameAction
     with _lock:
         env = _sessions.get(session_id)
     if env is None:
         return {"error": "session_not_found"}
-    frame_raw = env.step(action)
+    game_action = GameAction.from_id(action)
+    frame_raw = env.step(game_action, data=data or {})
     if frame_raw is None:
         return {"error": "env returned None", "done": True}
     result = _build_response(session_id, frame_raw)

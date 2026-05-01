@@ -244,6 +244,10 @@ def index():
 def contribute():
     return render_template('contribute.html')
 
+@app.route('/recommendations')
+def recommendations():
+    return render_template('recommendations.html')
+
 @app.route('/api/get_puzzle', methods=['GET', 'POST'])
 def get_puzzle():
     try:
@@ -357,7 +361,10 @@ def arc3_step():
         action = body.get('action')
         if sid is None or action is None:
             return jsonify({"error": "session_id and action required"}), 400
-        return jsonify(step_session(sid, int(action)))
+        action_data = None
+        if body.get('x') is not None and body.get('y') is not None:
+            action_data = {'x': int(body['x']), 'y': int(body['y'])}
+        return jsonify(step_session(sid, int(action), action_data))
     except Exception as e:
         import traceback; traceback.print_exc()
         return jsonify({"error": str(e)}), 500
