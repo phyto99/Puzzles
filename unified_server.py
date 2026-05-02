@@ -10,7 +10,7 @@ import json
 import threading
 import urllib.request
 import urllib.error
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, send_from_directory
 from types import SimpleNamespace
 
 # Define base paths
@@ -18,8 +18,13 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RAVEN_DIR = os.path.join(BASE_DIR, 'raven-datasets/I-RAVEN')
 
 # Initialize Flask
-template_dir = os.path.join(BASE_DIR, 'templates')
+template_dir  = os.path.join(BASE_DIR, 'templates')
+trainers_dir  = os.path.join(BASE_DIR, 'trainers')
 app = Flask(__name__, template_folder=template_dir)
+
+@app.route('/trainers/<path:filename>')
+def serve_trainer(filename):
+    return send_from_directory(trainers_dir, filename)
 
 @app.after_request
 def add_header(r):

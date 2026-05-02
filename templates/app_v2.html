@@ -468,6 +468,11 @@
                 <option value="arc3">ARC-AGI-3</option>
                 <option value="rlp">RLP (Tatham)</option>
             </optgroup>
+            <optgroup label="Trainers">
+                <option value="trainer-vocab">Vocabulary Builder</option>
+                <option value="trainer-kvashchev">Kvashchev Creativity</option>
+                <option value="trainer-studies">Research Studies</option>
+            </optgroup>
         </select>
         <select id="subType" onchange="loadNewPuzzle()"></select>
         <button onclick="loadNewPuzzle()"
@@ -664,6 +669,20 @@
         <div id="rlpFeedback" class="game-feedback"></div>
     </div>
 
+    <!-- ══ Trainers (iframe embeds) ══ -->
+    <div id="trainer-vocabContent" class="hidden">
+        <iframe id="trainerVocabFrame" src="/trainers/vocabulary-builder.html"
+                style="width:100%;height:780px;border:none;border-radius:6px;"></iframe>
+    </div>
+    <div id="trainer-kvashchevContent" class="hidden">
+        <iframe id="trainerKvashchevFrame" src="/trainers/kvashchev.html"
+                style="width:100%;height:780px;border:none;border-radius:6px;"></iframe>
+    </div>
+    <div id="trainer-studiesContent" class="hidden">
+        <iframe id="trainerStudiesFrame" src="/trainers/studies.html"
+                style="width:100%;height:780px;border:none;border-radius:6px;"></iframe>
+    </div>
+
     <footer>
         <div id="credit-raven"   class="hidden"><strong>I-RAVEN:</strong> Małkiński &amp; Mańdziuk — A-I-RAVEN and I-RAVEN-Mesh (IJCAI 2025)</div>
         <div id="credit-acre"    class="hidden"><strong>ACRE:</strong> Zhang et al. — Abstract Causal REasoning Beyond Covariation (CVPR 2021)</div>
@@ -675,6 +694,9 @@
         <div id="credit-arc3"    class="hidden"><strong>ARC-AGI-3:</strong> ARC Prize Foundation — Interactive Reasoning Benchmark (2026) — <a href="https://three.arcprize.org" target="_blank">three.arcprize.org</a></div>
         <div id="credit-bongard" class="hidden"><strong>Bongard:</strong> Inspired by M. Bongard (1970) — synthetic rule-based problems</div>
         <div id="credit-rlp"     class="hidden"><strong>RLP:</strong> ETH Zürich DISCO — PUZZLES: A Benchmark for Neural Algorithmic Reasoning (ICLR 2024) — <a href="https://github.com/ETH-DISCO/rlp" target="_blank">github.com/ETH-DISCO/rlp</a> — Simon Tatham's Portable Puzzle Collection</div>
+        <div id="credit-trainer-vocab"     class="hidden"><strong>Vocabulary Builder:</strong> Original trainer — SAT-level vocabulary acquisition via AI-generated contextual passages and spaced repetition</div>
+        <div id="credit-trainer-kvashchev" class="hidden"><strong>Kvashchev Creativity Trainer:</strong> Based on Kvashchev's divergent thinking battery — AI-evaluated fluency, flexibility, originality, and elaboration</div>
+        <div id="credit-trainer-studies"   class="hidden"><strong>Research Studies:</strong> Annotated bibliography of cognitive training research — working memory, far transfer, executive function</div>
     </footer>
 </div>
 
@@ -682,7 +704,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    Shared state
 ═══════════════════════════════════════════════════════════════════════════ */
-const ALL_CONTENT = ['raven','pgm','marvel','bongard','puzzlevqa','acre','clevr','arc','arc3','rlp'];
+const ALL_CONTENT = ['raven','pgm','marvel','bongard','puzzlevqa','acre','clevr','arc','arc3','rlp','trainer-vocab','trainer-kvashchev','trainer-studies'];
 let currentData   = null;
 let isWaiting     = false;
 
@@ -833,6 +855,9 @@ const SUB_OPTIONS = {
                 {v:'loopy',l:'Loopy'},{v:'slant',l:'Slant'},{v:'signpost',l:'Signpost'},
                 {v:'untangle',l:'Untangle'},{v:'pattern',l:'Pattern (Nonogram)'},
                 {v:'rect',l:'Rectangles'},{v:'solo',l:'Sudoku'},{v:'mines',l:'Minesweeper'}],
+    'trainer-vocab':     [],
+    'trainer-kvashchev': [],
+    'trainer-studies':   [],
 };
 
 function updateSubType(genType) {
@@ -866,6 +891,7 @@ async function loadNewPuzzle() {
     try {
         if (genType === 'arc3') { initARC3(); return; }
         if (genType === 'rlp')  { initRLP();  return; }
+        if (genType.startsWith('trainer-')) { showOnly(genType); setStatus(''); return; }
 
         const resp = await fetch('/api/get_puzzle', {
             method: 'POST',

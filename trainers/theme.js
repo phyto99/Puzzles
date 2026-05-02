@@ -129,10 +129,8 @@ const THEME = (() => {
   }
 
   function load() {
-    try {
-      const s = localStorage.getItem(LS_KEY);
-      return s ? JSON.parse(s) : { tint: 50, brightness: 33 };
-    } catch { return { tint: 50, brightness: 33 }; }
+    // Trainers always use light mode — dark theme makes reading harder during training.
+    return { tint: 50, brightness: 100 };
   }
 
   function save(tint, brightness) {

@@ -106,6 +106,22 @@
   </div>
 </div>
 
+<h2>Trainers</h2>
+
+<div class="item idea">
+  <div class="item-title"><span class="badge badge-idea">Idea</span> Auto AI preset system for trainers</div>
+  <div class="item-body">
+    Trainers currently require the user to manually configure an API key and select their own model. Build a preset system that auto-populates the best model for each trainer type (fast cheap model for vocab quizzes, stronger model for Kvashchev evaluation) using a shared config injected via the parent app. Would also enable logging trainer calls through the same backend instead of direct browser→API.
+  </div>
+</div>
+
+<div class="item idea">
+  <div class="item-title"><span class="badge badge-idea">Idea</span> Dynamic difficulty based on performance history</div>
+  <div class="item-body">
+    Track per-trainer session results (score, time, accuracy) in the unified session store. Feed performance signal back into trainer generation — harder vocab words after high scores, stricter Kvashchev evaluation criteria after repeated high-fluency runs. Requires trainers to post results to a <code>/api/trainer/result</code> endpoint and the parent app to pass a <code>?session_id</code> param into the iframe src on load.
+  </div>
+</div>
+
 <h2>Infrastructure</h2>
 
 <div class="item todo">
