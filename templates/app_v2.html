@@ -471,7 +471,7 @@
             <optgroup label="Trainers">
                 <option value="trainer-vocab">Vocabulary Builder</option>
                 <option value="trainer-kvashchev">Kvashchev Creativity</option>
-                <option value="trainer-studies">Research Studies</option>
+                <option value="trainer-ppde">PPDE</option>
             </optgroup>
         </select>
         <select id="subType" onchange="loadNewPuzzle()"></select>
@@ -678,8 +678,8 @@
         <iframe id="trainerKvashchevFrame" src="/trainers/kvashchev.html"
                 style="width:100%;height:780px;border:none;border-radius:6px;"></iframe>
     </div>
-    <div id="trainer-studiesContent" class="hidden">
-        <iframe id="trainerStudiesFrame" src="/trainers/studies.html"
+    <div id="trainer-ppdeContent" class="hidden">
+        <iframe id="trainerPpdeFrame" src="/trainers/ppde.html"
                 style="width:100%;height:780px;border:none;border-radius:6px;"></iframe>
     </div>
 
@@ -696,7 +696,7 @@
         <div id="credit-rlp"     class="hidden"><strong>RLP:</strong> ETH Zürich DISCO — PUZZLES: A Benchmark for Neural Algorithmic Reasoning (ICLR 2024) — <a href="https://github.com/ETH-DISCO/rlp" target="_blank">github.com/ETH-DISCO/rlp</a> — Simon Tatham's Portable Puzzle Collection</div>
         <div id="credit-trainer-vocab"     class="hidden"><strong>Vocabulary Builder:</strong> Original trainer — SAT-level vocabulary acquisition via AI-generated contextual passages and spaced repetition</div>
         <div id="credit-trainer-kvashchev" class="hidden"><strong>Kvashchev Creativity Trainer:</strong> Based on Kvashchev's divergent thinking battery — AI-evaluated fluency, flexibility, originality, and elaboration</div>
-        <div id="credit-trainer-studies"   class="hidden"><strong>Research Studies:</strong> Annotated bibliography of cognitive training research — working memory, far transfer, executive function</div>
+        <div id="credit-trainer-ppde"       class="hidden"><strong>PPDE:</strong> Psycho-Practical Problem Dynamics — generative problem trainer</div>
     </footer>
 </div>
 
@@ -704,7 +704,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    Shared state
 ═══════════════════════════════════════════════════════════════════════════ */
-const ALL_CONTENT = ['raven','pgm','marvel','bongard','puzzlevqa','acre','clevr','arc','arc3','rlp','trainer-vocab','trainer-kvashchev','trainer-studies'];
+const ALL_CONTENT = ['raven','pgm','marvel','bongard','puzzlevqa','acre','clevr','arc','arc3','rlp','trainer-vocab','trainer-kvashchev','trainer-ppde'];
 let currentData   = null;
 let isWaiting     = false;
 
@@ -857,7 +857,7 @@ const SUB_OPTIONS = {
                 {v:'rect',l:'Rectangles'},{v:'solo',l:'Sudoku'},{v:'mines',l:'Minesweeper'}],
     'trainer-vocab':     [],
     'trainer-kvashchev': [],
-    'trainer-studies':   [],
+    'trainer-ppde':      [],
 };
 
 function updateSubType(genType) {
