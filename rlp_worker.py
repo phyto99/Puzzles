@@ -35,7 +35,11 @@ PUZZLE_META = {
 }
 
 def _frame_b64(arr):
-    img = Image.fromarray(arr.astype(np.uint8)).resize((512, 512), Image.NEAREST)
+    img = Image.fromarray(arr.astype(np.uint8))
+    bbox = img.getbbox()
+    if bbox:
+        img = img.crop(bbox)
+    img = img.resize((512, 512), Image.NEAREST)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     return base64.b64encode(buf.getvalue()).decode()

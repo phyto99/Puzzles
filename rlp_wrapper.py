@@ -60,8 +60,10 @@ _session_ctr = 0
 
 
 def _frame_to_b64(img_array: np.ndarray) -> str:
-    # img_array is (H, W, 3) uint8
     img = Image.fromarray(img_array.astype(np.uint8))
+    bbox = img.getbbox()
+    if bbox:
+        img = img.crop(bbox)
     img = img.resize((512, 512), Image.NEAREST)
     buf = io.BytesIO()
     img.save(buf, format="PNG")

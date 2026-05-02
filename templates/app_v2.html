@@ -635,7 +635,7 @@
 
     <!-- ══ RLP (Simon Tatham Puzzles) ══ -->
     <div id="rlpContent" class="hidden">
-        <div class="game-panel-wrap">
+        <div class="game-panel-wrap" style="flex-direction:column;align-items:center;">
             <div class="game-canvas-col">
                 <div class="game-meta">
                     RLP &mdash; <strong id="rlpName">—</strong>
@@ -648,10 +648,9 @@
                     &nbsp;|&nbsp; <span id="rlpDone"></span>
                 </div>
             </div>
-            <div class="game-controls-col">
-                <div class="action-label">Actions</div>
-                <div id="rlpActionBtns" class="game-action-btns"></div>
-                <div class="game-ctrl-row">
+            <div class="game-controls-col" style="width:512px;min-width:unset;">
+                <div id="rlpActionBtns" class="game-action-btns" style="flex-direction:row;flex-wrap:wrap;"></div>
+                <div class="game-ctrl-row" style="margin-top:8px;">
                     <button class="game-ctrl-btn" onclick="rlpReset()">↺ Reset</button>
                     <button class="game-ctrl-btn" onclick="initRLP()">New Puzzle</button>
                 </div>
