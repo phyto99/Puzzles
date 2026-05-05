@@ -565,6 +565,8 @@
             <span id="epQueueInline" style="color:#666;font-size:10px;font-family:monospace;">—</span>
             <button onclick="toggleEntropyDetails()" id="epToggleBtn"
                 style="padding:2px 8px;border:0.5px solid #d0d0d0;border-radius:4px;background:white;cursor:pointer;font-size:10px;font-family:monospace;color:#666;">▸</button>
+            <button onclick="openDevPanel()" title="Developer view — full feature breakdown"
+                style="padding:2px 8px;border:0.5px solid #888;border-radius:4px;background:#222;cursor:pointer;font-size:10px;font-family:monospace;color:#ccc;">DEV</button>
         </div>
 
         <!-- expanded panel — matches JSX layout -->
@@ -593,6 +595,56 @@
                     <!-- session stats row -->
                     <div id="epSessionStats" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;"></div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ Dev Panel (full-width overlay) ══ -->
+    <div id="devPanel" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.88);z-index:9999;overflow-y:auto;font-family:monospace;color:#e8e8e8;padding:24px;">
+        <div style="max-width:1100px;margin:0 auto;">
+            <!-- header -->
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;border-bottom:0.5px solid #444;padding-bottom:10px;">
+                <span style="font-size:11px;letter-spacing:.12em;color:#aaa;">ENTROPY DEVELOPER VIEW</span>
+                <div style="flex:1;"></div>
+                <button onclick="exportEntropyState()" style="font-size:10px;padding:3px 10px;border:0.5px solid #666;border-radius:4px;background:none;color:#ccc;cursor:pointer;font-family:monospace;">export JSON</button>
+                <button onclick="clearEntropyState()" style="font-size:10px;padding:3px 10px;border:0.5px solid #c44;border-radius:4px;background:none;color:#c77;cursor:pointer;font-family:monospace;">clear state</button>
+                <button onclick="closeDevPanel()" style="font-size:10px;padding:3px 10px;border:0.5px solid #666;border-radius:4px;background:none;color:#ccc;cursor:pointer;font-family:monospace;">✕ close</button>
+            </div>
+
+            <!-- feature type selector -->
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+                <span style="font-size:10px;color:#888;letter-spacing:.08em;">INSPECT TYPE</span>
+                <select id="devTypeSelect" onchange="renderDevPanel()" style="font-size:11px;padding:4px 8px;background:#1a1a1a;border:0.5px solid #555;border-radius:4px;color:#ddd;font-family:monospace;cursor:pointer;">
+                    <option value="arc3">ARC-AGI-3 (game map)</option>
+                    <option value="raven">I-RAVEN (rule analysis)</option>
+                    <option value="marvel">MARVEL</option>
+                    <option value="pgm">PGM</option>
+                    <option value="clevr">CLEVR</option>
+                    <option value="acre">ACRE</option>
+                    <option value="puzzlevqa">PuzzleVQA</option>
+                    <option value="arc">ARC-AGI</option>
+                    <option value="bongard">Bongard</option>
+                    <option value="rlp">RLP</option>
+                </select>
+                <div style="flex:1;"></div>
+                <span style="font-size:9px;color:#666;">All data from localStorage · entropy_state_v2</span>
+            </div>
+
+            <!-- ARC3 game map -->
+            <div id="devARC3" style="display:none;">
+                <div style="font-size:10px;color:#888;letter-spacing:.08em;margin-bottom:10px;">ARC-AGI-3 · ALL GAMES · entropy-sorted</div>
+                <div id="devARC3Grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;"></div>
+            </div>
+
+            <!-- Feature breakdown (raven/marvel/pgm/clevr/acre etc.) -->
+            <div id="devFeatures" style="display:none;">
+                <div id="devFeatureContent"></div>
+            </div>
+
+            <!-- Transfer hints -->
+            <div id="devTransfer" style="margin-top:24px;border-top:0.5px solid #333;padding-top:14px;">
+                <div style="font-size:10px;color:#888;letter-spacing:.08em;margin-bottom:10px;">CROSS-PUZZLE TRANSFER HINTS</div>
+                <div id="devTransferList" style="display:flex;flex-direction:column;gap:5px;"></div>
             </div>
         </div>
     </div>
@@ -821,9 +873,11 @@
    Shared state
 ═══════════════════════════════════════════════════════════════════════════ */
 const ALL_CONTENT = ['raven','pgm','marvel','bongard','puzzlevqa','acre','clevr','arc','arc3','rlp','trainer-vocab','trainer-kvashchev','trainer-ppde'];
-let currentData      = null;
-let isWaiting        = false;
-let currentSubtypeId = null;  // set by entropy engine before each puzzle load
+let currentData         = null;
+let isWaiting           = false;
+let currentSubtypeId    = null;   // set by entropy engine before each puzzle load
+let currentPuzzleFeatures = null; // puzzle-specific generation params captured after load
+let arc3MoveCount       = 0;      // moves taken in current ARC3 session
 
 /* ═══════════════════════════════════════════════════════════════════════════
    3-D scene config (shared by ACRE and CLEVR)
@@ -887,9 +941,12 @@ function recordResult(genType, correct) {
     else s.streak = 0;
     _saveStats();
     renderStats();
-    // Entropy tracking — update subtype familiarity
+    // Entropy tracking — update subtype + feature familiarity
     if (window.EntropyEngine && currentSubtypeId) {
         EntropyEngine.recordResult(genType, currentSubtypeId, correct);
+        if (currentPuzzleFeatures) {
+            EntropyEngine.recordPuzzleFeatures(genType, currentPuzzleFeatures, correct);
+        }
         renderEntropyPanel(genType);
     }
 }
@@ -1274,6 +1331,217 @@ function toggleEntropyDetails() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   DEV PANEL
+═══════════════════════════════════════════════════════════════════════════ */
+function openDevPanel() {
+    document.getElementById('devPanel').style.display = 'block';
+    // Default to current puzzle type
+    const sel = document.getElementById('devTypeSelect');
+    const cur = document.getElementById('generatorType')?.value;
+    if (cur && sel.querySelector(`option[value="${cur}"]`)) sel.value = cur;
+    renderDevPanel();
+}
+
+function closeDevPanel() {
+    document.getElementById('devPanel').style.display = 'none';
+}
+
+function exportEntropyState() {
+    const raw = localStorage.getItem('entropy_state_v2');
+    const blob = new Blob([raw ?? '{}'], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `entropy_state_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+}
+
+function clearEntropyState() {
+    if (!confirm('Clear all entropy tracking state? This resets all familiarity scores.')) return;
+    localStorage.removeItem('entropy_state_v2');
+    renderDevPanel();
+    renderEntropyPanel();
+}
+
+function renderDevPanel() {
+    if (!window.EntropyEngine) return;
+    const typeId = document.getElementById('devTypeSelect').value;
+
+    // Show/hide sections
+    document.getElementById('devARC3').style.display     = typeId === 'arc3' ? 'block' : 'none';
+    document.getElementById('devFeatures').style.display = typeId !== 'arc3' ? 'block' : 'none';
+
+    if (typeId === 'arc3') {
+        _renderDevARC3();
+    } else {
+        _renderDevFeatures(typeId);
+    }
+    _renderDevTransfer();
+}
+
+// ── ARC3 game map ────────────────────────────────────────────────────────────
+function _renderDevARC3() {
+    const grid = document.getElementById('devARC3Grid');
+    grid.innerHTML = '';
+    const states = window.EntropyEngine.getARC3GameStates ? EntropyEngine.getARC3GameStates() : [];
+    if (!states.length) {
+        grid.innerHTML = '<div style="color:#666;font-size:11px;">No ARC3 game data yet — play some games first, or load the ARC-AGI-3 puzzle to register games.</div>';
+        return;
+    }
+
+    // Sort by reconstruction score descending (most urgent first)
+    states.sort((a,b) => (b.score ?? 0) - (a.score ?? 0));
+
+    states.forEach(g => {
+        const fam     = g.fam ?? 0.5;
+        const score   = g.score ?? 0;
+        const win_lvl = g.winLevels ?? 7;
+        const max_lvl = g.maxLevel ?? 0;
+        const eff     = g.lastEfficiency ?? 0;
+        const moves   = g.totalMoves ?? 0;
+        const sess    = g.sessions ?? 0;
+        const w       = g.wins ?? 0, l = g.losses ?? 0;
+        const zColor  = _zoneColor(fam);
+
+        // Level dots (0-7)
+        const lvlDots = Array.from({length: win_lvl || 7}, (_,i) => {
+            const filled = i < max_lvl;
+            return `<div style="width:7px;height:7px;border-radius:1px;background:${filled ? zColor : '#333'};flex-shrink:0;"></div>`;
+        }).join('');
+
+        // Efficiency bar
+        const effW = (eff * 60).toFixed(0);
+        const effColor = eff > 0.7 ? '#1D9E75' : eff > 0.4 ? '#EF9F27' : '#E24B4A';
+
+        const tags = (g.tags ?? []).slice(0,3).map(t =>
+            `<span style="font-size:8px;background:#2a2a2a;border:0.5px solid #444;padding:1px 5px;border-radius:3px;color:#999;">${t}</span>`
+        ).join('');
+
+        const card = document.createElement('div');
+        card.style.cssText = `border:0.5px solid #333;border-left:2px solid ${zColor};border-radius:5px;padding:10px 12px;background:#111;cursor:default;`;
+        card.innerHTML = `
+            <div style="display:flex;align-items:baseline;gap:5px;margin-bottom:6px;">
+                <span style="font-size:11px;font-weight:600;color:#ddd;">${g.title ?? g.id}</span>
+                <span style="margin-left:auto;font-size:9px;color:#666;">${sess} sess</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:7px;">${tags}</div>
+            <div style="font-size:9px;color:#666;margin-bottom:3px;">LEVELS REACHED</div>
+            <div style="display:flex;gap:3px;margin-bottom:8px;">${lvlDots}</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+                <span style="font-size:9px;color:#666;width:56px;">familiarity</span>
+                <div style="flex:1;height:3px;border-radius:2px;background:#2a2a2a;position:relative;">
+                    <div style="position:absolute;left:0;width:${(fam*100).toFixed(0)}%;height:100%;background:${zColor};border-radius:2px;"></div>
+                </div>
+                <span style="font-size:9px;color:${zColor};width:28px;text-align:right;">${(fam*100).toFixed(0)}%</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+                <span style="font-size:9px;color:#666;width:56px;">efficiency</span>
+                <div style="flex:1;height:3px;border-radius:2px;background:#2a2a2a;position:relative;">
+                    <div style="position:absolute;left:0;width:${(eff*100).toFixed(0)}%;height:100%;background:${effColor};border-radius:2px;"></div>
+                </div>
+                <span style="font-size:9px;color:${effColor};width:28px;text-align:right;">${(eff*100).toFixed(0)}%</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:9px;color:#555;border-top:0.5px solid #222;padding-top:5px;">
+                <span>${w}W / ${l}L</span>
+                <span>${moves} moves</span>
+                <span style="color:${_iColor(score)};">R ${(score*100).toFixed(0)}</span>
+            </div>`;
+        grid.appendChild(card);
+    });
+}
+
+// ── Feature breakdown (raven, marvel, pgm, clevr, acre, etc.) ────────────────
+function _renderDevFeatures(typeId) {
+    const el = document.getElementById('devFeatureContent');
+    el.innerHTML = '';
+    if (!window.EntropyEngine) return;
+    const breakdown = EntropyEngine.getFeatureBreakdown(typeId);
+    if (!breakdown || !Object.keys(breakdown).length) {
+        el.innerHTML = '<div style="color:#666;font-size:11px;">No feature data yet — play some ' + typeId + ' puzzles first.</div>';
+        return;
+    }
+
+    const reg = EntropyEngine.PUZZLE_REGISTRY[typeId];
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'font-size:10px;color:#888;letter-spacing:.08em;margin-bottom:14px;';
+    hdr.textContent = (reg?.name ?? typeId).toUpperCase() + ' · FEATURE BREAKDOWN';
+    el.appendChild(hdr);
+
+    Object.entries(breakdown).forEach(([dim, items]) => {
+        const section = document.createElement('div');
+        section.style.cssText = 'margin-bottom:20px;';
+
+        const dimLabel = document.createElement('div');
+        dimLabel.style.cssText = 'font-size:9px;color:#666;letter-spacing:.08em;margin-bottom:8px;text-transform:uppercase;border-bottom:0.5px solid #2a2a2a;padding-bottom:4px;';
+        dimLabel.textContent = dim.replace(/_/g,' ');
+        section.appendChild(dimLabel);
+
+        // Sort by reconstruction score
+        const sorted = [...items].sort((a,b) => (b.score ?? 0) - (a.score ?? 0));
+
+        sorted.forEach(item => {
+            const fam    = item.fam ?? 0.5;
+            const score  = item.score ?? 0;
+            const zColor = _zoneColor(fam);
+            const w      = item.wins ?? 0, l = item.losses ?? 0;
+            const sess   = w + l;
+            const vol    = item.volatility ?? 0.8;
+
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:6px;';
+            row.innerHTML = `
+                <span style="font-size:10px;color:#ccc;font-family:monospace;min-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${item.key}">${item.val ?? item.key}</span>
+                <div style="flex:1;height:4px;border-radius:2px;background:#2a2a2a;position:relative;">
+                    <div style="position:absolute;left:0;width:${(fam*100).toFixed(0)}%;height:100%;background:${zColor};border-radius:2px;transition:width .3s;"></div>
+                    <div style="position:absolute;left:15%;width:1px;height:6px;top:-1px;background:${zColor}55;"></div>
+                    <div style="position:absolute;left:78%;width:1px;height:6px;top:-1px;background:${zColor}55;"></div>
+                </div>
+                <span style="font-size:9px;color:${zColor};width:32px;text-align:right;font-family:monospace;">${(fam*100).toFixed(0)}%</span>
+                ${_sparklineSVG(fam, vol)}
+                <span style="font-size:9px;color:#555;width:40px;font-family:monospace;">${w}W/${l}L</span>
+                <span style="font-size:9px;color:${_iColor(score)};width:28px;font-family:monospace;">R${(score*100).toFixed(0)}</span>`;
+            section.appendChild(row);
+        });
+
+        el.appendChild(section);
+    });
+}
+
+// ── Transfer hints ────────────────────────────────────────────────────────────
+function _renderDevTransfer() {
+    const el = document.getElementById('devTransferList');
+    el.innerHTML = '';
+    if (!window.EntropyEngine) return;
+    const hints = EntropyEngine.getTransferHints(8);
+    if (!hints.length) {
+        el.innerHTML = '<div style="color:#555;font-size:10px;">No transfer hints yet — play a few rounds first.</div>';
+        return;
+    }
+    hints.forEach(h => {
+        // from/to are feature keys like "raven::rule::Progression"
+        // parse out the type prefix for display
+        const fromParts = h.from.split('::');
+        const toParts   = (h.to ?? '').split('::');
+        const fromType  = fromParts[0];
+        const fromFeat  = fromParts.slice(1).join(' › ');
+        const toType    = toParts[0];
+        const fromReg = EntropyEngine.PUZZLE_REGISTRY[fromType];
+        const toReg   = EntropyEngine.PUZZLE_REGISTRY[toType];
+        const fromClr = EntropyEngine.CLUSTERS[fromReg?.cluster]?.hex ?? '#888';
+        const toClr   = EntropyEngine.CLUSTERS[toReg?.cluster]?.hex   ?? '#888';
+        const div = document.createElement('div');
+        div.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:10px;padding:5px 8px;background:#111;border-radius:4px;border:0.5px solid #2a2a2a;flex-wrap:wrap;';
+        div.innerHTML = `
+            <span style="color:${fromClr};font-family:monospace;">${fromReg?.name ?? fromType}</span>
+            <span style="color:#555;font-size:9px;font-family:monospace;">${fromFeat}</span>
+            <span style="color:#444;">→</span>
+            <span style="color:${toClr};font-family:monospace;">${toReg?.name ?? toType}</span>
+            <span style="color:#666;flex:1;text-align:right;font-size:9px;">${h.label}</span>
+            <span style="font-size:9px;color:${_iColor(h.strength ?? 0.5)};font-family:monospace;">${((h.strength ?? 0.5)*100).toFixed(0)}%</span>`;
+        el.appendChild(div);
+    });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    RAVEN renderer
 ═══════════════════════════════════════════════════════════════════════════ */
 function renderRaven(data) {
@@ -1301,6 +1569,7 @@ function renderRaven(data) {
         d.appendChild(img); ag.appendChild(d);
     }
     setStatus('Config: '+data.config_name);
+    currentPuzzleFeatures = { config: data.config_name, rule_info: data.rule_info ?? [] };
 }
 
 async function checkRavenAnswer(idx, el) {
@@ -1475,6 +1744,7 @@ function renderAcre(data) {
     requestAnimationFrame(()=>renderInteractScene(cc,data.candidates[0].scene));
 
     setStatus(`Type: ${data.puzzle_type} | Regime: ${data.regime}`);
+    currentPuzzleFeatures = { regime: data.regime, puzzle_type: data.puzzle_type, question_subtype: data.question_subtype };
 }
 
 async function checkAcreAnswer() {
@@ -1530,6 +1800,7 @@ function renderClevr(data) {
     });
 
     setStatus(`CLEVR — ${data.question_type}`);
+    currentPuzzleFeatures = { question_type: data.question_type };
 }
 
 function checkClevrAnswer(idx, el) {
@@ -1608,6 +1879,7 @@ function renderArc(data) {
     buildArcPalette();
     buildArcOutputGrid();
     setStatus(`ARC task: ${data.task_id}`);
+    currentPuzzleFeatures = { version: currentSubtypeId, task_id: data.task_id };
 }
 
 function buildArcPalette() {
@@ -1725,6 +1997,7 @@ function renderMarvel(data) {
     showOnly('marvel');
     document.getElementById('marvelMeta').textContent =
         `Pattern: ${data.pattern} | Config: ${data.task_configuration} | ID: ${data.puzzle_id}`;
+    currentPuzzleFeatures = { pattern: data.pattern, task_configuration: data.task_configuration };
 
     const ctx = document.getElementById('marvelContext');
     ctx.innerHTML = '';
@@ -1808,6 +2081,7 @@ function renderPuzzleVQA(data) {
     });
 
     setStatus(`PuzzleVQA — ${data.pattern}`);
+    currentPuzzleFeatures = { pattern: data.pattern };
 }
 
 function checkPuzzleVQAAnswer(idx, el) {
@@ -1850,6 +2124,7 @@ function renderBongard(data) {
     document.getElementById('bongardTestImg').src=data.test_image;
 
     setStatus('Bongard — identify the rule');
+    currentPuzzleFeatures = { hint: data.hint ?? '' };
 }
 
 function checkBongard(choice) {
@@ -1902,6 +2177,7 @@ function renderPGM(data) {
 
     document.getElementById('pgmFeedback').textContent = '';
     setStatus(`PGM — ${data.rule_desc}`);
+    currentPuzzleFeatures = { shape: data.shape, rule_desc: data.rule_desc, n_attrs: data.n_attrs };
 }
 
 function checkPGMAnswer(idx, el) {
@@ -1941,13 +2217,21 @@ async function initARC3() {
             const data = await resp.json();
             if (data.error) throw new Error(data.error);
             arc3Envs = data;
+            // Register all games with the entropy engine
+            if (window.EntropyEngine) EntropyEngine.registerARC3Games(data);
         } catch(e) {
             setStatus('Error loading ARC-3 envs: ' + e.message, 'red'); return;
         }
     }
 
-    // Pick a random environment
-    const env = arc3Envs[Math.floor(Math.random() * arc3Envs.length)];
+    // Entropy picks the best game (not random)
+    let env;
+    if (window.EntropyEngine && EntropyEngine.getARC3GameStates().length > 0) {
+        const picked = EntropyEngine.pickNextSubtype('arc3', arc3CurrentGameId);
+        env = arc3Envs.find(e => e.game_id === picked?.id) ?? arc3Envs[Math.floor(Math.random() * arc3Envs.length)];
+    } else {
+        env = arc3Envs[Math.floor(Math.random() * arc3Envs.length)];
+    }
     arc3CurrentGameId = env.game_id;
     document.getElementById('arc3Title').textContent = env.title || env.game_id;
     await _arc3StartSession();
@@ -1967,6 +2251,8 @@ async function arc3Reset() {
 }
 
 async function _arc3StartSession() {
+    arc3MoveCount = 0;  // reset move counter
+    currentPuzzleFeatures = { game_id: arc3CurrentGameId };
     try {
         const resp = await fetch('/api/arc3/new', {
             method: 'POST',
@@ -1996,6 +2282,7 @@ async function arc3Step(actionId, x=null, y=null) {
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data = await resp.json();
         if (data.error) { setStatus('ARC-3: ' + data.error, 'red'); return; }
+        arc3MoveCount++;
         _arc3HandleFrame(data);
     } catch(e) {
         setStatus('ARC-3 error: ' + e.message, 'red');
@@ -2019,10 +2306,12 @@ function _arc3HandleFrame(data) {
     const fb = document.getElementById('arc3Feedback');
     if (data.state === 'WIN') {
         fb.innerHTML = `<span style="color:green">✓ Solved! (${data.levels_completed}/${data.win_levels} levels)</span>`;
+        if (window.EntropyEngine) EntropyEngine.recordARC3Result(arc3CurrentGameId, data.levels_completed, data.win_levels, arc3MoveCount, true);
         recordResult('arc3', true);
         arc3SessionId = null;
     } else if (data.done) {
         fb.innerHTML = `<span style="color:orange">Game over — state: ${data.state}</span>`;
+        if (window.EntropyEngine) EntropyEngine.recordARC3Result(arc3CurrentGameId, data.levels_completed ?? 0, data.win_levels ?? 7, arc3MoveCount, false);
         recordResult('arc3', false);
         arc3SessionId = null;
     } else {
@@ -2079,6 +2368,7 @@ async function initRLP() {
     }
     // Read puzzle from subType dropdown (updates when user changes selection)
     const puzzle = document.getElementById('subType').value || 'flood';
+    currentPuzzleFeatures = { puzzle };
     document.getElementById('rlpFeedback').textContent = '';
     document.getElementById('rlpDone').textContent = '';
     document.getElementById('rlpSteps').textContent = '0';

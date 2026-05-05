@@ -274,7 +274,8 @@ def get_puzzle():
                 "generator_type": "raven",
                 "panels": panels,
                 "target": res["target"],
-                "config_name": res["config_name"]
+                "config_name": res["config_name"],
+                "rule_info": res.get("rule_info", []),
             })
             
         elif gen_type == 'acre':
