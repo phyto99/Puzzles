@@ -601,9 +601,9 @@
 
     <!-- ══ Dev Panel (full-width overlay) ══ -->
     <div id="devPanel" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.88);z-index:9999;overflow-y:auto;font-family:monospace;color:#e8e8e8;padding:24px;">
-        <div style="max-width:1100px;margin:0 auto;">
+        <div style="max-width:1200px;margin:0 auto;">
             <!-- header -->
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;border-bottom:0.5px solid #444;padding-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;border-bottom:0.5px solid #444;padding-bottom:10px;">
                 <span style="font-size:11px;letter-spacing:.12em;color:#aaa;">ENTROPY DEVELOPER VIEW</span>
                 <div style="flex:1;"></div>
                 <button onclick="exportEntropyState()" style="font-size:10px;padding:3px 10px;border:0.5px solid #666;border-radius:4px;background:none;color:#ccc;cursor:pointer;font-family:monospace;">export JSON</button>
@@ -611,40 +611,85 @@
                 <button onclick="closeDevPanel()" style="font-size:10px;padding:3px 10px;border:0.5px solid #666;border-radius:4px;background:none;color:#ccc;cursor:pointer;font-family:monospace;">✕ close</button>
             </div>
 
-            <!-- feature type selector -->
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-                <span style="font-size:10px;color:#888;letter-spacing:.08em;">INSPECT TYPE</span>
-                <select id="devTypeSelect" onchange="renderDevPanel()" style="font-size:11px;padding:4px 8px;background:#1a1a1a;border:0.5px solid #555;border-radius:4px;color:#ddd;font-family:monospace;cursor:pointer;">
-                    <option value="arc3">ARC-AGI-3 (game map)</option>
-                    <option value="raven">I-RAVEN (rule analysis)</option>
-                    <option value="marvel">MARVEL</option>
-                    <option value="pgm">PGM</option>
-                    <option value="clevr">CLEVR</option>
-                    <option value="acre">ACRE</option>
-                    <option value="puzzlevqa">PuzzleVQA</option>
-                    <option value="arc">ARC-AGI</option>
-                    <option value="bongard">Bongard</option>
-                    <option value="rlp">RLP</option>
-                </select>
-                <div style="flex:1;"></div>
-                <span style="font-size:9px;color:#666;">All data from localStorage · entropy_state_v2</span>
+            <!-- tab bar -->
+            <div style="display:flex;gap:2px;margin-bottom:16px;" id="devTabBar">
+                <button id="devTab-features" onclick="switchDevTab('features')" style="font-size:10px;padding:5px 14px;border:0.5px solid #555;border-bottom:none;border-radius:4px 4px 0 0;background:#1a1a1a;color:#ddd;cursor:pointer;font-family:monospace;letter-spacing:.06em;">FEATURES</button>
+                <button id="devTab-progress" onclick="switchDevTab('progress')" style="font-size:10px;padding:5px 14px;border:0.5px solid #333;border-bottom:none;border-radius:4px 4px 0 0;background:#111;color:#666;cursor:pointer;font-family:monospace;letter-spacing:.06em;">PROGRESS</button>
+                <button id="devTab-transfer" onclick="switchDevTab('transfer')" style="font-size:10px;padding:5px 14px;border:0.5px solid #333;border-bottom:none;border-radius:4px 4px 0 0;background:#111;color:#666;cursor:pointer;font-family:monospace;letter-spacing:.06em;">TRANSFER MAP</button>
+                <div style="flex:1;border-bottom:0.5px solid #333;"></div>
+                <span style="font-size:9px;color:#444;align-self:flex-end;padding-bottom:4px;">localStorage · entropy_state_v2</span>
             </div>
 
-            <!-- ARC3 game map -->
-            <div id="devARC3" style="display:none;">
-                <div style="font-size:10px;color:#888;letter-spacing:.08em;margin-bottom:10px;">ARC-AGI-3 · ALL GAMES · entropy-sorted</div>
-                <div id="devARC3Grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;"></div>
+            <!-- ══ TAB: FEATURES ══ -->
+            <div id="devTabContent-features">
+                <!-- type selector row -->
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+                    <span style="font-size:10px;color:#888;letter-spacing:.08em;">INSPECT TYPE</span>
+                    <select id="devTypeSelect" onchange="renderDevPanel()" style="font-size:11px;padding:4px 8px;background:#1a1a1a;border:0.5px solid #555;border-radius:4px;color:#ddd;font-family:monospace;cursor:pointer;">
+                        <option value="arc3">ARC-AGI-3 (game map)</option>
+                        <option value="raven">I-RAVEN (rule analysis)</option>
+                        <option value="marvel">MARVEL</option>
+                        <option value="pgm">PGM</option>
+                        <option value="clevr">CLEVR</option>
+                        <option value="acre">ACRE</option>
+                        <option value="puzzlevqa">PuzzleVQA</option>
+                        <option value="arc">ARC-AGI</option>
+                        <option value="bongard">Bongard</option>
+                        <option value="rlp">RLP</option>
+                    </select>
+                </div>
+
+                <!-- optimal formula callout -->
+                <div id="devFormulaBox" style="display:none;margin-bottom:14px;padding:10px 14px;background:#0d1f18;border:0.5px solid #1D9E75;border-radius:5px;">
+                    <div style="font-size:9px;color:#1D9E75;letter-spacing:.1em;margin-bottom:5px;">NEXT BEST FORMULA — highest growth potential</div>
+                    <div id="devFormulaText" style="font-size:11px;color:#e8e8e8;line-height:1.6;"></div>
+                    <div id="devFormulaComponents" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>
+                </div>
+
+                <!-- ARC3 game map -->
+                <div id="devARC3" style="display:none;">
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+                        <span style="font-size:10px;color:#888;letter-spacing:.08em;">ARC-AGI-3 · ALL GAMES · entropy-sorted</span>
+                        <button onclick="toggleARC3TagView()" id="devARC3TagBtn" style="font-size:9px;padding:2px 8px;border:0.5px solid #555;border-radius:3px;background:none;color:#aaa;cursor:pointer;font-family:monospace;">group by tag</button>
+                    </div>
+                    <div id="devARC3TagGroups" style="display:none;margin-bottom:14px;"></div>
+                    <div id="devARC3Grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;"></div>
+                </div>
+
+                <!-- Feature breakdown (raven/marvel/pgm/clevr/acre etc.) -->
+                <div id="devFeatures" style="display:none;">
+                    <div id="devFeatureContent"></div>
+                </div>
+
+                <!-- Transfer hints (always shown at bottom) -->
+                <div id="devTransfer" style="margin-top:24px;border-top:0.5px solid #333;padding-top:14px;">
+                    <div style="font-size:10px;color:#888;letter-spacing:.08em;margin-bottom:10px;">CROSS-PUZZLE TRANSFER HINTS</div>
+                    <div id="devTransferList" style="display:flex;flex-direction:column;gap:5px;"></div>
+                </div>
             </div>
 
-            <!-- Feature breakdown (raven/marvel/pgm/clevr/acre etc.) -->
-            <div id="devFeatures" style="display:none;">
-                <div id="devFeatureContent"></div>
+            <!-- ══ TAB: PROGRESS ══ -->
+            <div id="devTabContent-progress" style="display:none;">
+                <div style="font-size:10px;color:#888;letter-spacing:.08em;margin-bottom:14px;">PERFORMANCE OVER TIME — familiarity per session, all puzzle types</div>
+                <div id="devProgressCharts" style="display:flex;flex-direction:column;gap:20px;"></div>
             </div>
 
-            <!-- Transfer hints -->
-            <div id="devTransfer" style="margin-top:24px;border-top:0.5px solid #333;padding-top:14px;">
-                <div style="font-size:10px;color:#888;letter-spacing:.08em;margin-bottom:10px;">CROSS-PUZZLE TRANSFER HINTS</div>
-                <div id="devTransferList" style="display:flex;flex-direction:column;gap:5px;"></div>
+            <!-- ══ TAB: TRANSFER MAP ══ -->
+            <div id="devTabContent-transfer" style="display:none;">
+                <div style="font-size:10px;color:#888;letter-spacing:.08em;margin-bottom:10px;">TRANSFER RELATIONSHIP DIAGRAM — edges show skill transfer between puzzle types</div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;" id="devTransferLegend"></div>
+                <div style="position:relative;background:#0a0a0a;border:0.5px solid #2a2a2a;border-radius:6px;overflow:hidden;">
+                    <svg id="devTransferSVG" width="100%" style="display:block;"></svg>
+                </div>
+                <div style="margin-top:12px;font-size:9px;color:#444;line-height:1.6;">
+                    Edge width = transfer strength. Orange edge = source currently in reconstruction zone (active transfer opportunity).
+                    Node color = cognitive cluster. Node size = cognitive load. Faded fill = low familiarity (not yet played much).
+                </div>
+                <!-- Full transfer map table -->
+                <div style="margin-top:20px;border-top:0.5px solid #222;padding-top:14px;">
+                    <div style="font-size:10px;color:#888;letter-spacing:.08em;margin-bottom:10px;">ALL TRANSFER EDGES · SORTED BY ACTIVE SCORE</div>
+                    <div id="devTransferFullList" style="display:flex;flex-direction:column;gap:4px;"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -1333,13 +1378,15 @@ function toggleEntropyDetails() {
 /* ═══════════════════════════════════════════════════════════════════════════
    DEV PANEL
 ═══════════════════════════════════════════════════════════════════════════ */
+let _devCurrentTab = 'features';
+let _arc3TagViewActive = false;
+
 function openDevPanel() {
     document.getElementById('devPanel').style.display = 'block';
-    // Default to current puzzle type
     const sel = document.getElementById('devTypeSelect');
     const cur = document.getElementById('generatorType')?.value;
     if (cur && sel.querySelector(`option[value="${cur}"]`)) sel.value = cur;
-    renderDevPanel();
+    switchDevTab(_devCurrentTab);
 }
 
 function closeDevPanel() {
@@ -1358,17 +1405,38 @@ function exportEntropyState() {
 function clearEntropyState() {
     if (!confirm('Clear all entropy tracking state? This resets all familiarity scores.')) return;
     localStorage.removeItem('entropy_state_v2');
+    localStorage.removeItem('entropy_progress_v1');
     renderDevPanel();
     renderEntropyPanel();
+}
+
+function switchDevTab(tab) {
+    _devCurrentTab = tab;
+    ['features','progress','transfer'].forEach(t => {
+        const btn = document.getElementById(`devTab-${t}`);
+        const content = document.getElementById(`devTabContent-${t}`);
+        const active = t === tab;
+        if (btn) {
+            btn.style.background = active ? '#1a1a1a' : '#111';
+            btn.style.color      = active ? '#ddd'   : '#555';
+            btn.style.borderColor= active ? '#555'   : '#333';
+        }
+        if (content) content.style.display = active ? 'block' : 'none';
+    });
+    if (tab === 'features')  renderDevPanel();
+    if (tab === 'progress')  _renderDevProgress();
+    if (tab === 'transfer')  _renderDevTransferMap();
 }
 
 function renderDevPanel() {
     if (!window.EntropyEngine) return;
     const typeId = document.getElementById('devTypeSelect').value;
 
-    // Show/hide sections
     document.getElementById('devARC3').style.display     = typeId === 'arc3' ? 'block' : 'none';
     document.getElementById('devFeatures').style.display = typeId !== 'arc3' ? 'block' : 'none';
+
+    // Optimal formula box
+    _renderDevFormula(typeId);
 
     if (typeId === 'arc3') {
         _renderDevARC3();
@@ -1378,17 +1446,82 @@ function renderDevPanel() {
     _renderDevTransfer();
 }
 
+// ── Optimal next formula callout ─────────────────────────────────────────────
+function _renderDevFormula(typeId) {
+    const box  = document.getElementById('devFormulaBox');
+    const txt  = document.getElementById('devFormulaText');
+    const comp = document.getElementById('devFormulaComponents');
+    if (!box || !window.EntropyEngine) return;
+
+    const formula = EntropyEngine.getNextBestFormula(typeId);
+    if (!formula) { box.style.display = 'none'; return; }
+
+    box.style.display = 'block';
+    txt.innerHTML = `<span style="color:#aaa;">Focus next session on:</span> <span style="color:#fff;font-weight:600;">${formula.formulaStr}</span>
+        <span style="color:#666;font-size:9px;margin-left:8px;">avg growth score ${(formula.topScore*100).toFixed(0)}</span>`;
+
+    comp.innerHTML = formula.components.map(c =>
+        `<div style="display:flex;flex-direction:column;gap:3px;padding:6px 10px;background:#0a0a0a;border:0.5px solid #1D9E7566;border-radius:4px;min-width:100px;">
+            <span style="font-size:8px;color:#666;letter-spacing:.08em;">${c.dimLabel.toUpperCase()}</span>
+            <span style="font-size:11px;color:#e8e8e8;">${c.val}</span>
+            <div style="display:flex;align-items:center;gap:4px;">
+                <div style="width:40px;height:2px;border-radius:1px;background:#222;position:relative;">
+                    <div style="position:absolute;left:0;width:${(c.fam*100).toFixed(0)}%;height:100%;background:${c.zone.color};border-radius:1px;"></div>
+                </div>
+                <span style="font-size:8px;color:${c.zone.color};">${c.zone.label}</span>
+            </div>
+        </div>`
+    ).join('');
+}
+
 // ── ARC3 game map ────────────────────────────────────────────────────────────
+function toggleARC3TagView() {
+    _arc3TagViewActive = !_arc3TagViewActive;
+    const btn = document.getElementById('devARC3TagBtn');
+    const tg  = document.getElementById('devARC3TagGroups');
+    if (btn) btn.textContent = _arc3TagViewActive ? 'show all games' : 'group by tag';
+    if (tg)  tg.style.display = _arc3TagViewActive ? 'block' : 'none';
+    if (_arc3TagViewActive) _renderARC3TagGroups();
+}
+
+function _renderARC3TagGroups() {
+    const el = document.getElementById('devARC3TagGroups');
+    if (!el || !window.EntropyEngine) return;
+    const groups = EntropyEngine.getARC3TagGroups();
+    if (!groups.length) { el.innerHTML = '<div style="color:#666;font-size:11px;">No tag data yet.</div>'; return; }
+
+    el.innerHTML = '';
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;';
+
+    groups.forEach(g => {
+        const zColor = _zoneColor(g.avgFam);
+        const card = document.createElement('div');
+        card.style.cssText = `border:0.5px solid #333;border-left:2px solid ${zColor};border-radius:4px;padding:8px 12px;background:#111;min-width:140px;`;
+        card.innerHTML = `
+            <div style="font-size:10px;color:#ddd;margin-bottom:4px;">${g.tag}</div>
+            <div style="font-size:9px;color:#666;margin-bottom:5px;">${g.count} games · ${g.totalSessions} sessions</div>
+            <div style="display:flex;align-items:center;gap:4px;">
+                <div style="flex:1;height:3px;border-radius:2px;background:#222;position:relative;">
+                    <div style="position:absolute;left:0;width:${(g.avgFam*100).toFixed(0)}%;height:100%;background:${zColor};border-radius:2px;"></div>
+                </div>
+                <span style="font-size:9px;color:${zColor};">${(g.avgFam*100).toFixed(0)}%</span>
+            </div>
+            <div style="font-size:9px;color:#555;margin-top:4px;">max level ${g.maxLevel} · R${(g.avgScore*100).toFixed(0)}</div>`;
+        wrap.appendChild(card);
+    });
+    el.appendChild(wrap);
+}
+
 function _renderDevARC3() {
     const grid = document.getElementById('devARC3Grid');
     grid.innerHTML = '';
     const states = window.EntropyEngine.getARC3GameStates ? EntropyEngine.getARC3GameStates() : [];
     if (!states.length) {
-        grid.innerHTML = '<div style="color:#666;font-size:11px;">No ARC3 game data yet — play some games first, or load the ARC-AGI-3 puzzle to register games.</div>';
+        grid.innerHTML = '<div style="color:#666;font-size:11px;">No ARC3 game data yet — load the ARC-AGI-3 puzzle to register games.</div>';
         return;
     }
 
-    // Sort by reconstruction score descending (most urgent first)
     states.sort((a,b) => (b.score ?? 0) - (a.score ?? 0));
 
     states.forEach(g => {
@@ -1402,47 +1535,55 @@ function _renderDevARC3() {
         const w       = g.wins ?? 0, l = g.losses ?? 0;
         const zColor  = _zoneColor(fam);
 
-        // Level dots (0-7)
+        // Level progress bar (7 segments, filled up to maxLevel)
         const lvlDots = Array.from({length: win_lvl || 7}, (_,i) => {
-            const filled = i < max_lvl;
-            return `<div style="width:7px;height:7px;border-radius:1px;background:${filled ? zColor : '#333'};flex-shrink:0;"></div>`;
+            const completed = (g.levelCompletions ?? [])[i] ?? 0;
+            const isFilled  = i < max_lvl;
+            const opacity   = isFilled ? Math.min(1, 0.4 + completed * 0.2) : 1;
+            return `<div style="width:${Math.floor(100/(win_lvl||7))-1}%;height:10px;border-radius:2px;background:${isFilled ? zColor : '#222'};opacity:${opacity};flex-shrink:0;position:relative;" title="Level ${i+1} — reached ${completed}×">
+                ${completed > 1 ? `<span style="position:absolute;top:0;left:50%;transform:translateX(-50%);font-size:7px;color:#000;font-weight:bold;line-height:10px;">${completed}</span>` : ''}
+            </div>`;
         }).join('');
 
-        // Efficiency bar
-        const effW = (eff * 60).toFixed(0);
         const effColor = eff > 0.7 ? '#1D9E75' : eff > 0.4 ? '#EF9F27' : '#E24B4A';
-
         const tags = (g.tags ?? []).slice(0,3).map(t =>
             `<span style="font-size:8px;background:#2a2a2a;border:0.5px solid #444;padding:1px 5px;border-radius:3px;color:#999;">${t}</span>`
         ).join('');
 
+        // Mini session sparkline from sessionHistory
+        const hist = g.sessionHistory ?? [];
+        const sparkline = hist.length >= 2 ? _sessionSparklineSVG(hist.map(h => h.levels / (win_lvl || 7)), hist.map(h => h.passed)) : '';
+
         const card = document.createElement('div');
         card.style.cssText = `border:0.5px solid #333;border-left:2px solid ${zColor};border-radius:5px;padding:10px 12px;background:#111;cursor:default;`;
         card.innerHTML = `
-            <div style="display:flex;align-items:baseline;gap:5px;margin-bottom:6px;">
+            <div style="display:flex;align-items:baseline;gap:5px;margin-bottom:5px;">
                 <span style="font-size:11px;font-weight:600;color:#ddd;">${g.title ?? g.id}</span>
                 <span style="margin-left:auto;font-size:9px;color:#666;">${sess} sess</span>
             </div>
-            <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:7px;">${tags}</div>
-            <div style="font-size:9px;color:#666;margin-bottom:3px;">LEVELS REACHED</div>
-            <div style="display:flex;gap:3px;margin-bottom:8px;">${lvlDots}</div>
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-                <span style="font-size:9px;color:#666;width:56px;">familiarity</span>
+            <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px;">${tags}</div>
+            <div style="font-size:8px;color:#555;margin-bottom:3px;letter-spacing:.06em;">LEVELS (0–${win_lvl||7}) · best: ${max_lvl}</div>
+            <div style="display:flex;gap:2px;margin-bottom:8px;width:100%;">${lvlDots}</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
+                <span style="font-size:9px;color:#666;width:54px;">familiarity</span>
                 <div style="flex:1;height:3px;border-radius:2px;background:#2a2a2a;position:relative;">
                     <div style="position:absolute;left:0;width:${(fam*100).toFixed(0)}%;height:100%;background:${zColor};border-radius:2px;"></div>
+                    <div style="position:absolute;left:15%;width:1px;height:5px;top:-1px;background:#555;"></div>
+                    <div style="position:absolute;left:78%;width:1px;height:5px;top:-1px;background:#555;"></div>
                 </div>
                 <span style="font-size:9px;color:${zColor};width:28px;text-align:right;">${(fam*100).toFixed(0)}%</span>
             </div>
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
-                <span style="font-size:9px;color:#666;width:56px;">efficiency</span>
+                <span style="font-size:9px;color:#666;width:54px;">efficiency</span>
                 <div style="flex:1;height:3px;border-radius:2px;background:#2a2a2a;position:relative;">
                     <div style="position:absolute;left:0;width:${(eff*100).toFixed(0)}%;height:100%;background:${effColor};border-radius:2px;"></div>
                 </div>
                 <span style="font-size:9px;color:${effColor};width:28px;text-align:right;">${(eff*100).toFixed(0)}%</span>
             </div>
+            ${sparkline ? `<div style="margin-bottom:6px;">${sparkline}</div>` : ''}
             <div style="display:flex;justify-content:space-between;font-size:9px;color:#555;border-top:0.5px solid #222;padding-top:5px;">
                 <span>${w}W / ${l}L</span>
-                <span>${moves} moves</span>
+                <span>${moves} mv</span>
                 <span style="color:${_iColor(score)};">R ${(score*100).toFixed(0)}</span>
             </div>`;
         grid.appendChild(card);
@@ -1461,39 +1602,58 @@ function _renderDevFeatures(typeId) {
     }
 
     const reg = EntropyEngine.PUZZLE_REGISTRY[typeId];
+    const dimLabels = reg?.featureDimLabels ?? {};
     const hdr = document.createElement('div');
     hdr.style.cssText = 'font-size:10px;color:#888;letter-spacing:.08em;margin-bottom:14px;';
-    hdr.textContent = (reg?.name ?? typeId).toUpperCase() + ' · FEATURE BREAKDOWN';
+    hdr.textContent = (reg?.name ?? typeId).toUpperCase() + ' · GENERATION VARIABLE BREAKDOWN';
     el.appendChild(hdr);
 
-    Object.entries(breakdown).forEach(([dim, items]) => {
+    // For Raven: show note explaining that dims are independent swappable axes
+    if (typeId === 'raven') {
+        const note = document.createElement('div');
+        note.style.cssText = 'font-size:9px;color:#666;margin-bottom:14px;padding:6px 10px;border-left:2px solid #378ADD;background:#0a0a1a;';
+        note.innerHTML = 'Each dimension below is an independent axis of the generation formula. <br>Configs, Rules, and Attributes are separately swapped per puzzle — track them independently to find where performance originates.';
+        el.appendChild(note);
+    }
+
+    // Priority order: show primary dims before combo
+    const dimOrder = Object.keys(breakdown).filter(d => d !== 'combo').concat(breakdown.combo ? ['combo'] : []);
+
+    dimOrder.forEach(dim => {
+        const items = breakdown[dim];
+        if (!items?.length) return;
         const section = document.createElement('div');
-        section.style.cssText = 'margin-bottom:20px;';
+        section.style.cssText = 'margin-bottom:22px;';
 
-        const dimLabel = document.createElement('div');
-        dimLabel.style.cssText = 'font-size:9px;color:#666;letter-spacing:.08em;margin-bottom:8px;text-transform:uppercase;border-bottom:0.5px solid #2a2a2a;padding-bottom:4px;';
-        dimLabel.textContent = dim.replace(/_/g,' ');
-        section.appendChild(dimLabel);
+        const humanLabel = dimLabels[dim] ?? dim.replace(/_/g,' ');
+        const isCombo = dim === 'combo';
 
-        // Sort by reconstruction score
+        const dimHeader = document.createElement('div');
+        dimHeader.style.cssText = `display:flex;align-items:baseline;gap:8px;margin-bottom:8px;border-bottom:0.5px solid #2a2a2a;padding-bottom:4px;`;
+        dimHeader.innerHTML = `
+            <span style="font-size:9px;color:${isCombo ? '#444' : '#888'};letter-spacing:.08em;text-transform:uppercase;">${humanLabel}</span>
+            <span style="font-size:8px;color:#444;">${items.length} values tracked</span>
+            ${isCombo ? '<span style="font-size:8px;color:#333;">(combo keys — for optimizer only)</span>' : ''}`;
+        section.appendChild(dimHeader);
+
         const sorted = [...items].sort((a,b) => (b.score ?? 0) - (a.score ?? 0));
+        const showN  = isCombo ? Math.min(5, sorted.length) : sorted.length;
 
-        sorted.forEach(item => {
+        sorted.slice(0, showN).forEach(item => {
             const fam    = item.fam ?? 0.5;
             const score  = item.score ?? 0;
             const zColor = _zoneColor(fam);
             const w      = item.wins ?? 0, l = item.losses ?? 0;
-            const sess   = w + l;
             const vol    = item.volatility ?? 0.8;
 
             const row = document.createElement('div');
             row.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:6px;';
             row.innerHTML = `
-                <span style="font-size:10px;color:#ccc;font-family:monospace;min-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${item.key}">${item.val ?? item.key}</span>
+                <span style="font-size:10px;color:${isCombo ? '#555' : '#ccc'};font-family:monospace;min-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${item.key}">${item.val ?? item.key}</span>
                 <div style="flex:1;height:4px;border-radius:2px;background:#2a2a2a;position:relative;">
                     <div style="position:absolute;left:0;width:${(fam*100).toFixed(0)}%;height:100%;background:${zColor};border-radius:2px;transition:width .3s;"></div>
-                    <div style="position:absolute;left:15%;width:1px;height:6px;top:-1px;background:${zColor}55;"></div>
-                    <div style="position:absolute;left:78%;width:1px;height:6px;top:-1px;background:${zColor}55;"></div>
+                    <div style="position:absolute;left:15%;width:1px;height:6px;top:-1px;background:#444;"></div>
+                    <div style="position:absolute;left:78%;width:1px;height:6px;top:-1px;background:#444;"></div>
                 </div>
                 <span style="font-size:9px;color:${zColor};width:32px;text-align:right;font-family:monospace;">${(fam*100).toFixed(0)}%</span>
                 ${_sparklineSVG(fam, vol)}
@@ -1506,24 +1666,21 @@ function _renderDevFeatures(typeId) {
     });
 }
 
-// ── Transfer hints ────────────────────────────────────────────────────────────
+// ── Transfer hints (compact list in Features tab) ─────────────────────────────
 function _renderDevTransfer() {
     const el = document.getElementById('devTransferList');
     el.innerHTML = '';
     if (!window.EntropyEngine) return;
     const hints = EntropyEngine.getTransferHints(8);
     if (!hints.length) {
-        el.innerHTML = '<div style="color:#555;font-size:10px;">No transfer hints yet — play a few rounds first.</div>';
+        el.innerHTML = '<div style="color:#444;font-size:10px;">No active transfer hints yet — play a few rounds to activate.</div>';
         return;
     }
     hints.forEach(h => {
-        // from/to are feature keys like "raven::rule::Progression"
-        // parse out the type prefix for display
         const fromParts = h.from.split('::');
-        const toParts   = (h.to ?? '').split('::');
         const fromType  = fromParts[0];
         const fromFeat  = fromParts.slice(1).join(' › ');
-        const toType    = toParts[0];
+        const toType    = (h.to ?? '').split('::')[0];
         const fromReg = EntropyEngine.PUZZLE_REGISTRY[fromType];
         const toReg   = EntropyEngine.PUZZLE_REGISTRY[toType];
         const fromClr = EntropyEngine.CLUSTERS[fromReg?.cluster]?.hex ?? '#888';
@@ -1532,12 +1689,377 @@ function _renderDevTransfer() {
         div.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:10px;padding:5px 8px;background:#111;border-radius:4px;border:0.5px solid #2a2a2a;flex-wrap:wrap;';
         div.innerHTML = `
             <span style="color:${fromClr};font-family:monospace;">${fromReg?.name ?? fromType}</span>
-            <span style="color:#555;font-size:9px;font-family:monospace;">${fromFeat}</span>
-            <span style="color:#444;">→</span>
+            <span style="color:#444;font-size:9px;font-family:monospace;">${fromFeat}</span>
+            <span style="color:#555;">→</span>
             <span style="color:${toClr};font-family:monospace;">${toReg?.name ?? toType}</span>
-            <span style="color:#666;flex:1;text-align:right;font-size:9px;">${h.label}</span>
+            <span style="color:#555;flex:1;text-align:right;font-size:9px;">${h.label}</span>
             <span style="font-size:9px;color:${_iColor(h.strength ?? 0.5)};font-family:monospace;">${((h.strength ?? 0.5)*100).toFixed(0)}%</span>`;
         el.appendChild(div);
+    });
+}
+
+// ── Progress charts (per puzzle type, session history) ────────────────────────
+function _renderDevProgress() {
+    if (!window.EntropyEngine) return;
+    const container = document.getElementById('devProgressCharts');
+    container.innerHTML = '';
+
+    const allHistory = EntropyEngine.getAllProgressHistory();
+    const typeIds    = Object.keys(EntropyEngine.PUZZLE_REGISTRY);
+
+    // Show types that have any history first, then empty types
+    const withData = typeIds.filter(id => (allHistory[id]?.length ?? 0) >= 2);
+    const noData   = typeIds.filter(id => (allHistory[id]?.length ?? 0) < 2);
+
+    if (!withData.length) {
+        container.innerHTML = '<div style="color:#555;font-size:11px;padding:20px 0;">No session history yet — play some puzzles and return here.</div>';
+        return;
+    }
+
+    withData.forEach(typeId => _renderProgressRow(container, typeId, allHistory[typeId] ?? []));
+
+    if (noData.length) {
+        const sep = document.createElement('div');
+        sep.style.cssText = 'font-size:9px;color:#333;margin:16px 0 8px;letter-spacing:.08em;';
+        sep.textContent = 'NOT YET PLAYED';
+        container.appendChild(sep);
+
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+        noData.forEach(id => {
+            const reg = EntropyEngine.PUZZLE_REGISTRY[id];
+            const clr = EntropyEngine.CLUSTERS[reg.cluster]?.hex ?? '#888';
+            const chip = document.createElement('span');
+            chip.style.cssText = `font-size:9px;padding:2px 8px;border:0.5px solid ${clr}44;border-radius:3px;color:#444;font-family:monospace;`;
+            chip.textContent = reg.name;
+            row.appendChild(chip);
+        });
+        container.appendChild(row);
+    }
+}
+
+function _renderProgressRow(container, typeId, history) {
+    const reg  = EntropyEngine.PUZZLE_REGISTRY[typeId];
+    const clr  = EntropyEngine.CLUSTERS[reg.cluster]?.hex ?? '#888';
+    const W = 600, H = 64, PAD = 6;
+
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'background:#0a0a0a;border:0.5px solid #1a1a1a;border-left:2px solid ' + clr + ';border-radius:4px;padding:10px 14px;';
+
+    // Header row
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'display:flex;align-items:baseline;gap:8px;margin-bottom:8px;';
+    const lastFam = history[history.length - 1]?.fam ?? 0.5;
+    const zone    = EntropyEngine._zoneLabel(lastFam);
+    const zColor  = EntropyEngine._zoneColor(lastFam);
+    const wins    = history.filter(p => p.passed).length;
+    const losses  = history.length - wins;
+    hdr.innerHTML = `
+        <span style="font-size:11px;color:#ddd;font-family:monospace;">${reg.name}</span>
+        <span style="font-size:9px;color:${clr};font-family:monospace;">${EntropyEngine.CLUSTERS[reg.cluster]?.label ?? ''}</span>
+        <span style="margin-left:auto;font-size:9px;color:#555;font-family:monospace;">${history.length} sessions · ${wins}W ${losses}L</span>
+        <span style="font-size:9px;color:${zColor};font-family:monospace;border:0.5px solid ${zColor};padding:1px 5px;border-radius:3px;">${zone}</span>
+        <span style="font-size:10px;color:${zColor};font-family:monospace;">${(lastFam*100).toFixed(0)}%</span>`;
+    wrapper.appendChild(hdr);
+
+    // SVG chart
+    const svg = _buildProgressSVG(history, W, H, PAD, clr);
+    wrapper.appendChild(svg);
+
+    container.appendChild(wrapper);
+}
+
+function _buildProgressSVG(history, W, H, PAD, lineColor) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', H);
+    svg.style.display = 'block';
+
+    // Zone bands
+    const zones = [
+        { y1: 0,    y2: 0.15, color: '#E24B4A18' },
+        { y1: 0.15, y2: 0.78, color: '#EF9F2710' },
+        { y1: 0.78, y2: 1.00, color: '#1D9E7510' },
+    ];
+    zones.forEach(z => {
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', PAD);
+        rect.setAttribute('y', PAD + (1 - z.y2) * (H - PAD*2));
+        rect.setAttribute('width', W - PAD*2);
+        rect.setAttribute('height', (z.y2 - z.y1) * (H - PAD*2));
+        rect.setAttribute('fill', z.color);
+        svg.appendChild(rect);
+    });
+
+    // Zone boundary lines
+    [0.15, 0.78].forEach(thresh => {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        const y = PAD + (1 - thresh) * (H - PAD*2);
+        line.setAttribute('x1', PAD); line.setAttribute('x2', W - PAD);
+        line.setAttribute('y1', y);   line.setAttribute('y2', y);
+        line.setAttribute('stroke', '#333'); line.setAttribute('stroke-width', '0.5');
+        svg.appendChild(line);
+    });
+
+    if (history.length < 2) return svg;
+
+    const xStep = (W - PAD*2) / (history.length - 1);
+    const toY   = fam => PAD + (1 - Math.max(0, Math.min(1, fam))) * (H - PAD*2);
+
+    // Fill area under line
+    const pts = history.map((p, i) => ({ x: PAD + i * xStep, y: toY(p.fam) }));
+    const pathD = ['M', pts[0].x, H - PAD, 'L', pts[0].x, pts[0].y,
+        ...pts.slice(1).flatMap(p => ['L', p.x, p.y]),
+        'L', pts[pts.length-1].x, H - PAD, 'Z'].join(' ');
+    const fill = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    fill.setAttribute('d', pathD);
+    fill.setAttribute('fill', lineColor + '22');
+    svg.appendChild(fill);
+
+    // Line
+    const linePath = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    linePath.setAttribute('points', pts.map(p => `${p.x},${p.y}`).join(' '));
+    linePath.setAttribute('fill', 'none');
+    linePath.setAttribute('stroke', lineColor);
+    linePath.setAttribute('stroke-width', '1.5');
+    svg.appendChild(linePath);
+
+    // Pass/fail dots
+    pts.forEach((p, i) => {
+        const passed = history[i].passed;
+        const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        dot.setAttribute('cx', p.x);
+        dot.setAttribute('cy', p.y);
+        dot.setAttribute('r', '3');
+        dot.setAttribute('fill', passed ? '#1D9E75' : '#E24B4A');
+        dot.setAttribute('stroke', '#0a0a0a');
+        dot.setAttribute('stroke-width', '1');
+        svg.appendChild(dot);
+    });
+
+    return svg;
+}
+
+// Mini session sparkline for ARC3 game cards
+function _sessionSparklineSVG(ratios, passed) {
+    if (!ratios?.length) return '';
+    const W = 80, H = 20;
+    const pts = ratios.map((r, i) => ({
+        x: 4 + i * ((W - 8) / Math.max(1, ratios.length - 1)),
+        y: 2 + (1 - r) * (H - 4)
+    }));
+    const line = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+    const dots = pts.map((p, i) => {
+        const c = (passed ?? [])[i] ? '#1D9E75' : '#E24B4A';
+        return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2" fill="${c}" stroke="#111" stroke-width="0.5"/>`;
+    }).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;">
+        <polyline points="${line}" fill="none" stroke="#555" stroke-width="1"/>
+        ${dots}
+    </svg>`;
+}
+
+// ── Transfer Map (SVG network diagram) ────────────────────────────────────────
+function _renderDevTransferMap() {
+    if (!window.EntropyEngine) return;
+    const { nodes, edges, clusterPositions } = EntropyEngine.getTransferGraph();
+    const W = 800, H = 500;
+
+    // Legend
+    const legend = document.getElementById('devTransferLegend');
+    legend.innerHTML = Object.entries(EntropyEngine.CLUSTERS).map(([k,v]) =>
+        `<div style="display:flex;align-items:center;gap:4px;">
+            <div style="width:8px;height:8px;border-radius:2px;background:${v.hex};"></div>
+            <span style="font-size:9px;color:#888;font-family:monospace;">${v.label}</span>
+        </div>`
+    ).join('') + `<div style="display:flex;align-items:center;gap:4px;margin-left:12px;">
+        <div style="width:20px;height:2px;background:#EF9F27;border-radius:1px;"></div>
+        <span style="font-size:9px;color:#888;font-family:monospace;">active transfer</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:4px;">
+        <div style="width:20px;height:1px;background:#333;border-radius:1px;"></div>
+        <span style="font-size:9px;color:#888;font-family:monospace;">potential transfer</span>
+    </div>`;
+
+    const svg = document.getElementById('devTransferSVG');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('height', H);
+    svg.innerHTML = '';
+
+    const ns = 'http://www.w3.org/2000/svg';
+
+    // Cluster region labels (background)
+    Object.entries(clusterPositions).forEach(([cluster, pos]) => {
+        const cx = pos.x * W, cy = pos.y * H;
+        const clusterInfo = EntropyEngine.CLUSTERS[cluster];
+        if (!clusterInfo) return;
+        const label = document.createElementNS(ns, 'text');
+        label.setAttribute('x', cx);
+        label.setAttribute('y', cy);
+        label.setAttribute('text-anchor', 'middle');
+        label.setAttribute('fill', clusterInfo.hex + '22');
+        label.setAttribute('font-size', '28');
+        label.setAttribute('font-family', 'monospace');
+        label.setAttribute('font-weight', '700');
+        label.setAttribute('pointer-events', 'none');
+        label.textContent = clusterInfo.label.toUpperCase();
+        svg.appendChild(label);
+    });
+
+    // Aggregate edges by fromType → toType (use max strength)
+    const edgeMap = {};
+    edges.forEach(e => {
+        const key = `${e.fromType}→${e.toType}`;
+        if (!edgeMap[key] || e.weight > edgeMap[key].weight) {
+            edgeMap[key] = e;
+        }
+    });
+
+    // Draw edges
+    const nodeMap = {};
+    nodes.forEach(n => { nodeMap[n.id] = n; });
+
+    Object.values(edgeMap).forEach(e => {
+        const from = nodeMap[e.fromType];
+        const to   = nodeMap[e.toType];
+        if (!from || !to || e.fromType === e.toType) return;
+
+        const x1 = from.x * W, y1 = from.y * H;
+        const x2 = to.x * W,   y2 = to.y * H;
+
+        // Slight curve using quadratic bezier
+        const mx = (x1 + x2) / 2 + (y2 - y1) * 0.15;
+        const my = (y1 + y2) / 2 - (x2 - x1) * 0.15;
+
+        const path = document.createElementNS(ns, 'path');
+        path.setAttribute('d', `M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', e.active ? '#EF9F27' : '#2a2a2a');
+        path.setAttribute('stroke-width', (e.weight * 4).toFixed(1));
+        path.setAttribute('opacity', e.active ? '0.85' : '0.4');
+        path.setAttribute('marker-end', 'url(#arrowhead)');
+        svg.appendChild(path);
+
+        // Strength label on active edges
+        if (e.active && e.weight > 0.3) {
+            const lx = (x1 + mx) / 2 + 4;
+            const ly = (y1 + my) / 2 - 4;
+            const ltxt = document.createElementNS(ns, 'text');
+            ltxt.setAttribute('x', lx); ltxt.setAttribute('y', ly);
+            ltxt.setAttribute('fill', '#EF9F27'); ltxt.setAttribute('font-size', '8');
+            ltxt.setAttribute('font-family', 'monospace');
+            ltxt.textContent = (e.strength * 100).toFixed(0) + '%';
+            svg.appendChild(ltxt);
+        }
+    });
+
+    // Arrowhead marker
+    const defs = document.createElementNS(ns, 'defs');
+    const marker = document.createElementNS(ns, 'marker');
+    marker.setAttribute('id', 'arrowhead');
+    marker.setAttribute('markerWidth', '8');
+    marker.setAttribute('markerHeight', '6');
+    marker.setAttribute('refX', '6');
+    marker.setAttribute('refY', '3');
+    marker.setAttribute('orient', 'auto');
+    const poly = document.createElementNS(ns, 'polygon');
+    poly.setAttribute('points', '0 0, 8 3, 0 6');
+    poly.setAttribute('fill', '#555');
+    marker.appendChild(poly);
+    defs.appendChild(marker);
+    svg.insertBefore(defs, svg.firstChild);
+
+    // Draw nodes
+    nodes.forEach(n => {
+        const cx  = n.x * W;
+        const cy  = n.y * H;
+        const r   = 10 + n.cogLoad * 12; // radius by cognitive load
+        const fill = n.fam > 0.1 ? n.clusterHex : '#1a1a1a';
+        const opacity = 0.3 + n.fam * 0.7;
+
+        // Node circle
+        const circle = document.createElementNS(ns, 'circle');
+        circle.setAttribute('cx', cx); circle.setAttribute('cy', cy);
+        circle.setAttribute('r', r);
+        circle.setAttribute('fill', fill);
+        circle.setAttribute('fill-opacity', opacity.toFixed(2));
+        circle.setAttribute('stroke', n.clusterHex);
+        circle.setAttribute('stroke-width', '1.5');
+        svg.appendChild(circle);
+
+        // Familiarity arc (inner ring)
+        if (n.fam > 0) {
+            const arcR   = r - 3;
+            const angle  = n.fam * 2 * Math.PI;
+            const endX   = cx + arcR * Math.sin(angle);
+            const endY   = cy - arcR * Math.cos(angle);
+            const large  = n.fam > 0.5 ? 1 : 0;
+            const zColor = EntropyEngine._zoneColor(n.fam);
+            const arc = document.createElementNS(ns, 'path');
+            arc.setAttribute('d', `M ${cx} ${cy-arcR} A ${arcR} ${arcR} 0 ${large} 1 ${endX} ${endY}`);
+            arc.setAttribute('fill', 'none');
+            arc.setAttribute('stroke', zColor);
+            arc.setAttribute('stroke-width', '2.5');
+            svg.appendChild(arc);
+        }
+
+        // Label
+        const name = n.name.replace('(Tatham)','').replace('ARC-AGI-3','ARC3').trim();
+        const txt = document.createElementNS(ns, 'text');
+        txt.setAttribute('x', cx);
+        txt.setAttribute('y', cy + r + 11);
+        txt.setAttribute('text-anchor', 'middle');
+        txt.setAttribute('fill', '#aaa');
+        txt.setAttribute('font-size', '9');
+        txt.setAttribute('font-family', 'monospace');
+        txt.textContent = name;
+        svg.appendChild(txt);
+
+        // Session count below name
+        if (n.sessions > 0) {
+            const stxt = document.createElementNS(ns, 'text');
+            stxt.setAttribute('x', cx);
+            stxt.setAttribute('y', cy + r + 20);
+            stxt.setAttribute('text-anchor', 'middle');
+            stxt.setAttribute('fill', '#444');
+            stxt.setAttribute('font-size', '8');
+            stxt.setAttribute('font-family', 'monospace');
+            stxt.textContent = `${n.sessions}s`;
+            svg.appendChild(stxt);
+        }
+    });
+
+    // Full transfer table in Transfer Map tab
+    _renderTransferFullTable();
+}
+
+function _renderTransferFullTable() {
+    const el = document.getElementById('devTransferFullList');
+    if (!el || !window.EntropyEngine) return;
+    el.innerHTML = '';
+
+    const graph = EntropyEngine.getTransferGraph();
+    const allEdges = graph.edges.slice().sort((a,b) => b.weight - a.weight);
+
+    allEdges.forEach(e => {
+        const fromReg = EntropyEngine.PUZZLE_REGISTRY[e.fromType];
+        const toReg   = EntropyEngine.PUZZLE_REGISTRY[e.toType];
+        const fromClr = EntropyEngine.CLUSTERS[fromReg?.cluster]?.hex ?? '#888';
+        const toClr   = EntropyEngine.CLUSTERS[toReg?.cluster]?.hex   ?? '#888';
+        const row = document.createElement('div');
+        row.style.cssText = `display:flex;align-items:center;gap:8px;font-size:10px;padding:4px 8px;border-radius:3px;
+            background:${e.active ? '#161006' : '#0a0a0a'};border:0.5px solid ${e.active ? '#EF9F2755' : '#1a1a1a'};`;
+        row.innerHTML = `
+            ${e.active ? '<span style="width:6px;height:6px;border-radius:50%;background:#EF9F27;flex-shrink:0;"></span>' : '<span style="width:6px;"></span>'}
+            <span style="color:${fromClr};min-width:90px;font-family:monospace;">${fromReg?.name ?? e.fromType}</span>
+            <span style="color:#444;font-size:9px;flex:1;font-family:monospace;">${e.fromFeature}</span>
+            <span style="color:#333;">→</span>
+            <span style="color:${toClr};min-width:80px;font-family:monospace;">${toReg?.name ?? e.toType}</span>
+            <span style="color:#444;font-size:9px;min-width:120px;">${e.label}</span>
+            <span style="color:#555;font-size:9px;width:32px;text-align:right;font-family:monospace;">${(e.strength*100).toFixed(0)}%</span>
+            <span style="font-size:9px;color:${_iColor(e.weight)};width:36px;text-align:right;font-family:monospace;">W${(e.weight*100).toFixed(0)}</span>`;
+        el.appendChild(row);
     });
 }
 

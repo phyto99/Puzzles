@@ -1,13 +1,15 @@
 /**
- * entropy_engine.js  —  Puzzle Entropy Scheduler  v2
+ * entropy_engine.js  —  Puzzle Entropy Scheduler  v3
  *
- * Tracks at three levels simultaneously:
+ * Tracks at four levels simultaneously:
  *   L1  typeId :: subtypeId           — coarse subtype familiarity
  *   L2  typeId :: feature :: value    — per-generation-parameter familiarity
  *   L3  arc3   :: game :: gameId      — per-ARC3-game rich state (levels, efficiency)
+ *   L4  progress_history              — timestamped session log per type (for charts)
  *
- * All state lives under localStorage key: 'entropy_state_v2'
- * Shared between app_v2.html (via this file) and EntropyRotator.jsx.
+ * State keys:
+ *   localStorage['entropy_state_v2']    — L1/L2/L3 familiarity state
+ *   localStorage['entropy_progress_v1'] — L4 progress history (separate to avoid bloat)
  */
 
 // ═══════════════════════════════════════════════════════════════
@@ -22,18 +24,23 @@ const PUZZLE_REGISTRY = {
       { id: "standard", label: "Standard" },
       { id: "mesh",     label: "Mesh", cogLoad: 0.95, volatility: 0.98 },
     ],
-    // Generation features tracked at L2
+    // L2 feature dimensions — these are the "swappable" generation variables.
+    // Each dimension is tracked separately; performance on one informs the others.
     features: {
+      // config: the spatial layout of the 3×3 matrix
       configs: ["center_single","distribute_four","distribute_nine",
                 "in_center_single_out_center_single",
                 "in_distribute_four_out_center_single",
                 "left_center_single_right_center_single",
                 "up_center_single_down_center_single"],
+      // rule: the logical transformation rule applied
       rules:   ["Constant","Progression","Arithmetic"],
+      // attr: the visual attribute being transformed
       attrs:   ["Number","Position","Type","Size","Color"],
     },
-    // Which config parameter to request from the API
-    apiConfigParam: "type",  // config sent as part of type=standard
+    apiConfigParam: "type",
+    // For "optimal formula" display — human-readable dimension names
+    featureDimLabels: { config: "Layout Config", rule: "Logic Rule", attr: "Visual Attribute", combo: "Config×Rule×Attr" },
   },
   pgm: {
     name: "PGM", cluster: "rule_induction",
@@ -44,6 +51,7 @@ const PUZZLE_REGISTRY = {
       shapes:  ["square","circle","triangle"],
       rules:   ["progression","XOR","OR","AND","consistent_union"],
     },
+    featureDimLabels: { shape: "Object Shape", rule: "Combination Rule", complexity: "Attribute Count" },
   },
   marvel: {
     name: "MARVEL", cluster: "rule_induction",
@@ -60,13 +68,15 @@ const PUZZLE_REGISTRY = {
     features: {
       task_configs: ["A","B","C","D","E"],
     },
+    featureDimLabels: { pattern: "Reasoning Pattern", config: "Task Config" },
   },
   bongard: {
     name: "Bongard", cluster: "rule_induction",
     cognitiveLoad: 0.75, ruleVolatility: 0.80,
     surface: ["abstract","rule","classification"],
     subtypes: [{ id: "mixed", label: "Mixed" }],
-    features: { categories: [] },  // populated dynamically from hint text
+    features: { categories: [] },
+    featureDimLabels: { cat: "Concept Category" },
   },
   puzzlevqa: {
     name: "PuzzleVQA", cluster: "spatial_2d",
@@ -82,20 +92,22 @@ const PUZZLE_REGISTRY = {
       { id: "numbers_triangle",     label: "Number Triangle", cogLoad: 0.78, volatility: 0.82 },
     ],
     features: {},
+    featureDimLabels: { pattern: "Visual Pattern" },
   },
   acre: {
     name: "ACRE", cluster: "constraint_sat",
     cognitiveLoad: 0.82, ruleVolatility: 0.85,
     surface: ["3d","causal","scene"],
     subtypes: [
-      { id: "IID",  label: "IID",          cogLoad: 0.75, volatility: 0.80 },
-      { id: "Comp", label: "Compositional",cogLoad: 0.85, volatility: 0.88 },
-      { id: "Sys",  label: "Systematic",   cogLoad: 0.88, volatility: 0.92 },
+      { id: "IID",  label: "IID",           cogLoad: 0.75, volatility: 0.80 },
+      { id: "Comp", label: "Compositional", cogLoad: 0.85, volatility: 0.88 },
+      { id: "Sys",  label: "Systematic",    cogLoad: 0.88, volatility: 0.92 },
     ],
     features: {
       puzzle_types: ["cause","effect"],
       question_subtypes: ["direct","indirect","screen_off","potential"],
     },
+    featureDimLabels: { regime: "Generalization Regime", qsub: "Question Subtype", ptype: "Puzzle Type" },
   },
   clevr: {
     name: "CLEVR", cluster: "constraint_sat",
@@ -106,6 +118,7 @@ const PUZZLE_REGISTRY = {
       question_types: ["count","exist","query_color","query_shape","query_size",
                        "query_material","compare_attr","compare_int","integer"],
     },
+    featureDimLabels: { qtype: "Question Type" },
   },
   arc: {
     name: "ARC-AGI", cluster: "rule_induction",
@@ -116,16 +129,16 @@ const PUZZLE_REGISTRY = {
       { id: "arc1", label: "ARC-AGI-1", cogLoad: 0.88, volatility: 0.92 },
     ],
     features: {},
+    featureDimLabels: { version: "Dataset Version" },
   },
   arc3: {
     name: "ARC-AGI-3", cluster: "adversarial",
     cognitiveLoad: 0.95, ruleVolatility: 0.97,
     surface: ["interactive","exploration","grid"],
-    // Subtypes are the 25 game IDs — populated dynamically
+    // Subtypes populated dynamically from /api/arc3/envs (25 game types)
     subtypes: [{ id: "any", label: "Any (entropy picks)" }],
-    features: {
-      // maxLevel 0-7, tags from env list
-    },
+    features: {},
+    featureDimLabels: { game: "Game Type", tag: "Game Tag" },
   },
   rlp: {
     name: "RLP (Tatham)", cluster: "constraint_sat",
@@ -147,6 +160,7 @@ const PUZZLE_REGISTRY = {
       { id: "mines",    label: "Minesweeper", cogLoad: 0.70, volatility: 0.68 },
     ],
     features: {},
+    featureDimLabels: { sub: "Puzzle Variant" },
   },
 };
 
@@ -161,6 +175,7 @@ const CLUSTERS = {
   adversarial:    { label: "Adversarial",       hex: "#378ADD" },
 };
 
+// Inter-cluster interference (high = good interleaving, low = similar/interfering)
 const INTERFERENCE = {
   rule_induction: { rule_induction:0.04, spatial_3d:0.95, spatial_2d:0.45, constraint_sat:0.80, adversarial:0.92 },
   spatial_3d:     { rule_induction:0.95, spatial_3d:0.04, spatial_2d:0.70, constraint_sat:0.82, adversarial:0.68 },
@@ -171,27 +186,37 @@ const INTERFERENCE = {
 
 // ═══════════════════════════════════════════════════════════════
 // CROSS-PUZZLE TRANSFER MAP
-// "If you're weak at A, improvement transfers to B"
+// "Weakness in A → improvement transfers to B"
+// strength: fraction of A's reconstruction score that propagates to B
 // ═══════════════════════════════════════════════════════════════
 const TRANSFER_MAP = [
-  { from: "raven::rule::Progression",    to: "arc",    label: "Sequence patterns", strength: 0.65 },
-  { from: "raven::rule::Arithmetic",     to: "acre",   label: "Causal arithmetic", strength: 0.55 },
-  { from: "raven::rule::Arithmetic",     to: "pgm",    label: "Rule overlap",      strength: 0.80 },
-  { from: "raven::attr::Color",          to: "arc",    label: "Color mapping",     strength: 0.70 },
-  { from: "raven::attr::Position",       to: "clevr",  label: "Spatial position",  strength: 0.60 },
-  { from: "marvel::pattern::Spatial Relationship", to: "clevr", label: "Spatial VQA", strength: 0.72 },
-  { from: "marvel::pattern::Quantities", to: "clevr",  label: "Counting",          strength: 0.68 },
-  { from: "clevr::qtype::count",         to: "puzzlevqa", label: "Enumeration",   strength: 0.62 },
-  { from: "pgm::rule::progression",      to: "raven",  label: "Rule overlap",      strength: 0.80 },
-  { from: "rlp::subtype::pattern",       to: "puzzlevqa", label: "Grid reading",  strength: 0.58 },
-  { from: "rlp::subtype::solo",          to: "acre",   label: "Constraint logic",  strength: 0.64 },
-  { from: "arc3::any",                   to: "arc",    label: "Grid transformations", strength: 0.75 },
+  { from: "raven::rule::Progression",    to: "arc",       label: "Sequence patterns",    strength: 0.65 },
+  { from: "raven::rule::Arithmetic",     to: "acre",      label: "Causal arithmetic",    strength: 0.55 },
+  { from: "raven::rule::Arithmetic",     to: "pgm",       label: "Rule overlap",         strength: 0.80 },
+  { from: "raven::attr::Color",          to: "arc",       label: "Color mapping",        strength: 0.70 },
+  { from: "raven::attr::Position",       to: "clevr",     label: "Spatial position",     strength: 0.60 },
+  { from: "raven::config::center_single",to: "raven",     label: "Config mastery base",  strength: 0.40 },
+  { from: "marvel::pattern::Spatial Relationship", to: "clevr", label: "Spatial VQA",   strength: 0.72 },
+  { from: "marvel::pattern::Quantities", to: "clevr",     label: "Counting",             strength: 0.68 },
+  { from: "marvel::pattern::2D-Geometry",to: "puzzlevqa", label: "2D pattern reading",   strength: 0.60 },
+  { from: "clevr::qtype::count",         to: "puzzlevqa", label: "Enumeration",          strength: 0.62 },
+  { from: "pgm::rule::progression",      to: "raven",     label: "Rule overlap",         strength: 0.80 },
+  { from: "pgm::rule::XOR",             to: "acre",      label: "Boolean logic",        strength: 0.58 },
+  { from: "rlp::sub::pattern",           to: "puzzlevqa", label: "Grid reading",         strength: 0.58 },
+  { from: "rlp::sub::solo",             to: "acre",      label: "Constraint logic",     strength: 0.64 },
+  { from: "rlp::sub::bridges",          to: "arc",       label: "Path topology",        strength: 0.52 },
+  { from: "arc3::game::any",            to: "arc",       label: "Grid transformations", strength: 0.75 },
+  { from: "acre::regime::IID",          to: "acre",      label: "Regime transfer base", strength: 0.45 },
+  { from: "bongard::cat::shape",        to: "raven",     label: "Shape abstraction",    strength: 0.55 },
+  { from: "bongard::cat::number",       to: "clevr",     label: "Numerosity concepts",  strength: 0.62 },
 ];
 
 // ═══════════════════════════════════════════════════════════════
 // STORAGE
 // ═══════════════════════════════════════════════════════════════
-const STORAGE_KEY = 'entropy_state_v2';
+const STORAGE_KEY   = 'entropy_state_v2';
+const PROGRESS_KEY  = 'entropy_progress_v1';
+const MAX_HISTORY   = 50; // sessions per type kept in history
 
 // Runtime ARC3 game registry (populated from /api/arc3/envs)
 const _arc3Games = new Map();  // game_id → {title, tags}
@@ -204,9 +229,54 @@ function _saveState(s) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch(e) {}
 }
 
+function _loadProgress() {
+  try { return JSON.parse(localStorage.getItem(PROGRESS_KEY) || '{}'); }
+  catch { return {}; }
+}
+function _saveProgress(p) {
+  try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(p)); } catch(e) {}
+}
+
 function _defaultState(fam = 0.50) {
   return { familiarity: fam, lastPlayed: Date.now() - 7 * 86_400_000,
            wins: 0, losses: 0, sessions: 0 };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// L4 — PROGRESS HISTORY  (per-session snapshots for charts)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Record a progress snapshot after each session result.
+ * histKey: e.g. "raven", "arc3::game::sk48", "arc3"
+ * point: { t, fam, passed, [extra fields per type] }
+ */
+function _recordProgressPoint(histKey, point) {
+  const prog = _loadProgress();
+  if (!prog[histKey]) prog[histKey] = [];
+  prog[histKey].push({ t: Date.now(), ...point });
+  // Keep only last MAX_HISTORY entries
+  if (prog[histKey].length > MAX_HISTORY) {
+    prog[histKey] = prog[histKey].slice(-MAX_HISTORY);
+  }
+  _saveProgress(prog);
+}
+
+/**
+ * Get progress history for a type.
+ * Returns array of { t, fam, passed, ... } sorted oldest→newest.
+ */
+function getProgressHistory(histKey) {
+  const prog = _loadProgress();
+  return (prog[histKey] ?? []).sort((a, b) => a.t - b.t);
+}
+
+/**
+ * Get progress for all known types, for the overview chart.
+ * Returns { typeId: [{t, fam, passed},...], ... }
+ */
+function getAllProgressHistory() {
+  return _loadProgress();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -248,14 +318,13 @@ function _zoneColor(fam) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// L1 — SUBTYPE FAMILIARITY (same as before)
+// L1 — SUBTYPE FAMILIARITY
 // ═══════════════════════════════════════════════════════════════
 
 function pickNextSubtype(typeId, lastSubtypeId) {
   const reg = PUZZLE_REGISTRY[typeId];
   if (!reg) return null;
 
-  // For ARC3: use dynamic game registry as subtypes
   if (typeId === 'arc3' && _arc3Games.size > 0) {
     return _pickNextARC3Game(lastSubtypeId);
   }
@@ -284,22 +353,28 @@ function recordResult(typeId, subtypeId, passed) {
   const state = _loadState();
   const key = `${typeId}::${subtypeId}`;
   const s   = state[key] ?? _defaultState();
+  const newFam = passed
+    ? Math.min(1, s.familiarity + 0.15)
+    : Math.max(0, s.familiarity - 0.08);
+
   state[key] = {
     ...s,
-    familiarity: passed ? Math.min(1, s.familiarity + 0.15) : Math.max(0, s.familiarity - 0.08),
+    familiarity: newFam,
     lastPlayed: Date.now(),
     wins:     s.wins   + (passed ? 1 : 0),
     losses:   s.losses + (passed ? 0 : 1),
     sessions: s.sessions + 1,
   };
   _saveState(state);
+
+  // L4: record progress snapshot for this type
+  _recordProgressPoint(typeId, { fam: newFam, passed, subtype: subtypeId });
 }
 
 function getSubtypeScores(typeId) {
   const reg = PUZZLE_REGISTRY[typeId];
   if (!reg) return [];
 
-  // ARC3: return game-level scores instead
   if (typeId === 'arc3' && _arc3Games.size > 0) {
     return _getARC3Scores().slice(0, 10).map(g => ({
       subtype:  { id: g.id, label: g.title },
@@ -354,9 +429,10 @@ function recordPuzzleFeatures(typeId, features, passed) {
 
   const touch = (key, featVol, featCl) => {
     const s = state[key] ?? _defaultState();
+    const newFam = Math.min(1, Math.max(0, s.familiarity + delta));
     state[key] = {
       ...s,
-      familiarity: Math.min(1, Math.max(0, s.familiarity + delta)),
+      familiarity: newFam,
       lastPlayed:  Date.now(),
       wins:        s.wins   + (passed ? 1 : 0),
       losses:      s.losses + (passed ? 0 : 1),
@@ -369,10 +445,13 @@ function recordPuzzleFeatures(typeId, features, passed) {
   switch (typeId) {
 
     case 'raven': {
+      // Track each dimension independently — configs, rules, attrs are separate
+      // swappable axes of variation, not a single combined type
       if (features.config) touch(`raven::config::${features.config}`);
       (features.rule_info ?? []).forEach(r => {
         if (r.name) touch(`raven::rule::${r.name}`, 0.92, 0.88);
         if (r.attr)  touch(`raven::attr::${r.attr}`,  0.90, 0.85);
+        // Track combos only for the optimizer — not shown as standalone subtypes
         if (r.name && r.attr && features.config)
           touch(`raven::combo::${features.config}|${r.name}|${r.attr}`, 0.95, 0.92);
       });
@@ -418,7 +497,6 @@ function recordPuzzleFeatures(typeId, features, passed) {
 
     case 'bongard': {
       if (features.hint) {
-        // Rough categorisation from hint text (first meaningful word)
         const cat = (features.hint.match(/\b(shape|size|color|number|position|count|type|inside|outside|left|right|above|below|angle|curve|line)\b/i) || ['other'])[0].toLowerCase();
         touch(`bongard::cat::${cat}`, 0.80, 0.75);
       }
@@ -435,8 +513,8 @@ function recordPuzzleFeatures(typeId, features, passed) {
 }
 
 /**
- * Return all L2 feature state for a type, sorted by reconstruction score desc.
- * Groups them by feature dimension (config, rule, attr, etc.)
+ * Return all L2 feature state for a type, grouped by dimension.
+ * Each group is sorted by reconstruction score desc.
  */
 function getFeatureBreakdown(typeId) {
   const state   = _loadState();
@@ -464,9 +542,66 @@ function getFeatureBreakdown(typeId) {
     });
   });
 
-  // Sort each group by score descending
   Object.keys(groups).forEach(d => groups[d].sort((a, b) => b.score - a.score));
-  return groups;  // { config: [...], rule: [...], attr: [...], combo: [...], ... }
+  return groups;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// OPTIMAL NEXT FORMULA
+// "What combination of generation params gives the most growth?"
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Analyze L2 feature state and return the optimal next puzzle formula.
+ * Returns { components: [{dim, val, score, fam, zone}], formulaStr, topScore }
+ *
+ * For Raven: picks best config + best rule + best attr independently
+ * For others: picks the highest-score value per tracked dimension
+ */
+function getNextBestFormula(typeId) {
+  const breakdown = getFeatureBreakdown(typeId);
+  const reg = PUZZLE_REGISTRY[typeId];
+  if (!breakdown || !Object.keys(breakdown).length) return null;
+
+  const dimLabels = reg?.featureDimLabels ?? {};
+  const components = [];
+
+  // Skip combo dim — use individual dims for the formula
+  const dims = Object.keys(breakdown).filter(d => d !== 'combo');
+
+  dims.forEach(dim => {
+    const items = breakdown[dim];
+    if (!items?.length) return;
+    // Pick the item with highest reconstruction score in this dimension
+    const best = items[0]; // already sorted desc by score
+    if (best.score < 0.05) return; // skip if barely any data
+    components.push({
+      dim,
+      dimLabel: dimLabels[dim] ?? dim,
+      val: best.val,
+      score: best.score,
+      fam: best.fam,
+      zone: best.zone,
+    });
+  });
+
+  if (!components.length) return null;
+
+  // Overall formula score = average of component reconstruction scores
+  const topScore = components.reduce((a, c) => a + c.score, 0) / components.length;
+
+  // Human-readable formula string
+  const formulaStr = components
+    .map(c => `${c.dimLabel}: ${c.val}`)
+    .join(' × ');
+
+  // For Raven specifically: also find the combo key that matches
+  let ravenComboHint = null;
+  if (typeId === 'raven' && breakdown.combo?.length) {
+    ravenComboHint = breakdown.combo[0]; // highest-score recorded combo
+  }
+
+  return { components, formulaStr, topScore, ravenComboHint };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -502,22 +637,29 @@ function recordARC3Result(gameId, levelsCompleted, winLevels, totalMoves, passed
     maxLevel: 0, winLevels: winLevels ?? 7,
     totalMoves: 0, sessionCount: 0,
     levelCompletions: Array(7).fill(0),
+    sessionHistory: [], // per-game history [{t, levels, eff, passed}]
   };
 
   const efficiency = (winLevels && totalMoves > 0)
     ? Math.min(1, (levelsCompleted / winLevels) / (totalMoves / Math.max(1, levelsCompleted * 8)))
     : 0;
 
-  // Familiarity = weighted by (levels reached / total levels)
   const levelRatio = winLevels > 0 ? levelsCompleted / winLevels : 0;
-  const famDelta   = passed ? 0.15 : (levelRatio * 0.10 - 0.05);  // partial credit for progress
+  const famDelta   = passed ? 0.15 : (levelRatio * 0.10 - 0.05);
 
   const newLevelCompletions = [...(s.levelCompletions ?? Array(7).fill(0))];
   for (let l = 0; l < Math.min(levelsCompleted, 7); l++) newLevelCompletions[l]++;
 
+  const newFam = Math.min(1, Math.max(0, s.familiarity + famDelta));
+
+  // Append session to per-game history (keep last 20)
+  const sessionHistory = [...(s.sessionHistory ?? []),
+    { t: Date.now(), levels: levelsCompleted, eff: efficiency, passed }
+  ].slice(-20);
+
   state[sk] = {
     ...s,
-    familiarity:       Math.min(1, Math.max(0, s.familiarity + famDelta)),
+    familiarity:       newFam,
     lastPlayed:        Date.now(),
     wins:              s.wins   + (passed ? 1 : 0),
     losses:            s.losses + (passed ? 0 : 1),
@@ -530,11 +672,17 @@ function recordARC3Result(gameId, levelsCompleted, winLevels, totalMoves, passed
     totalMoves:        (s.totalMoves ?? 0) + (totalMoves ?? 0),
     sessionCount:      (s.sessionCount ?? 0) + 1,
     levelCompletions:  newLevelCompletions,
+    sessionHistory,
   };
 
   _saveState(state);
 
-  // Also update L1 subtype (arc3::any)
+  // L4: progress snapshot for this specific game
+  _recordProgressPoint(`arc3::game::${gameId}`, { fam: newFam, passed, levels: levelsCompleted, eff: efficiency });
+  // L4: also snapshot the arc3 type overall
+  _recordProgressPoint('arc3', { fam: newFam, passed, gameId });
+
+  // L1 subtype
   recordResult('arc3', 'any', passed);
 }
 
@@ -559,6 +707,7 @@ function _getARC3Scores() {
       lastEfficiency:   s?.lastEfficiency ?? 0,
       lastMoves:        s?.lastMoves ?? 0,
       levelCompletions: s?.levelCompletions ?? Array(7).fill(0),
+      sessionHistory:   s?.sessionHistory ?? [],
       seen:             !!s,
       zone:             { label: _zoneLabel(fam), color: _zoneColor(fam) },
     });
@@ -574,7 +723,6 @@ function _pickNextARC3Game(lastGameId) {
   const scored = games.map(g => ({
     ...g,
     st: { id: g.id, label: g.title },
-    // Apply repeat penalty + noise
     adjScore: g.score * (g.id === lastGameId ? 0.15 : 1.0) * (1 + (Math.random() - 0.5) * 0.12),
   })).sort((a, b) => b.adjScore - a.adjScore);
 
@@ -582,16 +730,132 @@ function _pickNextARC3Game(lastGameId) {
   return { id: best.id, label: best.title };
 }
 
-/**
- * Full ARC3 game state for dev panel.
- * Returns array sorted by reconstruction score desc.
- */
 function getARC3GameStates() {
   return _getARC3Scores();
 }
 
+/**
+ * Group ARC3 games by their tags for high-level overview.
+ * Returns [{ tag, games: [...], avgFam, avgScore }] sorted by avgScore desc.
+ */
+function getARC3TagGroups() {
+  const games = _getARC3Scores();
+  const groups = {};
+
+  games.forEach(g => {
+    const tags = (g.tags ?? ['untagged']);
+    tags.forEach(tag => {
+      if (!groups[tag]) groups[tag] = [];
+      groups[tag].push(g);
+    });
+  });
+
+  return Object.entries(groups).map(([tag, gs]) => ({
+    tag,
+    games: gs,
+    count: gs.length,
+    avgFam:   gs.reduce((a, g) => a + g.fam, 0) / gs.length,
+    avgScore: gs.reduce((a, g) => a + g.score, 0) / gs.length,
+    maxLevel: Math.max(...gs.map(g => g.maxLevel)),
+    totalSessions: gs.reduce((a, g) => a + g.sessions, 0),
+  })).sort((a, b) => b.avgScore - a.avgScore);
+}
+
 // ═══════════════════════════════════════════════════════════════
-// SESSION QUEUE (cross-type, same as before)
+// TRANSFER GRAPH
+// Nodes = puzzle types (positioned by cluster), Edges = TRANSFER_MAP
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Returns the data for a visual transfer graph.
+ * Nodes have fixed positions based on cluster grouping.
+ * Edges carry familiarity-weighted activation (only edges where source is active).
+ */
+function getTransferGraph() {
+  const state = _loadState();
+
+  // Cluster-based layout positions (normalized 0–1)
+  const CLUSTER_POS = {
+    rule_induction: { x: 0.25, y: 0.50 },
+    spatial_3d:     { x: 0.75, y: 0.18 },
+    spatial_2d:     { x: 0.75, y: 0.82 },
+    constraint_sat: { x: 0.50, y: 0.78 },
+    adversarial:    { x: 0.50, y: 0.22 },
+  };
+
+  // Spread nodes within their cluster
+  const clusterCounts = {};
+  const nodes = Object.entries(PUZZLE_REGISTRY).map(([id, reg]) => {
+    const cluster = reg.cluster;
+    const cp = CLUSTER_POS[cluster] ?? { x: 0.5, y: 0.5 };
+    const idx = clusterCounts[cluster] = (clusterCounts[cluster] ?? 0) + 1;
+
+    // Slight jitter within cluster
+    const jitterR = 0.10;
+    const angle   = (idx - 1) * 2.4; // roughly spread by golden angle
+    const x = cp.x + Math.cos(angle) * jitterR;
+    const y = cp.y + Math.sin(angle) * jitterR;
+
+    // Type-level familiarity for node size/color
+    const summ = getGameSummary(id);
+    const fam  = summ.familiarity;
+
+    return {
+      id,
+      name: reg.name,
+      cluster,
+      clusterHex: CLUSTERS[cluster]?.hex ?? '#888',
+      cogLoad: reg.cognitiveLoad,
+      x: Math.max(0.05, Math.min(0.95, x)),
+      y: Math.max(0.05, Math.min(0.95, y)),
+      fam,
+      zone: { label: _zoneLabel(fam), color: _zoneColor(fam) },
+      sessions: summ.sessions,
+    };
+  });
+
+  // Build edges from TRANSFER_MAP, weighted by source familiarity
+  const edges = TRANSFER_MAP.map(({ from, to, label, strength }) => {
+    const s = state[from];
+    const vol = s?.volatility ?? 0.88;
+    const srcFam = s ? _decayedFam(s.familiarity, s.lastPlayed, vol) : 0;
+
+    // fromType = first segment, toType = to field
+    const fromType = from.split('::')[0];
+    const toType   = to.split('::')[0];
+
+    // Edge is "active" (highlighted) when source is in reconstruction zone
+    const active = srcFam > 0.15 && srcFam < 0.78;
+
+    return {
+      fromType, toType,
+      fromFeature: from.split('::').slice(1).join('::'),
+      label,
+      strength,
+      srcFam,
+      active,
+      // Weight = strength * zone-activation (brighter when in reconstruction zone)
+      weight: strength * (active ? 1.0 : (srcFam === 0 ? 0.2 : 0.4)),
+    };
+  });
+
+  // Cluster-level interference edges (for background graph)
+  const clusterEdges = [];
+  Object.keys(CLUSTERS).forEach((ca, i) => {
+    Object.keys(CLUSTERS).forEach((cb, j) => {
+      if (j <= i) return;
+      const iScore = INTERFERENCE[ca]?.[cb] ?? 0;
+      if (iScore > 0.5) {
+        clusterEdges.push({ fromCluster: ca, toCluster: cb, interference: iScore });
+      }
+    });
+  });
+
+  return { nodes, edges, clusterEdges, clusterPositions: CLUSTER_POS };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SESSION QUEUE (cross-type)
 // ═══════════════════════════════════════════════════════════════
 
 function getGameSummary(typeId) {
@@ -654,13 +918,8 @@ function buildTypeSession(typeIds, size) {
 
 // ═══════════════════════════════════════════════════════════════
 // TRANSFER INFERENCE
-// Which other puzzle types are likely affected by a weakness here?
 // ═══════════════════════════════════════════════════════════════
 
-/**
- * Given current feature state, return transfer hints:
- * if you're weak at X, improvement will transfer to Y.
- */
 function getTransferHints(limit) {
   limit = limit ?? 5;
   const state = _loadState();
@@ -671,7 +930,6 @@ function getTransferHints(limit) {
     if (!s) return;
     const vol = s.volatility ?? 0.88;
     const fam = _decayedFam(s.familiarity, s.lastPlayed, vol);
-    // Only surface hints for features in the reconstruction zone (15-78%)
     if (fam < 0.15 || fam > 0.78) return;
     const sc = _reconstructionScore(fam, vol, 0.85) * strength;
     hints.push({ from, to, label, fam, score: sc, strength });
@@ -690,6 +948,7 @@ window.EntropyEngine = {
   INTERFERENCE,
   TRANSFER_MAP,
   STORAGE_KEY,
+  PROGRESS_KEY,
 
   // L1 — subtype
   pickNextSubtype,
@@ -706,8 +965,17 @@ window.EntropyEngine = {
   registerARC3Games,
   recordARC3Result,
   getARC3GameStates,
+  getARC3TagGroups,
 
-  // Transfer
+  // L4 — progress history
+  getProgressHistory,
+  getAllProgressHistory,
+
+  // Optimal formula
+  getNextBestFormula,
+
+  // Transfer graph
+  getTransferGraph,
   getTransferHints,
 
   // Helpers (for dev panel)

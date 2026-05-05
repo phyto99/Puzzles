@@ -1,216 +1,178 @@
-# Entropy Rotation Protocol — Design Philosophy
+# Entropy Rotation Philosophy — Tuning Guide
 
-## The Core Problem
-
-Most practice systems optimize for comfort. They replay problems you already
-know, show you what you're good at, and let you settle into patterns. The
-result is the illusion of competence — you can solve things you've seen before,
-but novel problems stay hard.
-
-The Entropy Rotation Protocol is built on the opposite principle: **the best
-next problem is the one you are least prepared to predict**.
+> Apply this framework when integrating any new puzzle type, or auditing existing ones.
 
 ---
 
-## The Forgetting Curve and Reconstruction Zone
+## Core Premise
 
-Hermann Ebbinghaus (1885) showed that memory decays exponentially after a
-learning event. The curve for a memory with current strength `F` and time `t`
-(days) is:
+The scheduler's job is to find the **exact edge of competence** for every puzzle type and stay there.
+Not too easy (comfortable zone → no growth). Not too hard (forgotten zone → demoralizing).
+The ideal state is the **reconstruction zone** (familiarity 15–78%): the player remembers enough to engage,
+but must actively reconstruct rules — that effort *is* the training signal.
+
+---
+
+## The Four Tracking Levels
+
+| Level | Key | What it tracks |
+|-------|-----|----------------|
+| L1 | `typeId::subtypeId` | Coarse subtype familiarity (e.g. Raven::Mesh) |
+| L2 | `typeId::dim::value` | Per-generation-parameter familiarity (e.g. raven::rule::Arithmetic) |
+| L3 | `arc3::game::gameId` | ARC-AGI-3 per-game rich state: levels, moves, efficiency |
+| L4 | `entropy_progress_v1` | Timestamped session log per type, for charting growth curves |
+
+---
+
+## Familiarity Formula
 
 ```
-F(t) = F₀ · exp(−k · t)
+familiarity_t = familiarity_0 * exp(-volatility * 0.25 * days_since_last)
 ```
 
-where `k` is a volatility coefficient — how fast a particular cognitive skill
-erodes without reinforcement.
+- **Volatility** = how fast the skill decays without practice (0 = never decays, 1 = very fast)
+- Win: fam += 0.15  |  Loss: fam -= 0.08  (asymmetric — easier to gain than lose)
+- For ARC3: partial credit — fam += levelRatio * 0.10 - 0.05 on loss (progress still counts)
 
-This system tracks every puzzle type and subtype with a **familiarity score**
-`F ∈ [0, 1]`. Each time you pass, `F += 0.15` (capped at 1.0). Each time you
-fail, `F -= 0.08` (floored at 0.0). Between sessions, `F` decays according to
-the formula above, using each puzzle type's tuned `ruleVolatility` constant.
+**Zone thresholds:**
+- < 15% FORGOTTEN (needs rescue, but score penalized — dont spam beginner puzzles)
+- 15-78% RECONSTRUCTION (target zone, highest priority)
+- > 78% COMFORTABLE (deprioritize — diminishing returns)
 
-**But here is the key insight**: maximum learning does not happen when you've
-forgotten everything (F < 0.15), nor when you know it too well (F > 0.78).
-It happens in the **reconstruction zone** — roughly 15–78% familiarity — where
-you remember enough to feel the rules clicking back into place but must still
-actively reconstruct them.
+---
+
+## Reconstruction Score (Priority Signal)
 
 ```
-Reconstruction score:
-
-  if F < 0.15:  zone = 0.30  (nearly forgotten — still useful but inefficient)
-  if F > 0.78:  zone = 0.10  (comfortable — deprioritise)
-  else:         zone = 1.0 − |F − 0.42| / 0.45   (peaks at ~42%)
-
-  final_score = zone × ruleVolatility × cognitiveLoad
+zone_activation = 1.0 - |familiarity - 0.42| / 0.45    (peaks at fam ~42%)
+score = zone_activation * volatility * cognitiveLoad
 ```
 
-The decay sparkline shown next to each subtype is a 14-day projection: it
-shows exactly how long before that skill enters or leaves the reconstruction
-zone. This is the scheduling signal.
+The puzzle with the highest score is served next. Ties broken by noise (±6%).
+Repeat penalty: same subtype as last session gets score * 0.15.
 
 ---
 
-## Interference: Why Switching Domains Is Good
+## Adding a New Puzzle Type — Checklist
 
-Cognitive science distinguishes two types of forgetting:
+1. **Add to PUZZLE_REGISTRY:**
+   - cognitiveLoad: 0–1, how hard is it to hold in working memory?
+   - ruleVolatility: 0–1, how fast does proficiency decay? (abstract = high, procedural = low)
+   - cluster: which cognitive cluster does it belong to?
+   - surface: tag list of perceptual modalities (grid, color, 3d, language, etc.)
+   - subtypes: list of distinct variants the player can meaningfully distinguish
+   - features: per-dimension generation variables (what is swapped per puzzle)
+   - featureDimLabels: human-readable names for each dimension
 
-- **Decay** — memory fading over time (addressed above)
-- **Interference** — one mental model overwriting another
+2. **Wire L2 tracking in recordPuzzleFeatures:**
+   - Add a case block for the new type
+   - Call touch(key, vol, cl) for every swappable generation variable
+   - Volatility hint: structural params (layout, config) → 0.88–0.92; rule params → 0.90–0.95
 
-The system deliberately uses interference as a *training force*. When you
-practice two cognitively distant skills back-to-back, each must be retrieved
-from scratch against an interfering activation pattern. This forces stronger
-encoding.
+3. **Add transfer edges to TRANSFER_MAP:**
+   - If a player is weak at newtype::dim::value, what other puzzle benefits from that skill?
+   - Strength 0.4–0.6 = moderate transfer, 0.6–0.8 = strong, > 0.8 = near-identical skill
+   - Also add incoming edges: what existing puzzle skills transfer into this one?
 
-An **interference matrix** defines how much each cognitive cluster disrupts
-another:
+4. **Set a cluster interference score** — if the new puzzle is in an existing cluster, it inherits.
+   If it is genuinely novel, add a new cluster to CLUSTERS and extend INTERFERENCE.
 
-| From ↓ / To → | Rule Induction | 3D Spatial | 2D Spatial | Constraint | Adversarial |
-|---|---|---|---|---|---|
-| Rule Induction | 0.04 | **0.95** | 0.45 | 0.80 | **0.92** |
-| 3D Spatial | **0.95** | 0.04 | 0.70 | 0.82 | 0.68 |
-| 2D Spatial | 0.45 | 0.70 | 0.04 | 0.65 | **0.88** |
-| Constraint Sat. | 0.80 | 0.82 | 0.65 | 0.04 | 0.78 |
-| Adversarial | **0.92** | 0.68 | **0.88** | 0.78 | 0.04 |
-
-High interference between consecutive items = high entropy = good. Doing
-I-RAVEN (rule induction) immediately after ARC-AGI-3 (adversarial) maximally
-disrupts both, forcing deeper retrieval of each.
-
----
-
-## Two-Level Selection: Type and Subtype
-
-Selection happens at two levels simultaneously.
-
-### Level 1 — Puzzle Type (Session Queue)
-
-The session queue is built by a greedy algorithm operating over all puzzle
-types. Each type gets a **game-level score** derived from the minimum
-familiarity across its subtypes (weakest link drives urgency). The algorithm:
-
-1. Score every type by `reconstructionScore(minSubtypeFamiliarity)`
-2. Sort descending, take the top `2 × sessionSize` as the candidate pool
-3. Start with the highest-scoring type
-4. For each subsequent slot: pick the candidate that maximises
-   `score × interference(lastType, candidate)`
-5. This simultaneously prioritises **urgent** types AND maximises **cognitive
-   disruption** between consecutive items
-
-The result is a session where no two adjacent puzzles share cognitive
-machinery, and all selected types are in or near the reconstruction zone.
-
-### Level 2 — Subtype Selection
-
-Within the chosen puzzle type, a second pass selects the best **subtype**
-(e.g., within MARVEL: Temporal Movement vs 3D Geometry vs Mathematical;
-within RLP: Flood vs Nonogram vs Signpost).
-
-The subtype algorithm:
-
-1. Score each subtype by its own `reconstructionScore(fam, volatility, cogLoad)`
-2. Apply a **repeat penalty** (×0.15) to the last-played subtype, preventing
-   immediate repetition
-3. Add ε-noise (±6%) to prevent deterministic lock-in — the system should
-   feel unpredictable even to itself
-4. Pick the highest-scoring subtype after these adjustments
-
-This means even within a puzzle type you cannot pattern-match your way to
-success. If you've just done MARVEL Spatial Relationship twice and gotten good
-at it, the score rises above 0.78, the zone score drops to 0.10, and the
-system will route you to a harder, less-practiced category.
+5. **Test the optimal formula**: after a few sessions, getNextBestFormula('newtype') should
+   return sensible output — the dimension with highest reconstruction score is what to serve next.
 
 ---
 
-## Why This Always Generates the Best Next Problem
+## Raven Matrices — The Swappable Variable Model
 
-The claim: *for any practice state, the system reliably routes you to the
-highest-growth next problem*.
+Raven puzzles are generated by crossing three independent axes:
 
-**It works because:**
+| Axis | Values | Volatility |
+|------|--------|-----------|
+| Config (spatial layout) | 7 options (center_single, distribute_four, ...) | 0.95 |
+| Rule (logical transformation) | Constant, Progression, Arithmetic | 0.92 |
+| Attribute (visual property transformed) | Number, Position, Type, Size, Color | 0.90 |
 
-1. **Continuous decay** — familiarity scores are always live. The moment you
-   finish a problem, the clock starts on forgetting it. The system's view of
-   your state is never stale.
+Each axis is tracked separately. The combo key (config|rule|attr) is recorded for the optimizer
+but not shown as a standalone subtype — there are too many combos to display meaningfully.
 
-2. **Reconstruction zone targeting** — the score function has a hard peak at
-   ~42% familiarity. Problems you're either too good at or have fully forgotten
-   score low. Only problems where memory is actively fragile score high. This
-   is the precise condition where re-learning effort pays off most.
-
-3. **Interference maximisation** — the session queue isn't just urgency
-   ordering. It's urgency-weighted by cognitive distance. An urgent problem
-   in the same cluster as the last one is ranked below a slightly less urgent
-   problem from a maximally interfering cluster. This pushes session entropy
-   as high as possible.
-
-4. **Subtype entropy** — within a type, the repeat penalty and ε-noise ensure
-   you can never develop a subtype-specific pattern. Even if you've mastered
-   one variant, the system routes you to the hardest variant you haven't
-   recently seen.
-
-5. **Per-problem tracking** — state is tracked at `(type, subtype)` granularity.
-   A strong performance in MARVEL Quantities doesn't mask a weakness in MARVEL
-   3D Geometry. Each subtype has its own familiarity trajectory.
+The Next Best Formula for Raven answers: which config x which rule x which attribute
+combination currently has the highest reconstruction score? That is the next puzzle to serve.
 
 ---
 
-## Adding New Puzzle Types
+## ARC-AGI-3 — The 25-Game Formula
 
-The system is fully modular. Adding a new puzzle type requires exactly one
-change in `static/entropy_engine.js` (and mirrored in `EntropyRotator.jsx`):
+ARC3 games are tracked individually (L3) with:
+- levelsCompleted (0–7): how far into the game per session
+- lastEfficiency: levels/totalMoves — reward for solving cleanly, not through exhaustive trial
+- levelCompletions[0..6]: cumulative completions per level (shows where players plateau)
+- sessionHistory: last 20 sessions with timestamp, levels, efficiency, pass/fail
 
-```js
-newtype: {
-  name: "New Puzzle Type",
-  cluster: "rule_induction",         // cognitive cluster (drives interference)
-  cognitiveLoad: 0.80,               // [0-1] working memory demand
-  ruleVolatility: 0.85,              // [0-1] how fast rules decay
-  surface: ["tag1", "tag2"],         // descriptive tags (not used in scoring)
-  subtypes: [
-    { id: "variant_a", label: "Variant A", cogLoad: 0.78, volatility: 0.82 },
-    { id: "variant_b", label: "Variant B" },  // inherits type-level values
-  ]
-},
+Formula for next game selection:
+```
+score = reconstructionScore(decayedFam, volatility=0.92, cogLoad=0.95)
+      * (gameId === lastGameId ? 0.15 : 1.0)
+      * (1 + noise * 0.12)
 ```
 
-The session queue, subtype selector, decay sparklines, and interference matrix
-all update automatically. No other code changes.
+The game with highest adjusted score is served. Tag groups show aggregate performance
+across game families (all "click" games, all "grid" games, etc.).
 
 ---
 
-## Tuning Guide
+## Transfer Map — Interpreting the Diagram
 
-| Parameter | Effect if too high | Effect if too low |
-|---|---|---|
-| `cognitiveLoad` | Type dominates session queue | Type rarely appears |
-| `ruleVolatility` | Skill forgotten fast, scheduled often | Skill stays "known" too long |
-| Pass gain `+0.15` | Familiarity rises quickly, exits zone fast | Stays in reconstruction zone too long |
-| Fail penalty `-0.08` | Failures tank familiarity sharply | Failures have little scheduling impact |
-| Noise ε `±6%` | Highly unpredictable selections | More deterministic routing |
-| Repeat penalty `×0.15` | Never repeats a subtype | Can repeat same subtype immediately |
+- Node size = cognitive load (bigger = harder to hold in mind)
+- Node ring = familiarity arc (clockwise from top; full ring = 100% familiar)
+- Node fill opacity = how much the player has interacted with it
+- Orange edge = source feature is in reconstruction zone — active transfer opportunity
+- Grey edge = potential transfer but source not yet active
 
-The current defaults are tuned to feel like a training session that is
-challenging but not demoralising: you will see things you've partially
-forgotten, you will switch cognitive domains frequently, and you will never
-solve the same variant twice in a row. But you will always be operating near
-the peak of the learning curve.
+When you see an orange edge pointing from Puzzle A to Puzzle B:
+  Player is actively rebuilding skill X in A. Practicing B now will accelerate B's learning.
+
+This is the basis for the session queue ordering — the scheduler routes through
+high-interference clusters to maximize cross-training.
 
 ---
 
-## State Persistence
+## Session Queue — Cluster Interference Design
 
-All state is stored in `localStorage` under the key `entropy_state_v2`, keyed
-by `"typeId::subtypeId"`. Both `app_v2.html` (via `entropy_engine.js`) and
-`EntropyRotator.jsx` read and write this same key. The two interfaces share
-live training state — playing puzzles in the main UI automatically updates the
-rotation schedule shown in the React component, and vice versa.
+Interference score between clusters = how different they are cognitively (0 = same, 1 = maximally different).
+The queue picks the next puzzle that maximizes score * interference(last, next).
 
-State survives page reloads, browser restarts, and multiple tabs (last write
-wins). It can be exported as a JSON snapshot via the browser console:
+High-interference pairs (good to interleave):
+- Rule Induction and 3D Spatial: 0.95
+- Rule Induction and Adversarial: 0.92
+- 3D Spatial and Constraint Sat: 0.82
 
-```js
-JSON.parse(localStorage.getItem('entropy_state_v2'))
-```
+Low-interference pairs (similar — avoid consecutive):
+- Rule Induction and 2D Spatial: 0.45
+- Any cluster with itself: 0.04
+
+---
+
+## Forget Curve Calibration
+
+If a new puzzle shows too-fast decay (players always show forgotten zone):
+  Lower ruleVolatility slightly (0.02 increments)
+
+If players plateau in comfortable zone too quickly:
+  Raise ruleVolatility or lower the comfortable threshold in _zoneLabel
+
+If a specific subtype is never selected:
+  Check its cogLoad and volatility — may score too low relative to alternatives
+  Or check if familiarity is stuck near 0.5 — inspect recordPuzzleFeatures wiring
+
+---
+
+## Philosophy Note
+
+This system exists to serve human cognitive growth, not to measure AI benchmarks.
+The metrics (familiarity, efficiency, reconstruction score) are internal tuning signals —
+they are never shown to the player as scores or grades.
+
+What IS shown: the progress graph (your trajectory over time), the zone badge (where you are now),
+and the session queue (what the system thinks will help you grow next).
+
+The player should feel the system is their training partner, not their evaluator.
