@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Unified Puzzle Generator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="/static/entropy_engine.js"></script>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -412,6 +413,71 @@
             text-align: center;
             margin-top: 4px;
         }
+
+        /* ── Entropy panel ── */
+        #entropyBar {
+            margin: 6px 0 10px;
+            font-family: monospace;
+            font-size: 11px;
+        }
+        .ep-mono { font-family: monospace; }
+        .ep-caps {
+            font-size: 10px;
+            font-family: monospace;
+            color: #999;
+            letter-spacing: .10em;
+            text-transform: uppercase;
+        }
+        #entropyBarInner {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 12px;
+            background: #f8f8f8;
+            border: 0.5px solid #e0e0e0;
+            border-radius: 6px;
+            flex-wrap: wrap;
+        }
+        #entropyDetails {
+            margin-top: 4px;
+            display: none;
+            background: #f8f8f8;
+            border: 0.5px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 12px 14px;
+        }
+        /* subtype list rows */
+        .ep-st-row {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 6px;
+        }
+        /* familiarity track (zone markers baked in by JS) */
+        .ep-track-wrap {
+            position: relative;
+            height: 4px;
+            border-radius: 2px;
+            background: #e4e4e4;
+        }
+        /* queue card */
+        .ep-queue-card {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 0.5px solid #e8e8e8;
+            border-radius: 5px;
+            padding: 7px 10px;
+            background: white;
+            margin-bottom: 0;
+        }
+        /* interference connector */
+        .ep-ibar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 2px 10px 2px 28px;
+        }
     </style>
 </head>
 <body>
@@ -451,7 +517,7 @@
     </div>
 
     <div class="controls">
-        <select id="generatorType" onchange="loadNewPuzzle()">
+        <select id="generatorType" onchange="loadNewPuzzle();renderEntropyPanel(this.value);">
             <optgroup label="Pattern Recognition">
                 <option value="raven">I-RAVEN</option>
                 <option value="pgm">PGM</option>
@@ -479,6 +545,56 @@
             style="padding:5px 10px;border-radius:4px;border:1px solid #ccc;background:white;cursor:pointer;">
             Skip
         </button>
+    </div>
+
+    <!-- ══ Entropy Bar ══ -->
+    <div id="entropyBar">
+        <!-- compact always-visible bar -->
+        <div id="entropyBarInner">
+            <span class="ep-caps">ENTROPY ROTATION PROTOCOL</span>
+            <div style="width:0.5px;height:12px;background:#ddd;"></div>
+            <span id="epPickedLabel" style="color:#222;font-weight:500;font-size:12px;font-family:monospace;">—</span>
+            <div id="epInlineBar" style="position:relative;height:4px;border-radius:2px;background:#e4e4e4;width:80px;flex-shrink:0;"></div>
+            <span id="epFamPct"  style="color:#888;font-size:10px;font-family:monospace;">—</span>
+            <span id="epZone"    style="font-size:9px;border-radius:3px;padding:1px 5px;border:0.5px solid currentColor;">—</span>
+            <div style="flex:1;"></div>
+            <span class="ep-caps">SESSION ENTROPY</span>
+            <span id="epEntropyScore" style="font-size:15px;font-weight:500;font-family:monospace;color:#1D9E75;">—%</span>
+            <div style="width:0.5px;height:12px;background:#ddd;"></div>
+            <span class="ep-caps" style="white-space:nowrap;">NEXT →</span>
+            <span id="epQueueInline" style="color:#666;font-size:10px;font-family:monospace;">—</span>
+            <button onclick="toggleEntropyDetails()" id="epToggleBtn"
+                style="padding:2px 8px;border:0.5px solid #d0d0d0;border-radius:4px;background:white;cursor:pointer;font-size:10px;font-family:monospace;color:#666;">▸</button>
+        </div>
+
+        <!-- expanded panel — matches JSX layout -->
+        <div id="entropyDetails">
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:20px;flex-wrap:wrap;">
+
+                <!-- LEFT: subtype scores for active type -->
+                <div>
+                    <div style="display:flex;align-items:center;margin-bottom:10px;">
+                        <span class="ep-caps">SUBTYPE SCORES — <span id="epCurrentTypeName" style="color:#444;">—</span></span>
+                    </div>
+                    <div id="epSubtypeList" style="display:flex;flex-direction:column;gap:5px;"></div>
+                    <!-- cluster legend -->
+                    <div id="epClusterLegend" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+                </div>
+
+                <!-- RIGHT: session queue with interference connectors -->
+                <div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                        <span class="ep-caps">SESSION QUEUE</span>
+                        <div style="flex:1;"></div>
+                        <span class="ep-caps">SESSION ENTROPY</span>
+                        <span id="epSessionEntropy" style="font-size:15px;font-weight:500;font-family:monospace;color:#1D9E75;">—%</span>
+                    </div>
+                    <div id="epSessionQueue" style="display:flex;flex-direction:column;gap:0;"></div>
+                    <!-- session stats row -->
+                    <div id="epSessionStats" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="status" class="status">Loading…</div>
@@ -705,8 +821,9 @@
    Shared state
 ═══════════════════════════════════════════════════════════════════════════ */
 const ALL_CONTENT = ['raven','pgm','marvel','bongard','puzzlevqa','acre','clevr','arc','arc3','rlp','trainer-vocab','trainer-kvashchev','trainer-ppde'];
-let currentData   = null;
-let isWaiting     = false;
+let currentData      = null;
+let isWaiting        = false;
+let currentSubtypeId = null;  // set by entropy engine before each puzzle load
 
 /* ═══════════════════════════════════════════════════════════════════════════
    3-D scene config (shared by ACRE and CLEVR)
@@ -770,6 +887,11 @@ function recordResult(genType, correct) {
     else s.streak = 0;
     _saveStats();
     renderStats();
+    // Entropy tracking — update subtype familiarity
+    if (window.EntropyEngine && currentSubtypeId) {
+        EntropyEngine.recordResult(genType, currentSubtypeId, correct);
+        renderEntropyPanel(genType);
+    }
 }
 
 function renderStats() {
@@ -876,6 +998,19 @@ async function loadNewPuzzle() {
 
     const genType = document.getElementById('generatorType').value;
     updateSubType(genType);
+
+    // Entropy: auto-pick best subtype before reading the dropdown
+    if (window.EntropyEngine && genType !== 'arc3' && genType !== 'rlp' && !genType.startsWith('trainer-')) {
+        const picked = EntropyEngine.pickNextSubtype(genType, currentSubtypeId);
+        if (picked) {
+            const sel = document.getElementById('subType');
+            if (sel.querySelector(`option[value="${picked.id}"]`)) {
+                sel.value = picked.id;
+            }
+            currentSubtypeId = picked.id;
+        }
+    }
+
     const subType = document.getElementById('subType').value;
 
     setStatus(`Generating ${genType} puzzle…`, '#333');
@@ -911,6 +1046,7 @@ async function loadNewPuzzle() {
         const data = await resp.json();
         if (data.error) { setStatus('Error: '+data.error,'red'); return; }
         currentData = data;
+        renderEntropyPanel(genType);
 
         const render = {raven:renderRaven, acre:renderAcre, clevr:renderClevr,
                         arc:renderArc, marvel:renderMarvel, puzzlevqa:renderPuzzleVQA,
@@ -926,6 +1062,215 @@ function setStatus(msg, color='#333') {
     const el = document.getElementById('status');
     el.textContent = msg;
     el.style.color = color;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ENTROPY PANEL  —  visual parity with EntropyRotator.jsx
+═══════════════════════════════════════════════════════════════════════════ */
+
+function _zoneColor(fam) {
+    if (fam < 0.15) return '#E24B4A';
+    if (fam > 0.78) return '#1D9E75';
+    return '#EF9F27';
+}
+function _zoneLabel(fam) {
+    if (fam < 0.15) return 'forgotten';
+    if (fam > 0.78) return 'comfortable';
+    return 'reconstruction';
+}
+function _iColor(v) {
+    if (v > 0.75) return '#1D9E75';
+    if (v > 0.45) return '#BA7517';
+    return '#E24B4A';
+}
+
+// Ebbinghaus decay sparkline — returns an SVG string (matches DecaySparkline in JSX)
+function _sparklineSVG(fam, volatility) {
+    const W = 60, H = 18;
+    const pts = Array.from({length:15}, (_,d) => {
+        const f = fam * Math.exp(-volatility * 0.25 * d);
+        return `${(d/14)*W},${H - f*H}`;
+    }).join(' ');
+    const zoneTop = H - 0.78 * H, zoneH = (0.78 - 0.15) * H;
+    return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="overflow:visible;display:block;vertical-align:middle;">
+        <rect x="0" y="${zoneTop.toFixed(1)}" width="${W}" height="${zoneH.toFixed(1)}" fill="#EF9F2720"/>
+        <polyline points="${pts}" fill="none" stroke="#EF9F27" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="0" cy="${(H - fam*H).toFixed(1)}" r="2" fill="#EF9F27"/>
+    </svg>`;
+}
+
+// Familiarity bar with zone threshold markers (15% and 78% ticks)
+function _famBarHTML(fam, zoneColor, widthPx) {
+    const w = widthPx ? `width:${widthPx}px;` : 'flex:1;max-width:120px;';
+    return `<div class="ep-track-wrap" style="${w}">
+        <div style="position:absolute;left:0;width:${(fam*100).toFixed(1)}%;height:100%;background:${zoneColor};border-radius:2px;transition:width .4s;"></div>
+        <div style="position:absolute;left:15%;width:63%;height:100%;background:${zoneColor}22;border-radius:2px;"></div>
+        <div style="position:absolute;left:15%;top:-1px;width:1px;height:6px;background:${zoneColor}88;"></div>
+        <div style="position:absolute;left:78%;top:-1px;width:1px;height:6px;background:${zoneColor}88;"></div>
+    </div>`;
+}
+
+// Interference connector between queue cards (matches JSX style)
+function _iConnectorHTML(val) {
+    const color = _iColor(val);
+    const barW  = (val * 44).toFixed(0);
+    return `<div class="ep-ibar-wrap">
+        <div style="flex:1;height:0.5px;background:#e4e4e4;"></div>
+        <div style="display:flex;align-items:center;gap:4px;">
+            <div style="height:2px;width:${barW}px;background:${color};border-radius:1px;"></div>
+            <span style="font-size:9px;color:${color};min-width:26px;font-family:monospace;">Δ${(val*100).toFixed(0)}%</span>
+        </div>
+        <div style="flex:1;height:0.5px;background:#e4e4e4;"></div>
+    </div>`;
+}
+
+function renderEntropyPanel(typeId) {
+    if (!window.EntropyEngine) return;
+    typeId = typeId ?? document.getElementById('generatorType')?.value;
+    const isTrainer = !typeId || typeId.startsWith('trainer-');
+    document.getElementById('entropyBar').style.opacity = isTrainer ? '0.4' : '1';
+    if (isTrainer) return;
+
+    // ── compact bar ─────────────────────────────────────────────
+    const scores  = EntropyEngine.getSubtypeScores(typeId);
+    const current = scores.find(s => s.subtype.id === currentSubtypeId) ?? scores[0];
+    const session = EntropyEngine.buildTypeSession(Object.keys(EntropyEngine.PUZZLE_REGISTRY), 6);
+
+    if (current) {
+        const { fam, score, zone } = current;
+        const vol = current.subtype.volatility ?? EntropyEngine.PUZZLE_REGISTRY[typeId]?.ruleVolatility ?? 0.8;
+        const reg = EntropyEngine.PUZZLE_REGISTRY[typeId];
+        const clr = EntropyEngine.CLUSTERS[reg?.cluster]?.hex ?? '#888';
+
+        document.getElementById('epPickedLabel').textContent =
+            (reg?.name ?? typeId) + ' · ' + current.subtype.label;
+        document.getElementById('epPickedLabel').style.color = clr;
+
+        // Inline fam bar
+        const barEl = document.getElementById('epInlineBar');
+        barEl.innerHTML = _famBarHTML(fam, zone.color, 80).replace('class="ep-track-wrap"','class="ep-track-wrap" style="position:relative;height:4px;border-radius:2px;background:#e4e4e4;width:80px;flex-shrink:0;"');
+
+        document.getElementById('epFamPct').textContent = (fam*100).toFixed(0) + '%';
+        document.getElementById('epZone').textContent   = zone.label;
+        document.getElementById('epZone').style.color   = zone.color;
+        document.getElementById('epZone').style.borderColor = zone.color;
+    }
+
+    // Entropy score
+    const entColor = _iColor(session.entropy);
+    document.getElementById('epEntropyScore').textContent = (session.entropy*100).toFixed(0) + '%';
+    document.getElementById('epEntropyScore').style.color = entColor;
+
+    // Inline queue (always-visible short form)
+    document.getElementById('epQueueInline').textContent =
+        session.seq.slice(0, 4).map(s => s.name).join(' → ');
+
+    // ── expanded details ─────────────────────────────────────────
+    const det = document.getElementById('entropyDetails');
+    if (det.style.display !== 'block') return; // don't render if collapsed
+
+    // Subtype list (left column)
+    const reg = EntropyEngine.PUZZLE_REGISTRY[typeId];
+    document.getElementById('epCurrentTypeName').textContent = reg?.name ?? typeId;
+    const listEl = document.getElementById('epSubtypeList');
+    listEl.innerHTML = '';
+    scores.forEach(({ subtype: st, fam, score, zone, wins, losses }) => {
+        const isCurrent = st.id === currentSubtypeId;
+        const vol = st.volatility ?? reg?.ruleVolatility ?? 0.8;
+        const card = document.createElement('div');
+        card.style.cssText = `border-left:2px solid ${zone.color};border:0.5px solid ${isCurrent ? '#bbb' : '#eee'};border-left-width:2px;border-left-color:${zone.color};border-radius:5px;padding:6px 9px;background:${isCurrent ? '#f4f4f4' : 'white'};`;
+        card.innerHTML = `
+            <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:4px;">
+                <span style="font-size:12px;font-weight:${isCurrent?600:400};color:${isCurrent?'#222':'#555'};font-family:monospace;">${st.label}</span>
+                ${isCurrent ? '<span style="font-size:9px;background:#e8f0ff;color:#378ADD;padding:1px 5px;border-radius:3px;">next</span>' : ''}
+                <span style="margin-left:auto;font-size:9px;color:#aaa;font-family:monospace;">${wins}W / ${losses}L</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                ${_famBarHTML(fam, zone.color)}
+                <span style="font-size:9px;color:${zone.color};font-family:monospace;">${zone.label}</span>
+                <span style="font-size:9px;color:#aaa;font-family:monospace;">fam ${(fam*100).toFixed(0)}%</span>
+                <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
+                    ${_sparklineSVG(fam, vol)}
+                    <span style="font-size:9px;color:#aaa;font-family:monospace;">R ${(score*100).toFixed(0)}</span>
+                </div>
+            </div>`;
+        listEl.appendChild(card);
+    });
+
+    // Cluster legend
+    const legendEl = document.getElementById('epClusterLegend');
+    legendEl.innerHTML = Object.entries(EntropyEngine.CLUSTERS).map(([k,v]) =>
+        `<div style="display:flex;align-items:center;gap:3px;">
+            <div style="width:7px;height:7px;border-radius:2px;background:${v.hex};"></div>
+            <span style="font-size:9px;color:#aaa;font-family:monospace;">${v.label}</span>
+        </div>`
+    ).join('');
+
+    // Session queue (right column)
+    const queueEl = document.getElementById('epSessionQueue');
+    queueEl.innerHTML = '';
+    session.seq.forEach((item, i) => {
+        const clr     = EntropyEngine.CLUSTERS[item.cluster]?.hex ?? '#888';
+        const iScore  = i < session.interferences.length ? session.interferences[i] : null;
+        const vol     = EntropyEngine.PUZZLE_REGISTRY[item.typeId]?.ruleVolatility ?? 0.8;
+        const st      = item.nextSubtype;
+        const stFam   = st ? (EntropyEngine.getSubtypeScores(item.typeId).find(s => s.subtype.id === st.id)?.fam ?? 0.5) : 0.5;
+        const stZone  = { color: _zoneColor(stFam) };
+
+        const card = document.createElement('div');
+        card.className = 'ep-queue-card';
+        card.innerHTML = `
+            <span style="font-size:10px;color:#aaa;min-width:12px;font-family:monospace;">${i+1}</span>
+            <div style="width:7px;height:7px;border-radius:1px;background:${clr};flex-shrink:0;"></div>
+            <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:baseline;gap:5px;">
+                    <span style="font-size:12px;font-weight:500;color:#222;font-family:monospace;">${item.name}</span>
+                    <span style="font-size:9px;color:${clr};white-space:nowrap;font-family:monospace;">${st?.label ?? '—'}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;margin-top:3px;">
+                    ${_famBarHTML(stFam, stZone.color, 60)}
+                    <span style="font-size:9px;color:#aaa;font-family:monospace;">fam ${(stFam*100).toFixed(0)}%</span>
+                    <span style="font-size:9px;color:#aaa;font-family:monospace;">R ${(item.score*100).toFixed(0)}</span>
+                </div>
+            </div>`;
+        queueEl.appendChild(card);
+
+        if (iScore !== null && i < session.seq.length - 1) {
+            const conn = document.createElement('div');
+            conn.innerHTML = _iConnectorHTML(iScore);
+            queueEl.appendChild(conn.firstElementChild);
+        }
+    });
+
+    // Session entropy (updated here too for the expanded view)
+    document.getElementById('epSessionEntropy').textContent = (session.entropy*100).toFixed(0) + '%';
+    document.getElementById('epSessionEntropy').style.color = entColor;
+
+    // Session stat cards
+    const statsEl = document.getElementById('epSessionStats');
+    const avgFam  = session.seq.length
+        ? session.seq.reduce((a, b) => a + b.fam, 0) / session.seq.length
+        : 0;
+    const switches = session.seq.slice(1)
+        .filter((s, i) => s.cluster !== session.seq[i].cluster).length;
+    statsEl.innerHTML = [
+        { label:'AVG FAMILIARITY',  value:`${(avgFam*100).toFixed(0)}%`,             color:'#333' },
+        { label:'CLUSTER SWITCHES', value:`${switches}/${Math.max(0,session.seq.length-1)}`, color:'#333' },
+    ].map(({label,value,color}) =>
+        `<div style="background:white;border:0.5px solid #e8e8e8;border-radius:5px;padding:7px 10px;">
+            <div style="font-size:9px;color:#aaa;letter-spacing:.08em;font-family:monospace;margin-bottom:3px;">${label}</div>
+            <div style="font-size:18px;font-weight:500;color:${color};font-family:monospace;">${value}</div>
+        </div>`
+    ).join('');
+}
+
+function toggleEntropyDetails() {
+    const det  = document.getElementById('entropyDetails');
+    const btn  = document.getElementById('epToggleBtn');
+    const open = det.style.display === 'block';
+    det.style.display = open ? 'none' : 'block';
+    btn.textContent   = open ? '▸' : '▾';
+    if (!open) renderEntropyPanel(); // render full detail on open
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1585,6 +1930,7 @@ function checkPGMAnswer(idx, el) {
 ═══════════════════════════════════════════════════════════════════════════ */
 async function initARC3() {
     showOnly('arc3');
+    currentSubtypeId = 'any';  // ARC3 has one synthetic subtype
     document.getElementById('arc3Feedback').textContent = '';
     setStatus('Loading ARC-AGI-3 environments…', '#333');
 
@@ -1721,6 +2067,16 @@ let rlpSessionId = null, rlpSteps = 0, rlpTotalReward = 0;
 
 async function initRLP() {
     showOnly('rlp');
+    // Entropy: pick best RLP subtype
+    if (window.EntropyEngine) {
+        const picked = EntropyEngine.pickNextSubtype('rlp', currentSubtypeId);
+        if (picked) {
+            const sel = document.getElementById('subType');
+            if (sel.querySelector(`option[value="${picked.id}"]`)) sel.value = picked.id;
+            currentSubtypeId = picked.id;
+            renderEntropyPanel('rlp');
+        }
+    }
     // Read puzzle from subType dropdown (updates when user changes selection)
     const puzzle = document.getElementById('subType').value || 'flood';
     document.getElementById('rlpFeedback').textContent = '';
@@ -1913,6 +2269,8 @@ window.onload = () => {
     updateSubType(document.getElementById('generatorType').value);
     renderStats();
     loadNewPuzzle();
+    // Entropy panel: render after a tick so engine is ready
+    setTimeout(() => renderEntropyPanel(document.getElementById('generatorType').value), 100);
 };
 </script>
 
