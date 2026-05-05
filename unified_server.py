@@ -253,6 +253,112 @@ def contribute():
 def recommendations():
     return render_template('recommendations.html')
 
+@app.route('/entropy-philosophy')
+def entropy_philosophy():
+    import re, os
+    md_path = os.path.join(os.path.dirname(__file__), 'ENTROPY_PHILOSOPHY.md')
+    try:
+        with open(md_path, 'r', encoding='utf-8') as f:
+            raw = f.read()
+    except FileNotFoundError:
+        raw = '# Not found\n\nENTROPY_PHILOSOPHY.md missing.'
+
+    # Minimal markdown → HTML (no deps required)
+    def md_to_html(text):
+        lines = text.split('\n')
+        html = []
+        in_pre = False
+        in_table = False
+        for line in lines:
+            if line.startswith('```'):
+                if in_pre:
+                    html.append('</code></pre>')
+                    in_pre = False
+                else:
+                    html.append('<pre><code>')
+                    in_pre = True
+                continue
+            if in_pre:
+                html.append(line.replace('&','&amp;').replace('<','&lt;').replace('>','&gt;'))
+                continue
+            # Table rows
+            if line.startswith('|'):
+                if not in_table:
+                    html.append('<table>')
+                    in_table = True
+                cells = [c.strip() for c in line.strip('|').split('|')]
+                tag = 'th' if '---' not in line else None
+                if tag is None:
+                    continue
+                html.append('<tr>' + ''.join(f'<{tag}>{c}</{tag}>' for c in cells) + '</tr>')
+                continue
+            else:
+                if in_table:
+                    html.append('</table>')
+                    in_table = False
+            # Headings
+            m = re.match(r'^(#{1,4})\s+(.*)', line)
+            if m:
+                lvl = len(m.group(1))
+                html.append(f'<h{lvl}>{m.group(2)}</h{lvl}>')
+                continue
+            # HR
+            if re.match(r'^---+$', line.strip()):
+                html.append('<hr>')
+                continue
+            # Blank line
+            if not line.strip():
+                html.append('<p></p>')
+                continue
+            # Inline: bold, code, italic
+            line = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', line)
+            line = re.sub(r'`([^`]+)`', r'<code>\1</code>', line)
+            line = re.sub(r'\*([^*]+)\*', r'<em>\1</em>', line)
+            # List item
+            if re.match(r'^[-*]\s+', line):
+                html.append(f'<li>{line[2:]}</li>')
+            elif re.match(r'^\d+\.\s+', line):
+                html.append(f'<li>{re.sub(r"^\d+\.\s+", "", line)}</li>')
+            else:
+                html.append(f'<p>{line}</p>')
+        if in_table:
+            html.append('</table>')
+        if in_pre:
+            html.append('</code></pre>')
+        return '\n'.join(html)
+
+    body = md_to_html(raw)
+    return f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  body {{ background: #0e0e0e; color: #e8e8e8; font-family: "Segoe UI", system-ui, sans-serif;
+         font-size: 14px; line-height: 1.7; padding: 28px 28px 60px; max-width: 860px; }}
+  h1 {{ font-size: 20px; font-weight: 700; margin: 28px 0 6px; color: #fff; }}
+  h2 {{ font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em;
+        color: #1D9E75; margin: 28px 0 10px; border-bottom: 1px solid #222; padding-bottom: 6px; }}
+  h3 {{ font-size: 13px; font-weight: 600; color: #aaa; margin: 18px 0 6px; }}
+  h4 {{ font-size: 12px; color: #777; margin: 12px 0 4px; }}
+  p  {{ color: #bbb; margin-bottom: 8px; }}
+  li {{ color: #bbb; margin: 3px 0 3px 22px; list-style: disc; }}
+  code {{ background: #1a1a1a; color: #c8e6c9; padding: 1px 5px; border-radius: 3px;
+          font-family: monospace; font-size: 12px; }}
+  pre {{ background: #111; border: 1px solid #222; border-radius: 5px; padding: 14px 16px;
+         overflow-x: auto; margin: 12px 0; }}
+  pre code {{ background: none; padding: 0; color: #a5d6a7; font-size: 12px; }}
+  table {{ border-collapse: collapse; width: 100%; margin: 12px 0; }}
+  th, td {{ border: 1px solid #2a2a2a; padding: 6px 12px; text-align: left; font-size: 13px; }}
+  th {{ background: #181818; color: #aaa; font-weight: 600; }}
+  td {{ color: #bbb; }}
+  hr {{ border: none; border-top: 1px solid #222; margin: 20px 0; }}
+  strong {{ color: #e8e8e8; }}
+</style>
+</head>
+<body>{body}</body>
+</html>'''
+
 @app.route('/api/get_puzzle', methods=['GET', 'POST'])
 def get_puzzle():
     try:
