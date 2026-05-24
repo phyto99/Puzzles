@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Elite Puzzle Sources — Orbital & Contribution Guide</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Courier New',Courier,monospace;background:#fafafa;color:#111;font-size:13px}
+h2{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
+nav{border-bottom:2px solid #111;padding:10px 20px;display:flex;align-items:center;background:#fff}
+nav .logo{font-size:11px;font-weight:700;letter-spacing:.12em;margin-right:28px;text-transform:uppercase}
+.tab-btn{padding:6px 14px;font-family:inherit;font-size:10px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;letter-spacing:.07em;text-transform:uppercase;color:#888}
+.tab-btn.on{color:#111;border-bottom-color:#111;font-weight:700}
+section{display:none;padding:20px}
+section.on{display:block}
+#orbital-outer{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap}
+#orbital-wrap{flex:0 0 auto}
+#orbit-svg{display:block;border:1px solid #e0e0e0;background:#fff}
+#orbital-legend{flex:1;min-width:200px}
+.leg-block{margin-bottom:16px}
+.leg-block h2{margin-bottom:7px;border-bottom:1px solid #e0e0e0;padding-bottom:4px}
+.leg-row{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:10px;color:#444}
+.orbital-stats{background:#fff;border:1px solid #e0e0e0;padding:10px;margin-bottom:16px}
+.orbital-stats h2{margin-bottom:6px}
+.ostat{font-size:10px;color:#444;line-height:2.1}
+.ostat strong{color:#111}
+.orbit-controls{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:4px}
+.oc-btn{padding:3px 9px;font-family:inherit;font-size:9px;border:1px solid #bbb;background:#fff;cursor:pointer;text-transform:uppercase;letter-spacing:.05em;color:#555;transition:all .12s}
+.oc-btn.on{background:var(--cc,#111);color:#fff;border-color:var(--cc,#111)}
+#upcoming-list{margin-top:4px}
+.up-item{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #f0f0f0;font-size:10px}
+.up-days{font-weight:700;font-size:12px;min-width:22px;text-align:right}
+.up-d{font-size:9px;color:#bbb}
+.up-pip{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.up-name{color:#111;text-decoration:none}
+.up-name:hover{text-decoration:underline}
+.up-freq{color:#aaa;font-size:9px;margin-left:auto}
+.cat-color-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-top:6px}
+.cat-color-row{display:flex;align-items:center;gap:6px;font-size:10px;color:#444}
+.cat-swatch{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+#contrib-controls{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+#contrib-search{padding:5px 9px;font-family:inherit;font-size:11px;border:1px solid #bbb;width:240px;outline:none;background:#fff}
+#contrib-search:focus{border-color:#111}
+.cc-btn{padding:4px 11px;font-family:inherit;font-size:9px;border:1px solid #bbb;background:#fff;cursor:pointer;text-transform:uppercase;letter-spacing:.06em;color:#555}
+.cc-btn.on{background:#111;color:#fff;border-color:#111}
+.criteria-legend{background:#fff;border:1px solid #e0e0e0;padding:14px;margin-bottom:14px}
+.criteria-legend h2{margin-bottom:10px}
+.crit-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:8px}
+.crit-item{font-size:10px;line-height:1.5}
+.crit-name{font-weight:700;font-size:9px;text-transform:uppercase;letter-spacing:.07em}
+.crit-desc{color:#666;margin-top:2px;font-size:9px}
+.score-guide{display:flex;gap:4px;margin-top:5px}
+.sg{width:15px;height:15px;border:1px solid #ddd;font-size:8px;display:flex;align-items:center;justify-content:center;font-weight:700}
+.sg-0{background:#fee2e2;color:#991b1b}
+.sg-1{background:#fef3c7;color:#92400e}
+.sg-2{background:#dcfce7;color:#166534}
+.sg-3{background:#111;color:#fff}
+#site-list{border:1px solid #e0e0e0;background:#fff}
+.site-row{display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:10px 12px 10px 14px;border-bottom:1px solid #f0f0f0;align-items:start;border-left:3px solid #ddd}
+.site-row:last-child{border-bottom:none}
+.site-row.rejected{opacity:.72}
+.site-row:hover{background:#f9f9f9}
+.site-name{font-weight:700;font-size:11px;margin-bottom:3px}
+.site-name a{color:#111;text-decoration:none;border-bottom:1px solid #ddd}
+.site-name a:hover{border-bottom-color:#111}
+.site-meta{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+.site-desc{font-size:9px;color:#666;line-height:1.55}
+.cat-tag{font-size:8px;padding:1px 6px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;border:1px solid}
+.freq-tag{font-size:8px;padding:1px 6px;background:#111;color:#fff;letter-spacing:.04em;border:1px solid #111}
+.score-bars{display:flex;gap:3px;align-items:flex-end}
+.crit-bar-col{display:flex;flex-direction:column;align-items:center;gap:2px}
+.crit-bar-label{font-size:6px;color:#aaa;letter-spacing:.03em;text-transform:uppercase}
+.crit-bar{width:15px;height:15px;border:1px solid #eee;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700}
+.c0{background:#fee2e2;color:#991b1b;border-color:#fca5a5}
+.c1{background:#fef3c7;color:#92400e;border-color:#fcd34d}
+.c2{background:#dcfce7;color:#166534;border-color:#86efac}
+.c3{background:#111;color:#fff;border-color:#111}
+.score-total{font-size:21px;font-weight:700;line-height:1;text-align:center}
+.score-label{font-size:8px;color:#aaa;text-align:center;margin-top:2px;letter-spacing:.05em}
+.st-strong{color:#166534}
+.st-pass{color:#92400e}
+.st-fail{color:#991b1b}
+.status-col{text-align:center;min-width:72px}
+.badge-accept{display:inline-block;padding:3px 8px;border:1.5px solid #111;font-size:8px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;background:#111;color:#fff}
+.badge-reject{display:inline-block;padding:3px 8px;border:1.5px solid #ccc;font-size:8px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;background:#f0f0f0;color:#888}
+.reject-reason{font-size:9px;color:#999;margin-top:5px;font-style:italic;line-height:1.5}
+.score-block{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:82px}
+#contrib-summary{font-size:10px;color:#666;margin-bottom:10px;line-height:1.9}
+.sort-row{display:flex;font-size:8px;color:#999;padding:6px 12px;background:#f8f8f8;border-bottom:1px solid #e8e8e8;align-items:center;letter-spacing:.06em;text-transform:uppercase}
+.day-tick-label{font-family:'Courier New',monospace;font-size:7.5px;fill:#bbb}
+.ring-label{font-family:'Courier New',monospace;font-size:8px;font-weight:700;fill:#ccc;letter-spacing:.08em}
+.site-dot-label{font-family:'Courier New',monospace;font-size:6.5px}
+#tip{position:fixed;background:#fff;border:1px solid #111;padding:9px 12px;font-family:'Courier New',monospace;font-size:10px;pointer-events:none;z-index:99;display:none;max-width:240px;line-height:1.65;box-shadow:3px 3px 0 #ccc}
+@media(max-width:700px){#orbital-outer{flex-direction:column}.crit-grid{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Puzzle Observatory</div>
+  <button class="tab-btn on" onclick="sv('orbital')">Orbital Calendar</button>
+  <button class="tab-btn" onclick="sv('contrib')">Contribution Guide</button>
+</nav>
+
+<section id="s-orbital" class="on">
+  <div id="orbital-outer">
+    <div id="orbital-wrap">
+      <svg id="orbit-svg" viewBox="0 0 600 600" width="560" height="560"></svg>
+    </div>
+    <div id="orbital-legend">
+      <div class="orbital-stats">
+        <h2 id="today-heading">Today</h2>
+        <div class="ostat" id="ostat"></div>
+      </div>
+      <div class="leg-block">
+        <h2>Ring key</h2>
+        <div class="leg-row"><div style="width:28px;height:0;border-top:2px solid #111;flex-shrink:0"></div>Today spoke (→ right)</div>
+        <div class="leg-row"><div style="width:28px;height:0;border-top:1px dashed #bbb;flex-shrink:0"></div>Weekly ring · 7-day scale</div>
+        <div class="leg-row"><div style="width:28px;height:0;border-top:1px solid #ccc;flex-shrink:0"></div>Monthly ring · 30-day scale</div>
+        <div class="leg-row"><div style="width:28px;height:0;border-top:1px solid #bbb;flex-shrink:0"></div>Annual ring · 365-day scale</div>
+        <div class="leg-row"><div style="width:28px;height:0;border-top:1px dotted #ccc;flex-shrink:0"></div>Evergreen · always active</div>
+        <div style="font-size:9px;color:#aaa;margin-top:5px">Clockwise from → = upcoming. Click any dot or label.</div>
+      </div>
+      <div class="leg-block">
+        <h2>Dot size — urgency</h2>
+        <div class="leg-row"><div style="width:14px;height:14px;background:#555;border-radius:50%;flex-shrink:0"></div>Updates today</div>
+        <div class="leg-row"><div style="width:11px;height:11px;background:#555;border-radius:50%;flex-shrink:0;opacity:.85"></div>This week</div>
+        <div class="leg-row"><div style="width:9px;height:9px;background:#555;border-radius:50%;flex-shrink:0;opacity:.65"></div>This month</div>
+        <div class="leg-row"><div style="width:7px;height:7px;background:#555;border-radius:50%;flex-shrink:0;opacity:.45"></div>This year / evergreen</div>
+        <div style="font-size:9px;color:#aaa;margin-top:4px;font-style:italic">Color = category</div>
+      </div>
+      <div class="leg-block">
+        <h2>Category colors</h2>
+        <div class="cat-color-grid" id="cat-color-legend"></div>
+      </div>
+      <div class="leg-block">
+        <h2>Upcoming — next 30 days</h2>
+        <div id="upcoming-list"></div>
+      </div>
+      <div class="leg-block">
+        <h2>Filter by category</h2>
+        <div class="orbit-controls" id="cat-btns"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="s-contrib">
+  <div class="criteria-legend">
+    <h2>Acceptance Criteria — Each scored 0–3 · Threshold ≥ 13 / 24</h2>
+    <div class="crit-grid" style="grid-template-columns:repeat(4,1fr)">
+      <div class="crit-item"><div class="crit-name">Rarity / Ritual</div><div class="crit-desc">Temporal discipline. Annual/biannual events carry ritual weight beyond a continuous stream.</div><div class="score-guide"><div class="sg sg-0">0</div><div class="sg sg-1">1</div><div class="sg sg-2">2</div><div class="sg sg-3">3</div></div></div>
+      <div class="crit-item"><div class="crit-name">Invention</div><div class="crit-desc">Creates new rule systems, constraint logic, or entirely new kinds of puzzles.</div><div class="score-guide"><div class="sg sg-0">0</div><div class="sg sg-1">1</div><div class="sg sg-2">2</div><div class="sg sg-3">3</div></div></div>
+      <div class="crit-item"><div class="crit-name">Barrier</div><div class="crit-desc">Serious gate. 3 = near-professional or genius-level filter required.</div><div class="score-guide"><div class="sg sg-0">0</div><div class="sg sg-1">1</div><div class="sg sg-2">2</div><div class="sg sg-3">3</div></div></div>
+      <div class="crit-item"><div class="crit-name">Pedigree</div><div class="crit-desc">World champions, IMO medalists, grandmasters, olympiad specialists actively engage.</div><div class="score-guide"><div class="sg sg-0">0</div><div class="sg sg-1">1</div><div class="sg sg-2">2</div><div class="sg sg-3">3</div></div></div>
+      <div class="crit-item"><div class="crit-name">Archive</div><div class="crit-desc">Deep, searchable, annotated solutions for cumulative scholarly study.</div><div class="score-guide"><div class="sg sg-0">0</div><div class="sg sg-1">1</div><div class="sg sg-2">2</div><div class="sg sg-3">3</div></div></div>
+      <div class="crit-item"><div class="crit-name">Institution</div><div class="crit-desc">Backed by: government, university, world federation, or ancient society.</div><div class="score-guide"><div class="sg sg-0">0</div><div class="sg sg-1">1</div><div class="sg sg-2">2</div><div class="sg sg-3">3</div></div></div>
+      <div class="crit-item"><div class="crit-name">Transcendence</div><div class="crit-desc">Produces "aha!" of mathematical beauty or shifts how solvers perceive logic/language/reality.</div><div class="score-guide"><div class="sg sg-0">0</div><div class="sg sg-1">1</div><div class="sg sg-2">2</div><div class="sg sg-3">3</div></div></div>
+      <div class="crit-item"><div class="crit-name">Unsolved Depth</div><div class="crit-desc">Genuine open problems that resist top solvers for years. Living frontier.</div><div class="score-guide"><div class="sg sg-0">0</div><div class="sg sg-1">1</div><div class="sg sg-2">2</div><div class="sg sg-3">3</div></div></div>
+    </div>
+    <div style="margin-top:10px;font-size:9px;color:#777;line-height:1.7"><strong>ACCEPTED</strong> ≥ 13 pts &nbsp;|&nbsp; <strong>REJECTED</strong> &lt; 13 pts &nbsp;|&nbsp; Must earn across multiple dimensions. 8 criteria v2 — scores revised 2026.</div>
+  </div>
+  <div id="contrib-controls">
+    <input id="contrib-search" placeholder="Search sites, categories, descriptions…" oninput="filterContrib()">
+    <button class="cc-btn on" id="btn-all" onclick="setFilter('all',this)">All</button>
+    <button class="cc-btn" onclick="setFilter('accept',this)">Accepted</button>
+    <button class="cc-btn" onclick="setFilter('reject',this)">Rejected</button>
+  </div>
+  <div id="contrib-summary"></div>
+  <div id="site-list">
+    <div class="sort-row">
+      <span style="flex:1">Site &amp; Description</span>
+      <span style="width:114px;text-align:center">RAR · INV · BAR · PED · ARC · INS</span>
+      <span style="width:72px;text-align:center">Status</span>
+    </div>
+    <div id="contrib-rows"></div>
+  </div>
+</section>
+
+<div id="tip">
+  <div id="tip-name" style="font-weight:700;font-size:11px;margin-bottom:2px"></div>
+  <div id="tip-cat" style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px"></div>
+  <div id="tip-days" style="font-size:10px;color:#666;margin-bottom:2px"></div>
+  <div id="tip-score" style="font-size:9px;color:#999;margin-bottom:3px"></div>
+  <div id="tip-desc" style="font-size:9px;color:#777"></div>
+</div>
+
+<script>
+const CATS = {
+  hunt:'Puzzle Hunts', math:'Math Competitions', logic:'Logic Puzzles',
+  sudoku:'Sudoku Variants', cryptic:'Cryptic Crosswords', cipher:'Ciphers & Codes',
+  code:'Competitive Prog.', society:'Puzzle Societies', mech:'Mechanical Puzzles',
+  chess:'Chess Composition', ling:'Linguistics Logic',
+};
+const CAT_COLORS = {
+  hunt:'#1d4ed8', math:'#7c3aed', logic:'#0891b2', sudoku:'#ea580c',
+  cryptic:'#16a34a', cipher:'#dc2626', code:'#6d28d9', society:'#db2777',
+  mech:'#b45309', chess:'#475569', ling:'#6366f1',
+};
+
+// [id, name, url, cat, freq, dayInfo, desc]
+// RESEARCH CORRECTIONS (May 2026):
+// #33  Cut the Knot      — Invention 2→1, Barrier 2→1 (educational, no difficulty gate) → now REJECTED
+// #39  Tanya Khovanova   — Institution 2→1 (personal blog, not institutionally backed)
+// #68  Fifteensquared    — Invention 1→0 (commentary only, creates no puzzles) → now REJECTED
+// #87  Gathering 4 Gardner — URL corrected (was gatheringforcoleman.com, a typo)
+// #30,92,93 — freq corrected biannual→bimonthly (all publish 6× per year, not 2×)
+// #96  FIDE Album        — description clarified as triennial (freq kept biannual as proxy)
+// CRITERIA UPGRADE (v2): 6→8 criteria; added Transcendence/Insight (TRN) + Unsolved Depth (UNS)
+// Threshold raised from 10/18 to 13/24 (~55% in both cases). #49 PuzzSQ, #58 Penpa-Edit now REJECTED.
+// NEW ENTRIES: #97–106  — Linguistics Logic (IOL), Chess Composition (WFCC, OzProblems),
+//   Mechanical (Slocum IU, IPP archive), Logic (WPC Unofficial, LMD Portal), Sudoku (WPF GP archive),
+//   Math (Evan Chen, AoPS Olympiad Archive).
+const RAW = [
+  [1,'MIT Mystery Hunt','puzzles.mit.edu','hunt','annual',{m:0,d:15},'Hardest puzzle hunt on earth. 48–72 hr. Teams of 50+. Invented mechanics every year.'],
+  [2,'Galactic Puzzle Hunt','galacticpuzzlehunt.com','hunt','annual',{m:7,d:15},'MIT-pedigree online hunt, August. Deep metas, originally invented mechanics each year.'],
+  [3,'DASH Hunt','playdash.org','hunt','annual',{m:4,d:1},'Different Area Same Hunt. In-person multi-city, May. Serious constructor community.'],
+  [4,'Teammate Hunt','teammatehunt.com','hunt','annual',{m:1,d:1},'Annual online hunt, February. Dense nested meta-puzzle structures.'],
+  [5,'BAPHL','baphl.org','hunt','irregular',null,'Boston Area Puzzle Hunt League. Walkaround hunts ~3× per year. Hard metas.'],
+  [6,'Microsoft Puzzle Hunt','puzzlehunt.azurewebsites.net','hunt','annual',{m:4,d:15},'Microsoft employee-constructed annual hunt. Hard meta-puzzle chains.'],
+  [7,'P&A Magazine','pandamagazine.com','hunt','monthly',1,'Monthly print/PDF puzzle hunt. Hunt-veteran constructors. Continuous archive.'],
+  [8,'Brown Puzzlehunt','brownpuzzlehunt.com','hunt','annual',{m:3,d:11},'Brown Puzzle College annual hunt. In-person + online hybrid.'],
+  [9,'HMMT Puzzle Hunt','hmmt.org','hunt','biannual',null,'Biannual high-school puzzle hunt by Harvard-MIT Math Tournament. Feb + Nov.'],
+  [10,'Silph Puzzle Hunt','silphpuzzlehunt.com','hunt','annual',{m:6,d:25},'Pokémon-themed hunt. Novel invented mechanics every year. July.'],
+  [11,'Edric Truzzle Hunt','truzzle.net','hunt','annual',{m:6,d:12},'Independent online hunt, July. Elegant puzzle design. Growing pedigree.'],
+  [12,'FlatDurian Hunt','puzzlehuntmy.us','hunt','irregular',null,'Bimonthly round releases since 2025–26. First-time org; archive incomplete.'],
+  [13,'Hunt Archive Wiki','puzzles.wiki','hunt','continuous',null,'Indexed archive of every hunt ever run. Resource tool only, not a puzzle source.'],
+  [14,'Puzzle Hunt Calendar','puzzlehuntcalendar.com','hunt','continuous',null,'Live tracker of upcoming puzzle hunt events. Directory tool only.'],
+  [15,'Puzzlvaria Blog','puzzlvaria.wordpress.com','hunt','irregular',null,'Dan Katz hunt-criticism blog. Commentary only; puzzles reviewed are the sources.'],
+  [16,'Jane Street Puzzles','janestreet.com/puzzles','math','monthly',1,'Monthly quant-firm-level logic. Custom rule sets every time. Solutions archived.'],
+  [17,'IBM Ponder This','research.ibm.com/haifa/ponderthis','math','monthly',28,'Monthly since 1998. Requires computer search + proof. IBM Research.'],
+  [18,'Putnam Competition','maa.org/putnam','math','annual',{m:11,d:6},'Hardest North American undergrad math exam. 12 problems. December.'],
+  [19,'IMO Archive','imo-official.org/problems.aspx','math','annual',{m:6,d:15},'International Math Olympiad. Hardest high-school math. Proof required.'],
+  [20,'USAMO','maa.org/usamo','math','annual',{m:3,d:20},'Top 250 US students. 6 proof problems. April. Pathway to IMO.'],
+  [21,'AMC 12 / AIME','maa.org/amc','math','annual',{m:1,d:5},'AMC→AIME funnel. AIME has no multiple choice. February competition.'],
+  [22,'Miklós Schweitzer','math.u-szeged.hu/schweitzer','math','annual',{m:9,d:20},'Open-book 10-day competition. Considered the hardest math contest in the world.'],
+  [23,'HMMT Math Tournaments','hmmt.org','math','biannual',null,'Harvard-MIT Math Tournament. February + November. Hard proof-style problems.'],
+  [24,'Tournament of Towns','olympiads.mccme.ru','math','biannual',null,'Russian math olympiad. Two sessions per year. Multi-tier difficulty.'],
+  [25,'Baltic Way','bmoa.eu','math','annual',{m:10,d:1},'Team competition, 11 Baltic states. Proof problems. October.'],
+  [26,'Czech-Slovak Math Olympiad','cmsp.mff.cuni.cz','math','annual',{m:2,d:1},'Joint Czech and Slovak math olympiad. Proof-based. Deep tradition.'],
+  [27,'Romanian Math Olympiad','rmo.ro','math','annual',{m:1,d:15},'Historically strong olympiad tradition. Proof problems. January.'],
+  [28,'IMO Shortlist','imo-official.org','math','annual',{m:9,d:1},'Shortlisted IMO problems released the year after the following competition.'],
+  [29,'Crux Mathematicorum','cms.math.ca/publications/crux','math','monthly',1,'Peer-reviewed problems journal. Called "best in world." Open-access since 2019.'],
+  [30,'Mathematical Reflections','awesomemath.us/mathematical-reflections','math','bimonthly',null,'Olympiad-level student problems journal. Six issues per year (bimonthly). Freq corrected from biannual.'],
+  [31,'AMM Problems Section','maa.org/press/periodicals/american-mathematical-monthly','math','monthly',1,'MAA flagship monthly. Problems section with peer-reviewed solutions.'],
+  [32,'Project Euler','projecteuler.net','math','continuous',null,'900+ computational math problems. Efficiency matters. No public spoilers policy.'],
+  [33,'Cut the Knot','cut-the-knot.org','math','continuous',null,'Recreational math proofs and interactive illustrations by Bogomolny. Educational archive only.'],
+  [34,'Brainstellar (Deadly)','brainstellar.com','math','continuous',null,'Quant-firm-tier probability and logic. Curated Deadly tier only.'],
+  [35,'Art of Problem Solving','artofproblemsolving.com','math','continuous',null,'General competition math hub. No minimum difficulty floor. General-access resource site.'],
+  [36,'IOQM India','olympiads.hbcse.tifr.res.in','math','annual',{m:7,d:1},'Indian Olympiad Qualifying Exam. Gateway to IMO. TIFR-backed. August.'],
+  [37,'UKMT Senior Challenges','ukmt.org.uk','math','annual',{m:9,d:1},'UK Mathematics Trust. Senior → BMO → IMO pathway. October.'],
+  [38,'Futility Closet','futilitycloset.com','math','continuous',null,'Mathematical curiosities blog. No difficulty barrier, no elite community, no gate.'],
+  [39,'Tanya Khovanova Math Blog','blog.tanyakhovanova.com','math','irregular',null,'MIT mathematician\'s puzzle blog. Competition problems + original compositions.'],
+  [40,'GMPuzzles','gmpuzzles.com','logic','weekly',0,'World Sudoku Champions constructing daily. Every puzzle uses custom variant rules.'],
+  [41,'World Puzzle Championship','worldpuzzle.org','logic','annual',{m:9,d:1},'Annual WPC. Language-neutral logic. 100+ countries. Archive 1992–present.'],
+  [42,'WPF Puzzle Grand Prix','grandprix.worldpuzzle.org','logic','monthly',15,'Monthly online WPF rounds. WPC-style logic puzzles. WPC qualification pathway.'],
+  [43,'Logic Masters India','logicmastersindia.com','logic','monthly',10,'Two tests/month: 1 sudoku + 1 logic. World-class constructors.'],
+  [44,'Logic Masters Germany','logic-masters.de','logic','continuous',null,'LMD forum. Enormous archive. Inventor of many classic puzzle form types.'],
+  [45,'US Puzzle Championship','uspc.puzzles.com','logic','annual',{m:6,d:1},'Annual USPC. Top scorers represent the USA at WPC. Hard logic problems.'],
+  [46,'Simon Tatham Puzzles','chiark.greenend.org.uk/~sgtatham/puzzles','logic','continuous',null,'39 open-source portable logic puzzle types. All uniquely solvable. Rigorous design.'],
+  [47,'Nikoli Japan','nikoli.com','logic','continuous',null,'Original publisher of Sudoku, Slitherlink, Nurikabe. Premium editorial quality.'],
+  [48,'Akil Oyunlari Turkey','akiloyunlaridergisi.com','logic','monthly',1,'Turkish logic magazine. WPC-level constructors. Novel puzzle types invented regularly.'],
+  [49,'PuzzSQ / Logic App','puzsq.logicpuzzle.app','logic','continuous',null,'Archive of logic puzzles by WPC-level constructors. Searchable.'],
+  [50,'Croco-Puzzle','croco-puzzle.com','logic','continuous',null,'Large Nikoli-style puzzle archive. Lower curation rigor.'],
+  [51,'Puzzle Picnic','puzzlepicnic.com','logic','continuous',null,'Logic puzzle collection. No minimum difficulty or institutional backing.'],
+  [52,'Archimedes Lab','archimedes-lab.org','logic','irregular',null,'Math/logic puzzles. Insufficient difficulty barrier and pedigree for this list.'],
+  [53,'Cracking the Cryptic','crackingthecryptic.com','sudoku','irregular',null,'Variant sudoku with entirely invented constraint systems. Daily videos and setter community.'],
+  [54,'World Sudoku Championship','worldsudokuchampionship.com','sudoku','annual',{m:9,d:5},'Annual WSC. Held alongside WPC. 50+ distinct sudoku variant types. Full archive.'],
+  [55,'WPF Sudoku Grand Prix','grandprix.worldpuzzle.org','sudoku','monthly',1,'Monthly sudoku rounds. WPC/WSC qualification pathway.'],
+  [56,'Lisudoku','lisudoku.com','sudoku','continuous',null,'Custom constraint builder tool. Construction tool only, not a puzzle source.'],
+  [57,'F-Puzzles','f-puzzles.com','sudoku','continuous',null,'Construction and solving tool. Not a curated puzzle source.'],
+  [58,'Penpa-Edit Community','swaroopg92.github.io/penpa-edit','sudoku','continuous',null,'Web tool for WPC-style puzzles. Community shares original puzzles here.'],
+  [59,'The Listener Crossword','listenercrossword.com','cryptic','weekly',6,'Hardest cryptic since 1930. Weekly Saturday Times (UK). Themed variants only.'],
+  [60,'The Magpie Magazine','piemag.com','cryptic','monthly',1,'Monthly subscription. 5 cryptics + 1 numerical. Grades A–E. Goodliffe & Anthony eds.'],
+  [61,'Enigmatic Variations','fifteensquared.net','cryptic','weekly',0,'Weekly themed cryptic, Sunday Telegraph. Running 30+ years.'],
+  [62,'The Inquisitor','fifteensquared.net','cryptic','weekly',6,'Saturday Independent. Thematic cryptics. Solution blog at Fifteensquared.'],
+  [63,'NPL Enigma Cryptics','puzzlers.org/the-enigma','cryptic','monthly',1,'NPL monthly. Variety cryptics and flats. Rarely seen outside the League.'],
+  [64,'Azed (Observer)','theguardian.com/crosswords','cryptic','weekly',0,'Jonathan Crowther in Sunday Observer. Hardest British barred-grid cryptic.'],
+  [65,'Mephisto (Sunday Times)','thetimes.com/puzzles','cryptic','weekly',0,'Sunday Times barred-grid cryptic. Three setters: Manley, Moorey, McKenna.'],
+  [66,'1 Across Magazine','bestforpuzzles.com','cryptic','monthly',1,'UK subscription cryptic magazine. Advanced thematic puzzles monthly.'],
+  [67,'The Crossword Club UK','crosswordclub.co.uk','cryptic','monthly',1,'UK subscription service. Monthly cryptics by top-tier setters.'],
+  [68,'Fifteensquared Blog','fifteensquared.net','cryptic','continuous',null,'Community solver blog archiving solutions to Listener, EV, and Inquisitor crosswords.'],
+  [69,'MysteryTwister C3','mysterytwister.org','cipher','continuous',null,'Cipher challenge contest with Hall of Fame. Unsolved problems remain. Since 2009.'],
+  [70,'NSA Puzzle Periodical','nsa.gov/news-features/puzzles','cipher','monthly',1,'NSA monthly math/crypto puzzles. Government origin. Often unsolved for weeks.'],
+  [71,'GCHQ Puzzle Challenges','gchq.gov.uk','cipher','irregular',null,'UK intelligence agency challenges. Annual Christmas puzzle. Elite difficulty.'],
+  [72,'NCSC CyberFirst','ncsc.gov.uk/cyberfirst','cipher','annual',{m:1,d:1},'UK National Cyber Security Centre annual competition. Cipher + coding.'],
+  [73,'Cicada 3301 Archive','uncovering-cicada.fandom.com','cipher','continuous',null,'Archive of 2012–2014 puzzles. Multi-layer: cryptography, steganography, IRL elements.'],
+  [74,'Kryptos Community','elonka.com/kryptos','cipher','continuous',null,'CIA sculpture cipher. Part 4 unsolved since 1990. Active researcher community.'],
+  [75,'Crypto Corner','cryptocorner.info','cipher','continuous',null,'Classical cipher educational tools. No challenge community or unsolved depth.'],
+  [76,'CTF Time','ctftime.org','cipher','irregular',null,'CTF competition directory. The competitions it lists may qualify; this directory does not.'],
+  [77,'Project Architeuthis','en.wikipedia.org/wiki/Project_Architeuthis','cipher','annual',{m:0,d:1},'US Navy cryptologic cipher challenge. Annual. Recruiting cryptologists.'],
+  [78,'Advent of Code','adventofcode.com','code','annual',{m:11,d:1},'December programming puzzles. All years archived. Jane Street solvers compete.'],
+  [79,'AtCoder Grand Contest','atcoder.jp','code','irregular',null,'AGC: hardest competitive programming rounds. ~10/year. Japan origin.'],
+  [80,'ICPC World Finals','icpc.global','code','annual',{m:3,d:1},'International Collegiate Programming Contest. World Finals. March.'],
+  [81,'IOI Archive','ioinformatics.org','code','annual',{m:6,d:1},'International Olympiad in Informatics. Algorithmic problems. Proof required.'],
+  [82,'USACO Platinum','usaco.org','code','irregular',null,'USA Computing Olympiad. Platinum division. ~4 contests per year.'],
+  [83,'Codeforces Div1 E/F','codeforces.com','code','irregular',null,'Only the hardest Codeforces problems. D1 E and F. Expert-only territory.'],
+  [84,'IOI Shortlist','ioinformatics.org','code','annual',{m:9,d:1},'Unreleased IOI shortlisted problems from prior year. Research quality.'],
+  [85,'NPL / The Enigma','puzzlers.org','society','monthly',1,'World\'s oldest puzzle org (1883). Monthly Enigma magazine. ~900 members.'],
+  [86,'Int\'l Puzzle Party','puzzleparty.org','society','annual',{m:7,d:1},'By-invitation-only. Annual mechanical puzzle exchange + design competition.'],
+  [87,'Gathering 4 Gardner','gathering4gardner.org','society','biannual',null,'Biennial celebration of Martin Gardner. Math, magic, puzzles. Elite gathering.'],
+  [88,'ACPT','crosswordtournament.com','society','annual',{m:2,d:20},'American Crossword Puzzle Tournament. Annual March. NPL members attend.'],
+  [89,'Nob Yoshigahara Design Comp.','puzzleworld.org/DesignCompetition','mech','annual',{m:7,d:1},'IPP\'s annual design competition. Jury Grand Prize. Invitation-only.'],
+  [90,'Puzzle Museum (Slocum)','puzzlemuseum.com','mech','continuous',null,'Jerry Slocum\'s archive. 30,000+ mechanical puzzles from 13th century onward.'],
+  [91,'Hanayama Puzzle Blog','hanayama-toys.com','mech','irregular',null,'Japanese cast metal puzzles. Level 6 series. Originally designed by Nob Yoshigahara.'],
+  [92,'The Problemist Journal','theproblemist.org','chess','bimonthly',null,'Bimonthly (6× per year). British Chess Problem Society journal. Composition + solving.'],
+  [93,'Die Schwalbe','dieschwalbe.de','chess','bimonthly',null,'German chess problem society. Bimonthly (6× per year) journal. Compositions + proof games.'],
+  [94,'Tim Krabbé Chess Curiosities','timkr.home.xs4all.nl/chess/chess.htm','chess','continuous',null,'Essential chess curiosity archive. Records, proof games, endgame studies.'],
+  [95,'Retro Corner (MatPlus)','matplus.net','chess','continuous',null,'Retrograde analysis community. Proof games. Last-move deduction puzzles.'],
+  [96,'FIDE Album (Composition)','fide.com','chess','biannual',null,'FIDE triennial anthology of finest chess compositions worldwide. (Freq listed as biannual proxy.)'],
+  // ── NEW ENTRIES v2 ──────────────────────────────────────────────────────────
+  [97,'IOL Problems Archive','ioling.org/problems/','ling','annual',{m:7,d:20},'International Linguistics Olympiad: 20+ years of language-decoding problems with full solutions. Derive grammar of unknown languages from scratch. By-year and best-solutions sub-archives available.'],
+  [98,'WFCC Official Site','wfcc.ch','chess','annual',{m:9,d:1},'World Federation for Chess Composition. Governs WCCT, World Solving Championship, FIDE Albums, composition congresses. Highest institutional authority in the chess composition tradition.'],
+  [99,'OzProblems','ozproblems.com','chess','continuous',null,'Australian chess composition repository with FIDE Album selections, endgame studies, proof games, and retrograde analysis — all with diagrams and rich searchable archive.'],
+  [100,'Slocum Collection (Indiana Univ.)','digitalcollections.iu.edu/collections/p2678p93x','mech','continuous',null,'Indiana University Lilly Library digital archive of Jerry Slocum\'s 30,000+ mechanical puzzles from the 13th century onward. Fully searchable with photos, descriptions, and provenance.'],
+  [101,'WPC Unofficial Archive','ectoplsm.github.io/wpc-unofficial.org/instructions/','logic','continuous',null,'Unofficial archive of World Puzzle Championship instruction booklets and original problem sets from 1992–present. Preserves the full history of language-neutral logic puzzle invention.'],
+  [102,'WPF Sudoku GP Archives','gp.worldpuzzle.org/content/sudoku-archive','sudoku','continuous',null,'Full downloadable archive of past WPF Sudoku Grand Prix rounds with problem sets and answer keys. Companion to the live monthly GP qualification competition.'],
+  [103,'Evan Chen Olympiad Problems','web.evanchen.cc/problems.html','math','continuous',null,'Curated olympiad problem sets and solutions by Harvard PhD and IMO medalist Evan Chen. Clean, comprehensive coverage of hard competition problems with detailed write-ups.'],
+  [104,'LMD Rätsel Portal','logic-masters.de/Raetselportal/?chlang=en','logic','continuous',null,'Logic Masters Germany puzzle portal: 34,000+ original logic puzzles fully searchable and many online-solvable. World\'s largest community archive of invented puzzle forms.'],
+  [105,'IPP Design Comp. Archive','puzzles.baxterweb.com/idcArchive/','mech','continuous',null,'Historical archive of all International Puzzle Party Design Competition entries — images, descriptions, and objectives for every submission since the competition began.'],
+  [106,'AoPS Olympiad Archive','artofproblemsolving.com/wiki/index.php/Olympiad_Archive','math','continuous',null,'Art of Problem Solving\'s comprehensive olympiad archive including IMO, Moscow Mathematical Olympiad, USAMO, and major national olympiads worldwide. Deep problem coverage with solutions.'],
+];
+
+// Scores [rarity, invention, barrier, pedigree, archive, institution, transcendence, unsolved_depth]
+// v2: 8 criteria, max 24. Threshold 13/24 (~55%, matching prior 10/18).
+const SC = {
+  1:[3,3,3,3,3,3,2,2], 2:[3,3,3,3,3,2,2,1], 3:[3,2,3,2,2,2,1,1], 4:[3,3,3,2,3,2,2,1],
+  5:[2,2,2,2,2,2,1,1], 6:[3,2,3,2,3,3,2,1], 7:[2,3,3,3,2,2,2,1], 8:[3,2,3,1,2,2,1,1],
+  9:[2,2,3,3,2,3,1,1], 10:[3,3,2,2,2,1,1,1], 11:[3,2,2,1,2,1,1,1], 12:[2,2,2,1,1,1,0,0],
+  13:[1,0,1,0,3,1,0,0], 14:[1,0,0,0,1,1,0,0], 15:[1,1,1,2,2,1,1,0],
+  16:[2,3,3,3,3,3,2,2], 17:[2,2,3,3,3,3,2,2], 18:[3,0,3,3,3,3,3,1], 19:[3,0,3,3,3,3,3,1],
+  20:[3,0,3,3,3,3,3,1], 21:[3,0,2,3,3,3,2,1], 22:[3,0,3,3,3,3,3,2], 23:[2,0,3,3,3,3,2,1],
+  24:[2,0,3,2,3,3,2,1], 25:[3,0,3,2,3,3,2,1], 26:[3,0,3,2,2,3,2,1], 27:[3,0,3,2,2,3,2,1],
+  28:[3,0,3,3,3,3,3,2], 29:[2,1,2,3,3,3,2,2], 30:[2,1,2,2,3,2,2,1], 31:[2,1,2,3,3,3,2,2],
+  32:[1,2,2,2,2,1,2,2], // TRN+UNS raised: computational insight + many problems remain unsolved
+  33:[1,1,1,2,3,1,2,1], 34:[1,1,3,2,3,1,1,1], 35:[1,0,1,3,3,1,1,1],
+  36:[3,0,2,2,2,3,2,1], 37:[3,0,2,2,2,3,2,1], 38:[1,2,1,1,2,1,1,0],
+  39:[1,2,2,3,2,1,2,1],
+  40:[1,3,3,3,3,3,2,1], 41:[3,2,3,3,3,3,2,1], 42:[2,2,3,3,2,3,2,1], 43:[2,3,3,3,2,3,2,1],
+  44:[1,3,3,3,3,3,2,1], 45:[3,2,3,3,3,3,2,1], 46:[1,3,2,3,2,2,2,1], 47:[1,3,3,3,3,3,2,1],
+  48:[2,3,3,3,2,3,2,1], 49:[1,2,2,2,2,1,1,1], 50:[1,2,2,1,2,1,1,0], 51:[1,2,2,1,2,1,1,0],
+  52:[1,2,1,1,2,1,1,0],
+  53:[1,3,2,3,3,2,1,1], 54:[3,3,3,3,3,3,2,1], 55:[2,3,3,3,2,3,2,1],
+  56:[1,3,1,1,1,1,0,0], 57:[1,3,1,1,1,1,0,0], 58:[1,3,2,2,1,1,1,0],
+  59:[1,3,3,3,3,3,3,2], 60:[2,3,3,3,3,2,2,1], 61:[1,3,3,2,3,2,2,1], 62:[1,3,3,2,3,2,2,1],
+  63:[2,3,3,3,3,3,3,2], 64:[1,3,3,3,3,2,3,1], 65:[1,3,3,3,3,2,3,1], 66:[2,3,3,2,2,2,2,1],
+  67:[2,3,3,2,2,2,2,1],
+  68:[1,0,2,2,3,1,1,0],
+  69:[1,3,3,2,2,2,2,3], 70:[2,2,3,2,2,3,2,2], 71:[2,3,3,3,2,3,3,2], 72:[3,2,3,3,2,3,2,1],
+  73:[3,3,3,2,1,1,3,3], 74:[3,3,3,2,1,3,3,3], 75:[1,2,2,1,2,1,1,0], 76:[1,2,2,1,2,1,1,1],
+  77:[3,2,3,3,1,3,2,1],
+  78:[3,2,2,2,2,1,1,1], 79:[1,2,3,3,3,3,2,2], 80:[3,1,3,3,3,3,2,1], 81:[3,2,3,3,3,3,2,1],
+  82:[2,1,3,3,3,3,2,1], 83:[1,2,3,2,3,2,2,2], 84:[3,2,3,3,3,3,2,2],
+  85:[2,3,3,3,3,3,3,2], 86:[3,3,3,3,2,3,3,2], 87:[2,3,3,3,3,3,3,2], 88:[3,1,3,2,2,2,2,0],
+  89:[3,3,3,3,3,3,3,2], 90:[1,2,2,2,3,3,2,1], 91:[1,2,2,2,2,2,2,1],
+  92:[2,3,3,3,3,3,3,2], 93:[2,3,3,3,3,3,3,2], 94:[1,3,3,3,3,2,3,3], 95:[1,3,3,3,3,2,3,3],
+  96:[3,3,3,3,3,3,3,2],
+  // ── NEW v2 entries ──
+  97:[3,3,3,3,3,3,3,1],  // IOL Problems Archive
+  98:[3,3,3,3,3,3,3,2],  // WFCC Official Site
+  99:[1,3,3,3,3,2,3,2],  // OzProblems
+  100:[1,2,2,3,3,3,2,1], // Slocum Collection (IU)
+  101:[1,2,2,3,3,1,2,1], // WPC Unofficial Archive
+  102:[1,3,3,3,3,3,2,1], // WPF Sudoku GP Archives
+  103:[1,1,3,3,3,2,2,1], // Evan Chen Olympiad Problems
+  104:[1,3,3,3,3,3,2,1], // LMD Rätsel Portal
+  105:[1,3,2,3,3,2,2,1], // IPP Design Comp. Archive
+  106:[1,0,3,3,3,2,2,1], // AoPS Olympiad Archive
+};
+
+const REJECT_REASON = {
+  12:'Too new (2025–26). Insufficient pedigree and archive depth to verify whether it holds to elite standards.',
+  13:'Resource/tool — indexes other puzzles but is not itself a puzzle source.',
+  14:'Calendar/directory tool. Indispensable for finding hunts, but not a puzzle source.',
+  15:'Commentary and criticism blog. High quality, but the puzzles reviewed are the sources, not this.',
+  33:'Educational recreational math resource. Despite an excellent archive, lacks a difficulty floor or elite community gate. Invention and Barrier revised downward (May 2026).',
+  35:'General resource hub with no minimum difficulty floor. Accessible to any beginner.',
+  38:'Too casual. No difficulty floor, no elite community, no submission mechanism.',
+  50:'Lower curation rigor; lacks peer-review or championship backing for its puzzle set.',
+  51:'No institutional backing or difficulty minimum. Community-driven without a quality gate.',
+  52:'Insufficient difficulty barrier and pedigree. General-interest level.',
+  56:'Construction tool only. Does not curate or publish puzzles.',
+  57:'Construction and solving tool. Not a puzzle publication or challenge source.',
+  68:'Community solver blog: archives solutions to other publications\' crosswords. Creates no puzzles. Invention revised to 0 (May 2026). Compare Puzzlvaria (id 15), rejected for analogous reasons.',
+  75:'Educational tool with classical cipher explanations. No challenge community or unsolved depth.',
+  76:'CTF directory/calendar. The competitions it lists may qualify individually; this directory does not.',
+  49:'8-criterion upgrade reveals no institutional backing and no difficulty gate. Score 12/24, below revised threshold of 13/24.',
+  58:'Community sharing tool without curation mechanism or institutional backing. Score 11/24 under 8-criterion system.',
+};
+
+const S = RAW.map(([id,n,u,c,f,d,x]) => {
+  const sc    = SC[id]||[0,0,0,0,0,0,0,0];
+  const total = sc.reduce((a,b)=>a+b,0);
+  return {id,n,u,c,f,d,x,sc,total,accepted:total>=13};
+});
+
+// Dynamic system time
+const TODAY_DATE = new Date();
+const TODAY_DOW  = TODAY_DATE.getDay();
+const TODAY_DOM  = TODAY_DATE.getDate();
+
+function daysUntil(s) {
+  if (s.f==='continuous') return 0;
+  if (s.f==='weekly'||s.f==='biweekly') {
+    if (s.d==null) return 4;
+    let diff = s.d - TODAY_DOW;
+    if (diff < 0) diff += 7;   // FIX: was <=0, causing same-day to show as 7
+    return diff;
+  }
+  if (s.f==='monthly') {
+    if (s.d==null) return 15;
+    const t = s.d;
+    if (t >= TODAY_DOM) return t - TODAY_DOM;  // FIX: was >, causing same-day to wrap
+    return (30 - TODAY_DOM) + t;
+  }
+  if (s.f==='bimonthly') return 50;
+  if (s.f==='annual') {
+    if (!s.d) return 183;
+    let tgt = new Date(2026, s.d.m, s.d.d);
+    if (tgt <= TODAY_DATE) tgt = new Date(2027, s.d.m, s.d.d);
+    return Math.round((tgt - TODAY_DATE)/86400000);
+  }
+  if (s.f==='biannual') return 90;
+  if (s.f==='irregular') return null;
+  return 0;
+}
+
+function freqLabel(f) {
+  return {weekly:'Weekly',biweekly:'Biweekly',monthly:'Monthly',bimonthly:'Bimonthly',
+    biannual:'Biannual',annual:'Annual',continuous:'Evergreen',irregular:'Irregular'}[f]||f;
+}
+
+/* ── ORBITAL ────────────────────────────────────────────────────────────
+   FIX: angleToXY now uses  rad = deg * π/180
+        → 0° = RIGHT (3 o'clock), increasing angle = clockwise in SVG.
+   Previous version used (deg−90)*π/180 which placed 0° at 12 o'clock.
+─────────────────────────────────────────────────────────────────────── */
+const CX=300, CY=300;
+const WEEKLY_R=82, MONTHLY_R=146, ANNUAL_R=208, EVERGR_R=262;
+let activeCatFilter = new Set();
+
+function angleToXY(deg, r) {
+  const rad = deg * Math.PI / 180;
+  return [CX + r*Math.cos(rad), CY + r*Math.sin(rad)];
+}
+
+function buildOrbital() {
+  // FIX: single declaration — original had `const accepted` declared TWICE (redeclaration error)
+  const accepted = S.filter(s => s.accepted);
+  let h = '';
+
+  // Today spoke → pointing RIGHT
+  const spokeX = CX + EVERGR_R + 8;
+  h += `<line x1="${CX}" y1="${CY}" x2="${spokeX}" y2="${CY}" stroke="#111" stroke-width="1.5"/>`;
+  h += `<text x="${spokeX}" y="${CY-7}" text-anchor="end" class="ring-label" fill="#111">TODAY</text>`;
+
+  // Weekly ring (dashed) + day ticks fanning clockwise from right
+  h += `<circle cx="${CX}" cy="${CY}" r="${WEEKLY_R}" fill="none" stroke="#ddd" stroke-width=".75" stroke-dasharray="4 4"/>`;
+  for (let d=0;d<7;d++) {
+    const a=(d/7)*360;
+    const [x1,y1]=angleToXY(a,WEEKLY_R-5), [x2,y2]=angleToXY(a,WEEKLY_R+5);
+    h+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
+      stroke="${d===0?'#666':'#ddd'}" stroke-width="${d===0?1.5:.5}"/>`;
+    if(d>0){const[lx,ly]=angleToXY(a,WEEKLY_R+13);h+=`<text x="${lx.toFixed(1)}" y="${(ly+3).toFixed(1)}" text-anchor="middle" class="day-tick-label">+${d}d</text>`;}
+  }
+
+  // Monthly ring + week ticks
+  h += `<circle cx="${CX}" cy="${CY}" r="${MONTHLY_R}" fill="none" stroke="#ddd" stroke-width=".75"/>`;
+  for (let w=0;w<4;w++) {
+    const a=(w/4)*360;
+    const [x1,y1]=angleToXY(a,MONTHLY_R-6), [x2,y2]=angleToXY(a,MONTHLY_R+6);
+    h+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
+      stroke="${w===0?'#666':'#ddd'}" stroke-width="${w===0?1.5:.5}"/>`;
+    if(w>0){const[lx,ly]=angleToXY(a,MONTHLY_R+14);h+=`<text x="${lx.toFixed(1)}" y="${(ly+3).toFixed(1)}" text-anchor="middle" class="day-tick-label">+${w}wk</text>`;}
+  }
+
+  // Annual ring + quarter ticks: 0°=right=May  90°=bottom=Aug  180°=left=Nov  270°=top=Feb
+  h += `<circle cx="${CX}" cy="${CY}" r="${ANNUAL_R}" fill="none" stroke="#ccc" stroke-width=".75"/>`;
+  const qL=['May','Aug','Nov','Feb'], qA=['start','middle','end','middle'];
+  for (let q=0;q<4;q++) {
+    const a=(q/4)*360;
+    const [x1,y1]=angleToXY(a,ANNUAL_R-7), [x2,y2]=angleToXY(a,ANNUAL_R+7);
+    h+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
+      stroke="${q===0?'#666':'#ccc'}" stroke-width="${q===0?1.5:.5}"/>`;
+    const [lx,ly]=angleToXY(a,ANNUAL_R+17);
+    h+=`<text x="${lx.toFixed(1)}" y="${(ly+3).toFixed(1)}" text-anchor="${qA[q]}" class="day-tick-label" fill="#999">${qL[q]}</text>`;
+  }
+
+  // Evergreen ring (dotted)
+  h += `<circle cx="${CX}" cy="${CY}" r="${EVERGR_R}" fill="none" stroke="#ddd" stroke-width=".75" stroke-dasharray="2 5"/>`;
+
+  // Build dot list
+  const weekly_sites  = accepted.filter(s=>['weekly','biweekly'].includes(s.f));
+  const monthly_sites = accepted.filter(s=>s.f==='monthly');
+  const annual_sites  = accepted.filter(s=>['annual','biannual','bimonthly'].includes(s.f));
+  const evgr_sites    = accepted.filter(s=>s.f==='continuous');
+  const irreg_sites   = accepted.filter(s=>s.f==='irregular');
+  const dots = [];
+
+  weekly_sites.forEach(s=>{
+    const days=daysUntil(s), angle=(days/7)*360;
+    const [x,y]=angleToXY(angle,WEEKLY_R);
+    dots.push({s,x,y,dotR:days===0?7:days<=2?5.5:4.5,angle,ring:'weekly',days});
+  });
+  monthly_sites.forEach((s,i)=>{
+    const days=daysUntil(s), angle=(days/30)*360;
+    const [x,y]=angleToXY(angle,MONTHLY_R+(i%3-1)*6);
+    dots.push({s,x,y,dotR:days<=2?6:days<=7?5:4,angle,ring:'monthly',days});
+  });
+  annual_sites.forEach((s,i)=>{
+    const days=daysUntil(s), angle=(days/365)*360;
+    const [x,y]=angleToXY(angle,ANNUAL_R+(i%4-1.5)*5);
+    dots.push({s,x,y,dotR:3.5,angle,ring:'annual',days});
+  });
+  evgr_sites.forEach((s,i)=>{
+    const angle=(i/evgr_sites.length)*360;
+    const [x,y]=angleToXY(angle,EVERGR_R);
+    dots.push({s,x,y,dotR:3,angle,ring:'evergreen',days:0});
+  });
+  irreg_sites.forEach((s,i)=>{
+    const angle=(i*20)%360;
+    const [x,y]=angleToXY(angle,ANNUAL_R+14);
+    dots.push({s,x,y,dotR:3,angle,ring:'irregular',days:null});
+  });
+
+  // Render dots + labels — BOTH inside one <a> so clicking either opens the source
+  dots.forEach(({s,x,y,dotR,ring,days,angle})=>{
+    const hidden = activeCatFilter.size>0 && !activeCatFilter.has(s.c);
+    const col    = CAT_COLORS[s.c]||'#666';
+    const op     = hidden ? 0.07 :
+                   ring==='evergreen' ? 0.60 :
+                   ring==='irregular' ? 0.38 :
+                   days===0           ? 1.00 :
+                   days<=7            ? 0.85 :
+                   days<=30           ? 0.65 : 0.42;
+
+    // FIX: label uses local `angle` directly — original used broken dots.find(…)?.angle lookup
+    let lbl = '';
+    if (days!==null && days<=14 && days>=0 && ring!=='evergreen') {
+      const lr = ring==='weekly'?WEEKLY_R+20:ring==='monthly'?MONTHLY_R+20:ANNUAL_R+20;
+      const [lx,ly] = angleToXY(angle, lr);
+      const abbr    = s.n.split(/[\s/]/)[0].slice(0,10);
+      lbl = `<text x="${lx.toFixed(1)}" y="${(ly+3).toFixed(1)}"
+        text-anchor="middle" class="site-dot-label"
+        fill="${col}" opacity="${hidden?0.07:0.85}">${abbr}</text>`;
+    }
+
+    h += `<a href="https://${s.u}" target="_blank" style="cursor:pointer">
+      <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${dotR}"
+        fill="${col}" opacity="${op}"
+        onmouseenter="showTip(event,${s.id})" onmouseleave="hideTip()"/>
+      ${lbl}
+    </a>`;
+  });
+
+  // Centre drawn LAST so it renders above all dots
+  h += `<circle cx="${CX}" cy="${CY}" r="30" fill="#fff" stroke="#111" stroke-width="1.5"/>`;
+  const _cMon=TODAY_DATE.toLocaleString('en-US',{month:'short'}).toUpperCase();
+  const _cDay=String(TODAY_DOM).padStart(2,'0');
+  const _cYr=TODAY_DATE.getFullYear();
+  h += `<text x="${CX}" y="${CY-5}" text-anchor="middle" style="font-family:'Courier New',monospace;font-size:8px;font-weight:700;fill:#111">${_cMon} ${_cDay}</text>`;
+  h += `<text x="${CX}" y="${CY+9}" text-anchor="middle" style="font-family:'Courier New',monospace;font-size:7px;fill:#777">${_cYr}</text>`;
+
+  document.getElementById('orbit-svg').innerHTML = h;
+
+  // Upcoming list
+  const upcoming = dots.filter(d=>d.days!==null&&d.days>0&&d.days<=30).sort((a,b)=>a.days-b.days);
+  document.getElementById('upcoming-list').innerHTML =
+    upcoming.slice(0,22).map(({s,days})=>{
+      const col=CAT_COLORS[s.c]||'#666';
+      return `<div class="up-item">
+        <span class="up-days">${days}</span><span class="up-d">d</span>
+        <span class="up-pip" style="background:${col}"></span>
+        <a href="https://${s.u}" target="_blank" class="up-name">${s.n}</a>
+        <span class="up-freq">${freqLabel(s.f)}</span>
+      </div>`;
+    }).join('')||'<div style="font-size:10px;color:#aaa;padding:4px 0">No known dates in next 30 days</div>';
+
+  // Stats — uses `accepted` from top of function (the duplicate was the original bug)
+  const todayN = dots.filter(d=>d.days===0&&d.ring!=='evergreen').length;
+  const weekN  = dots.filter(d=>d.days!==null&&d.days>0&&d.days<=7).length;
+  document.getElementById('ostat').innerHTML =
+    `<strong>${S.length}</strong> total sites indexed<br>` +
+    `<strong>${accepted.length}</strong> meet acceptance criteria<br>` +
+    `<strong>${evgr_sites.length}</strong> evergreen (always active)<br>` +
+    `<strong>${todayN}</strong> updating today<br>` +
+    `<strong>${weekN}</strong> updating this week`;
+}
+
+function buildCatBtns() {
+  document.getElementById('cat-btns').innerHTML =
+    `<button class="oc-btn on" style="--cc:#111" onclick="toggleCatFilter('all',this)">All</button>`+
+    Object.keys(CATS).map(k=>
+      `<button class="oc-btn" style="--cc:${CAT_COLORS[k]}" onclick="toggleCatFilter('${k}',this)">${CATS[k]}</button>`
+    ).join('');
+}
+function buildCatColorLegend() {
+  document.getElementById('cat-color-legend').innerHTML =
+    Object.entries(CATS).map(([k,v])=>
+      `<div class="cat-color-row"><div class="cat-swatch" style="background:${CAT_COLORS[k]}"></div><span>${v}</span></div>`
+    ).join('');
+}
+function toggleCatFilter(k,btn) {
+  if (k==='all') {
+    activeCatFilter.clear();
+    document.querySelectorAll('#cat-btns .oc-btn').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+  } else {
+    document.querySelector('#cat-btns .oc-btn').classList.remove('on');
+    if (activeCatFilter.has(k)){activeCatFilter.delete(k);btn.classList.remove('on');}
+    else{activeCatFilter.add(k);btn.classList.add('on');}
+    if (activeCatFilter.size===0) document.querySelector('#cat-btns .oc-btn').classList.add('on');
+  }
+  buildOrbital();
+}
+
+function showTip(e, id) {
+  const s   = S.find(x=>x.id===id); if(!s)return;
+  const days = daysUntil(s);
+  const col  = CAT_COLORS[s.c]||'#666';
+  document.getElementById('tip-name').innerHTML =
+    `<a href="https://${s.u}" target="_blank" style="color:#111;text-decoration:none;border-bottom:1px solid #111">${s.n} ↗</a>`;
+  document.getElementById('tip-cat').style.color  = col;
+  document.getElementById('tip-cat').textContent  = CATS[s.c]||s.c;
+  document.getElementById('tip-days').textContent =
+    days===0?'Always active (evergreen)':days===null?'Irregular schedule':`Updates in ${days} day${days!==1?'s':''} · ${freqLabel(s.f)}`;
+  document.getElementById('tip-score').textContent = `Score: ${s.total}/24 · ${s.accepted?'✓ Accepted':'✗ Rejected'}`;
+  document.getElementById('tip-desc').textContent  = s.x;
+  const tip=document.getElementById('tip');
+  let tx=e.clientX+15, ty=e.clientY-30;
+  if(tx+248>window.innerWidth)  tx=e.clientX-252;
+  if(ty+145>window.innerHeight) ty=e.clientY-150;
+  tip.style.left=Math.max(4,tx)+'px'; tip.style.top=Math.max(4,ty)+'px'; tip.style.display='block';
+}
+function hideTip(){document.getElementById('tip').style.display='none';}
+
+let contribFilter='all', contribSearch='';
+const CRIT_NAMES=['RAR','INV','BAR','PED','ARC','INS','TRN','UNS'];
+const CRIT_FULL=['Rarity','Invention','Barrier','Pedigree','Archive','Institution','Transcendence','Unsolved Depth'];
+function cc(v){return['c0','c1','c2','c3'][v]||'c0';}
+
+function buildContrib() {
+  let sites=S.slice();
+  if(contribFilter==='accept') sites=sites.filter(s=>s.accepted);
+  if(contribFilter==='reject') sites=sites.filter(s=>!s.accepted);
+  if(contribSearch){const q=contribSearch.toLowerCase();sites=sites.filter(s=>s.n.toLowerCase().includes(q)||s.x.toLowerCase().includes(q)||(CATS[s.c]||'').toLowerCase().includes(q));}
+  sites.sort((a,b)=>{if(a.accepted!==b.accepted)return a.accepted?-1:1;return b.total-a.total;});
+  const nA=sites.filter(s=>s.accepted).length, nR=sites.filter(s=>!s.accepted).length;
+  document.getElementById('btn-all').textContent=`All (${S.length})`;
+  document.getElementById('contrib-summary').innerHTML=
+    `Showing ${sites.length} of ${S.length} · <strong>${nA} accepted</strong> · <strong>${nR} rejected</strong> · Threshold 13/24`;
+  document.getElementById('contrib-rows').innerHTML=sites.map(s=>{
+    const col=CAT_COLORS[s.c]||'#888';
+    const bars=s.sc.map((v,i)=>`<div class="crit-bar-col"><div class="crit-bar ${cc(v)}" title="${CRIT_FULL[i]}: ${v}/3">${v}</div><div class="crit-bar-label">${CRIT_NAMES[i]}</div></div>`).join('');
+    const tc=s.total>=14?'st-strong':s.accepted?'st-pass':'st-fail';
+    const rr=REJECT_REASON[s.id]||'';
+    return `<div class="site-row ${s.accepted?'':'rejected'}" style="border-left-color:${col}">
+      <div>
+        <div class="site-name"><a href="https://${s.u}" target="_blank">${s.n}</a></div>
+        <div class="site-meta">
+          <span class="cat-tag" style="color:${col};border-color:${col};background:${col}18">${CATS[s.c]||s.c}</span>
+          <span class="freq-tag">${freqLabel(s.f)}</span>
+        </div>
+        <div class="site-desc">${s.x}</div>
+        ${!s.accepted&&rr?`<div class="reject-reason">↳ ${rr}</div>`:''}
+      </div>
+      <div class="score-block">
+        <div class="score-bars">${bars}</div>
+        <div class="score-total ${tc}">${s.total}</div>
+        <div class="score-label">/ 24 pts</div>
+      </div>
+      <div class="status-col">
+        <span class="${s.accepted?'badge-accept':'badge-reject'}">${s.accepted?'✓ Accept':'✗ Reject'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+function setFilter(f,btn){contribFilter=f;document.querySelectorAll('#contrib-controls .cc-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');buildContrib();}
+function filterContrib(){contribSearch=document.getElementById('contrib-search').value;buildContrib();}
+function sv(v){
+  document.getElementById('s-orbital').classList.toggle('on',v==='orbital');
+  document.getElementById('s-contrib').classList.toggle('on',v==='contrib');
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('on',['orbital','contrib'][i]===v));
+  if(v==='contrib')buildContrib();
+}
+
+buildCatColorLegend();
+buildCatBtns();
+buildOrbital();
+document.getElementById('today-heading').textContent =
+  'Today — ' + TODAY_DATE.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+</script>
+</body>
+</html>
