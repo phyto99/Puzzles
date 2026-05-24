@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Elite Puzzle Sources — Orbital & Contribution Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Long+Cang&family=Ma+Shan+Zheng&family=Zhi+Mang+Xing&family=Bodoni+Moda:ital,opsz@0,6..96;1,6..96&family=Cormorant+Garamond:ital,wght@0,300;1,300&family=Playfair+Display:wght@400&family=Cinzel:wght@400&family=IM+Fell+English:ital@0;1&family=Fraunces:ital,opsz,wght@0,9..144,300;1,9..144,300&family=Instrument+Serif:ital@0;1&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--ui-font:'Courier New',Courier,monospace;--data-font:'Courier New',Courier,monospace}
+/* Data-dense elements always stay monospace regardless of font theme */
+#mx-tbl,#mx-tbl td,#mx-tbl th,.mx-badge,
+.score-total,.score-label,.score-bars,.crit-bar,.crit-bar-label,
+.tr-days,.tr-d,.tr-score-sm,.tr-freq-sm,
+.freq-tag,.ostat,.us-val,.us-label,.cr-score,.cr-freq,
+#contrib-summary,#prompt-text,.intake-template,#sc-detail,#sk-detail,
+#canvas-nav,.sub-btn,
+.leg-block,.leg-block h2,.leg-row,.cat-color-row,#cat-color-legend,
+.tr-head,.tr-head-full,
+#cvp-scatter
+{font-family:var(--data-font)!important}
+/* Score matrix numbers use theme font */
+.mx-cell,.mx-tot{font-family:var(--ui-font)!important}
+/* Upcoming list: all theme font except frequency tags */
+#upcoming-heading,#upcoming-list,#upcoming-list *{font-family:var(--ui-font)!important}
+#upcoming-list .up-freq{font-family:var(--data-font)!important}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--ui-font);background:#fafafa;color:#111;font-size:13px}
+h2{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
+nav{border-bottom:2px solid #111;padding:10px 20px;display:flex;align-items:center;background:#fff}
+nav .logo{font-size:11px;font-weight:700;letter-spacing:.12em;margin-right:28px;text-transform:uppercase}
+.tab-btn{padding:6px 14px;font-family:inherit;font-size:10px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;letter-spacing:.07em;text-transform:uppercase;color:#888}
+.tab-btn.on{color:#111;border-bottom-color:#111;font-weight:700}
+section{display:none;padding:20px}
+section.on{display:block}
+#orbital-outer{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap}
+#orbital-wrap{flex:0 0 auto}
+#orbit-svg{display:block;border:1px solid #e0e0e0;background:#fff}
+#orbital-legend{flex:1;min-width:200px}
+.leg-block{margin-bottom:16px}
+.leg-block h2{margin-bottom:7px;border-bottom:1px solid #e0e0e0;padding-bottom:4px}
+.leg-row{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:10px;color:#444}
+.orbital-stats{background:#fff;border:1px solid #e0e0e0;padding:10px;margin-bottom:16px}
+.orbital-stats h2{margin-bottom:6px}
+.ostat{font-size:10px;color:#444;line-height:2.1}
+.ostat strong{color:#111}
+.orbit-controls{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:4px}
+.oc-btn{padding:3px 9px;font-family:inherit;font-size:9px;border:1px solid #bbb;background:#fff;cursor:pointer;text-transform:uppercase;letter-spacing:.05em;color:#555;transition:all .12s}
+.oc-btn.on{background:var(--cc,#111);color:#fff;border-color:var(--cc,#111)}
+#upcoming-list{margin-top:4px}
+.up-item{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #f0f0f0;font-size:10px}
+.up-days{font-weight:700;font-size:12px;min-width:22px;text-align:right}
+.up-d{font-size:9px;color:#bbb}
+.up-pip{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.up-name{color:#111;text-decoration:none}
+.up-name:hover{text-decoration:underline}
+.up-freq{color:#aaa;font-size:9px;margin-left:auto}
+.cat-color-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-top:6px}
+.cat-color-row{display:flex;align-items:center;gap:6px;font-size:10px;color:#444}
+.cat-swatch{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+#contrib-controls{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+#contrib-search{padding:5px 9px;font-family:inherit;font-size:11px;border:1px solid #bbb;width:240px;outline:none;background:#fff}
+#contrib-search:focus{border-color:#111}
+.cc-btn{padding:4px 11px;font-family:inherit;font-size:9px;border:1px solid #bbb;background:#fff;cursor:pointer;text-transform:uppercase;letter-spacing:.06em;color:#555}
+.cc-btn.on{background:#111;color:#fff;border-color:#111}
+.criteria-legend{background:#fff;border:1px solid #e0e0e0;padding:14px;margin-bottom:14px}
+.criteria-legend h2{margin-bottom:10px}
+.crit-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:8px}
+.crit-item{font-size:10px;line-height:1.5}
+.crit-name{font-weight:700;font-size:9px;text-transform:uppercase;letter-spacing:.07em}
+.crit-desc{color:#666;margin-top:2px;font-size:9px}
+.score-guide{display:flex;gap:4px;margin-top:5px}
+.sg{width:15px;height:15px;border:1px solid #ddd;font-size:8px;display:flex;align-items:center;justify-content:center;font-weight:700}
+.sg-0{background:#fee2e2;color:#991b1b}
+.sg-1{background:#fef3c7;color:#92400e}
+.sg-2{background:#dcfce7;color:#166534}
+.sg-3{background:#111;color:#fff}
+#site-list{border:1px solid #e0e0e0;background:#fff}
+.site-row{display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:10px 12px 10px 14px;border-bottom:1px solid #f0f0f0;align-items:start;border-left:3px solid #ddd}
+.site-row:last-child{border-bottom:none}
+.site-row.rejected{opacity:.72}
+.site-row:hover{background:#f9f9f9}
+.site-name{font-weight:700;font-size:11px;margin-bottom:3px}
+.site-name a{color:#111;text-decoration:none;border-bottom:1px solid #ddd}
+.site-name a:hover{border-bottom-color:#111}
+.site-meta{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+.site-desc{font-size:9px;color:#666;line-height:1.55}
+.cat-tag{font-size:8px;padding:1px 6px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;border:1px solid}
+.freq-tag{font-size:8px;padding:1px 6px;background:#111;color:#fff;letter-spacing:.04em;border:1px solid #111}
+.score-bars{display:flex;gap:3px;align-items:flex-end}
+.crit-bar-col{display:flex;flex-direction:column;align-items:center;gap:2px}
+.crit-bar-label{font-size:6px;color:#aaa;letter-spacing:.03em;text-transform:uppercase}
+.crit-bar{width:15px;height:15px;border:1px solid #eee;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700}
+.c0{background:#fee2e2;color:#991b1b;border-color:#fca5a5}
+.c1{background:#fef3c7;color:#92400e;border-color:#fcd34d}
+.c2{background:#dcfce7;color:#166534;border-color:#86efac}
+.c3{background:#111;color:#fff;border-color:#111}
+.score-total{font-size:21px;font-weight:700;line-height:1;text-align:center}
+.score-label{font-size:8px;color:#aaa;text-align:center;margin-top:2px;letter-spacing:.05em}
+.st-strong{color:#166534}
+.st-pass{color:#92400e}
+.st-fail{color:#991b1b}
+.status-col{text-align:center;min-width:72px}
+.badge-accept{display:inline-block;padding:3px 8px;border:1.5px solid #111;font-size:8px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;background:#111;color:#fff}
+.badge-reject{display:inline-block;padding:3px 8px;border:1.5px solid #ccc;font-size:8px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;background:#f0f0f0;color:#888}
+.reject-reason{font-size:9px;color:#999;margin-top:5px;font-style:italic;line-height:1.5}
+.score-block{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:82px}
+#contrib-summary{font-size:10px;color:#666;margin-bottom:10px;line-height:1.9}
+.sort-row{display:flex;font-size:8px;color:#999;padding:6px 12px;background:#f8f8f8;border-bottom:1px solid #e8e8e8;align-items:center;letter-spacing:.06em;text-transform:uppercase}
+.day-tick-label{font-family:'Courier New',monospace;font-size:7px;fill:#bbb}
+.ring-label{font-family:'Courier New',monospace;font-size:7px;font-weight:700;fill:#ccc;letter-spacing:.08em}
+.site-dot-label{font-family:'Courier New',monospace;font-size:6.5px}
+#tip{position:fixed;background:#fff;border:1px solid #111;padding:9px 12px;font-family:'Courier New',monospace;font-size:10px;pointer-events:none;z-index:99;display:none;max-width:240px;line-height:1.65;box-shadow:3px 3px 0 #ccc}
+@media(max-width:700px){#orbital-outer{flex-direction:column}.crit-grid{grid-template-columns:repeat(3,1fr)}}
+/* ── URGENCY STRIP ── */
+#urgency-strip{background:#111;color:#fff;font-family:'Courier New',Courier,monospace;font-size:9px;letter-spacing:.06em;padding:3px 20px;display:flex;gap:14px;align-items:center;overflow-x:auto;flex-shrink:0}
+.us-seg{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.us-label{color:#555}.us-val{font-weight:700}.us-pip{width:5px;height:5px;border-radius:50%;background:#fff;flex-shrink:0}
+.us-link{color:#ccc;text-decoration:none;border-bottom:1px solid #444;font-weight:700}.us-link:hover{color:#fff;border-bottom-color:#fff}
+/* ── COMMAND PALETTE ── */
+#cmd-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:flex-start;justify-content:center;padding-top:80px}
+#cmd-overlay.on{display:flex}
+#cmd-box{background:#fff;border:2px solid #111;width:560px;max-width:96vw;max-height:70vh;display:flex;flex-direction:column;box-shadow:8px 8px 0 rgba(0,0,0,.18)}
+#cmd-input{padding:11px 14px;font-family:'Courier New',Courier,monospace;font-size:13px;border:none;border-bottom:2px solid #111;outline:none;width:100%;background:#fff}
+#cmd-results{overflow-y:auto;flex:1}
+.cmd-row{padding:7px 14px;display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center;border-bottom:1px solid #f0f0f0;cursor:pointer}
+.cmd-row:hover,.cmd-row.hi{background:#f5f5f5}.cmd-row.hi{background:#111!important}
+.cmd-row.hi .cr-name,.cmd-row.hi .cr-name a,.cmd-row.hi .cr-score,.cmd-row.hi .cr-freq{color:#fff!important;border-color:transparent!important}
+.cmd-row.hi .cr-cat{border-color:#fff!important;color:#fff!important}
+.cr-name{font-weight:700;font-size:11px}.cr-name a{color:#111;text-decoration:none;border-bottom:1px solid #ddd}
+.cr-cat{font-size:8px;padding:1px 5px;border:1px solid;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.cr-score{font-size:12px;font-weight:700;min-width:28px;text-align:right}.cr-freq{font-size:8px;color:#aaa;white-space:nowrap}
+#cmd-hint{font-size:8px;color:#999;padding:5px 14px;border-top:1px solid #eee;letter-spacing:.05em}
+/* ── FILTER BAR ── */
+#filter-bar{display:flex;align-items:center;gap:6px;padding:5px 20px;background:#f8f8f8;border-bottom:1px solid #e0e0e0;flex-wrap:wrap;min-height:34px}
+.fb-status{display:flex;gap:4px}
+.fb-btn{padding:2px 9px;font-family:inherit;font-size:8px;border:1px solid #bbb;background:#fff;cursor:pointer;text-transform:uppercase;letter-spacing:.06em;color:#555;line-height:1.6}
+.fb-btn.on{background:#111;color:#fff;border-color:#111}
+.fb-divider{width:1px;height:16px;background:#ddd;flex-shrink:0}
+.fb-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;font-size:8px;border:1px solid;border-radius:1px;cursor:pointer;font-weight:700;text-transform:uppercase;letter-spacing:.05em;line-height:1.6;transition:opacity .1s}
+.fb-chip:hover{opacity:.7}
+.fb-chip-x{font-size:9px;margin-left:2px;opacity:.6}
+.fb-search{padding:2px 7px;font-family:inherit;font-size:9px;border:1px solid #bbb;outline:none;background:#fff;width:150px}
+.fb-search:focus{border-color:#111}
+.fb-clear{margin-left:auto;padding:2px 8px;font-family:inherit;font-size:8px;border:1px solid #bbb;background:#fff;cursor:pointer;color:#555;text-transform:uppercase;letter-spacing:.06em}
+.fb-clear:hover{background:#111;color:#fff;border-color:#111}
+/* ── CANVAS ── */
+#s-canvas{display:none;padding:0}
+#s-canvas.on{display:block}
+#canvas-nav{display:flex;gap:0;border-bottom:1px solid #e0e0e0;padding:0 20px;background:#fff}
+.sub-btn{padding:7px 16px;font-family:inherit;font-size:9px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;text-transform:uppercase;letter-spacing:.08em;color:#888}
+.sub-btn.on{color:#111;border-bottom-color:#111;font-weight:700}
+#cv-orbital{padding:20px;display:block}
+#cv-scatter{display:none;padding:16px 20px;flex-wrap:wrap;align-items:flex-start;gap:20px}
+#cv-scatter.on{display:flex}
+#cv-skillmap{display:none;padding:16px 20px;flex-wrap:wrap;align-items:flex-start;gap:20px}
+#cv-skillmap.on{display:flex}
+/* ── LIBRARY ── */
+#s-library{display:none;padding:16px 20px}
+#s-library.on{display:block}
+#lib-triage{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+#lib-matrix-hd{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#888;margin-bottom:8px;border-bottom:1px solid #e0e0e0;padding-bottom:6px;display:flex;align-items:center;gap:6px}
+#mx-wrap{overflow-x:auto;overflow-y:auto;max-height:calc(50vh - 40px);border:1px solid #e0e0e0}
+/* ── GUIDE ── */
+#s-guide{display:none;padding:20px}
+#s-guide.on{display:block}
+/* ── TRIAGE ── */
+.tr-panel{border:1px solid #e0e0e0;background:#fff}
+.tr-head{padding:7px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;border-bottom:2px solid #111;background:#f8f8f8;display:flex;justify-content:space-between;align-items:center}
+.tr-count{font-size:9px;color:#888;font-weight:400}
+.tr-item{display:flex;align-items:center;gap:7px;padding:6px 12px;border-bottom:1px solid #f5f5f5;font-size:10px}
+.tr-item:last-child{border-bottom:none}
+.tr-days{font-weight:700;font-size:13px;min-width:24px;text-align:right;line-height:1}
+.tr-d{font-size:8px;color:#aaa;margin-left:-2px}
+.tr-pip{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.tr-name{flex:1;font-weight:700}.tr-name a{color:#111;text-decoration:none}.tr-name a:hover{text-decoration:underline}
+.tr-meta{display:flex;gap:4px;align-items:center;flex-shrink:0}
+.tr-score-sm{font-size:9px;color:#888;font-weight:700}
+.tr-freq-sm{font-size:8px;padding:1px 5px;background:#111;color:#fff;font-weight:700}
+#s-triage-bot{grid-column:1/-1}
+.tr-head-full{padding:7px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;border-bottom:2px solid #111;background:#f8f8f8;margin-bottom:8px}
+.evg-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.evg-card{border:1px solid #e0e0e0;padding:8px 10px;background:#fff;cursor:pointer;transition:border-color .1s}
+.evg-card:hover{border-color:#111}
+.ev-score{font-size:22px;font-weight:700;line-height:1}
+.ev-name{font-size:10px;font-weight:700;margin:3px 0 1px;line-height:1.3}.ev-name a{color:#111;text-decoration:none}
+.ev-cat{font-size:8px;text-transform:uppercase;letter-spacing:.05em;color:#888}
+/* ── MATRIX ── */
+#mx-bar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+#mx-search{padding:5px 9px;font-family:inherit;font-size:11px;border:1px solid #bbb;width:220px;outline:none}
+#mx-search:focus{border-color:#111}
+.mx-btn{padding:3px 10px;font-family:inherit;font-size:9px;border:1px solid #bbb;background:#fff;cursor:pointer;text-transform:uppercase;letter-spacing:.05em;color:#555}
+.mx-btn.on{background:#111;color:#fff;border-color:#111}
+#mx-wrap{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 160px);border:1px solid #e0e0e0}
+#mx-tbl{border-collapse:collapse;font-family:'Courier New',Courier,monospace;font-size:9px;white-space:nowrap}
+#mx-tbl th{position:sticky;top:0;background:#f8f8f8;border:1px solid #ddd;padding:5px 7px;font-size:8px;font-weight:700;text-transform:uppercase;cursor:pointer;letter-spacing:.05em;z-index:1;user-select:none}
+#mx-tbl th:first-child{position:sticky;left:0;z-index:2;min-width:170px;text-align:left}
+#mx-tbl th:hover{background:#e8e8e8}
+#mx-tbl th.sa::after{content:' ↑'}
+#mx-tbl th.sd::after{content:' ↓'}
+#mx-tbl th.sa,#mx-tbl th.sd{background:#111;color:#fff}
+#mx-tbl td{border:1px solid #f0f0f0;padding:3px 7px;vertical-align:middle}
+#mx-tbl td:first-child{position:sticky;left:0;background:#fff;z-index:1;border-right:2px solid #e0e0e0}
+#mx-tbl tr:hover td{background:#fafafa}
+#mx-tbl tr:hover td:first-child{background:#f0f0f0}
+#mx-tbl td:first-child a{color:#111;text-decoration:none;font-weight:700;font-size:10px;border-bottom:1px solid #ddd}
+#mx-tbl td:first-child a:hover{border-bottom-color:#111}
+.mx-cell{width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;border-radius:2px;margin:0 auto}
+.mx-tot{font-size:13px;font-weight:700;text-align:center}
+.mx-st-s{color:#166534}.mx-st-p{color:#92400e}.mx-st-f{color:#991b1b}
+.mx-badge{font-size:7px;padding:1px 5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:inline-block}
+.mx-acc{background:#111;color:#fff}.mx-rej{background:#e5e7eb;color:#888}
+/* ── UNIFIED CANVAS ── */
+#canvas-wrap{display:flex;gap:20px;align-items:flex-start;padding:16px 20px}
+#canvas-svg{border:1px solid #e0e0e0;background:#fff;display:block;flex-shrink:0;cursor:crosshair}
+.dot{transition:cx .75s cubic-bezier(.4,0,.2,1),cy .75s cubic-bezier(.4,0,.2,1),r .45s ease,opacity .55s ease;cursor:pointer}
+.dot:hover{filter:brightness(1.25)}
+#canvas-side{flex:1;min-width:180px;max-width:240px;overflow-y:auto;max-height:600px}
+.cv-panel{display:none}.cv-panel.on{display:block}
+/* ── ANNOTATION MODAL ── */
+#ann-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:400;align-items:center;justify-content:center}
+#ann-modal.on{display:flex}
+#ann-box{background:#fff;border:2px solid #111;width:420px;padding:16px;display:flex;flex-direction:column;gap:10px;box-shadow:6px 6px 0 rgba(0,0,0,.15)}
+#ann-box h3{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
+#ann-text{font-family:'Courier New',Courier,monospace;font-size:10px;border:1px solid #bbb;padding:8px;resize:vertical;min-height:90px;outline:none;line-height:1.6}
+#ann-text:focus{border-color:#111}
+.ann-row{display:flex;gap:8px;justify-content:flex-end}
+.ann-btn{padding:3px 11px;font-family:inherit;font-size:9px;border:1px solid #bbb;background:#fff;cursor:pointer;text-transform:uppercase;letter-spacing:.06em}
+.ann-btn.primary{background:#111;color:#fff;border-color:#111}
+.ann-icon{font-size:9px;padding:1px 5px;border:1px solid #ddd;background:#fff;cursor:pointer;color:#888;font-family:inherit}
+.ann-icon:hover{border-color:#111;color:#111}
+/* ── STALE INDICATOR ── */
+.stale{display:inline-block;width:6px;height:6px;border-radius:50%;background:#f59e0b;margin-left:4px;vertical-align:middle;cursor:help}
+/* ── COVERAGE GAPS ── */
+.gap-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.gap-item{padding:8px 10px;border:1px solid #fcd34d;background:#fffbeb}
+.gap-name{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#92400e}
+.gap-desc{font-size:9px;color:#78716c;margin-top:3px;line-height:1.5}
+.gap-badge{font-size:8px;padding:1px 6px;background:#fef3c7;border:1px solid #fcd34d;color:#92400e;display:inline-block;margin-top:5px;font-weight:700}
+/* ── GUIDE PANELS ── */
+.guide-panel{border:1px solid #e0e0e0;background:#fff;padding:12px 14px;margin-bottom:12px}
+.guide-panel h2{margin-bottom:8px;border-bottom:1px solid #f0f0f0;padding-bottom:5px}
+.guide-panel p{font-size:9px;color:#555;line-height:1.75;margin-bottom:6px}
+.guide-panel code{font-family:'Courier New',Courier,monospace;background:#f8f8f8;padding:1px 4px;border:1px solid #e0e0e0;font-size:9px}
+.roadmap-item{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid #f5f5f5;font-size:9px}
+.roadmap-item:last-child{border-bottom:none}
+.rm-status{font-size:8px;padding:1px 6px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;margin-top:1px}
+.rm-live{background:#dcfce7;color:#166534}.rm-plan{background:#fef3c7;color:#92400e}.rm-future{background:#f1f5f9;color:#64748b}
+.intake-template{font-family:'Courier New',Courier,monospace;font-size:8.5px;line-height:1.85;background:#f8f8f8;border:1px solid #e0e0e0;padding:10px 12px;white-space:pre-wrap;color:#333;margin-top:8px;max-height:200px;overflow-y:auto}
+/* ── SCATTER / SKILL MAP side panels ── */
+.sc-leg{display:flex;align-items:center;gap:7px;font-size:10px;padding:3px 0;cursor:pointer;user-select:none}
+.sc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sc-leg.on{font-weight:700}
+.cv-panel h2{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;margin-bottom:8px;border-bottom:1px solid #e0e0e0;padding-bottom:4px}
+/* ── PROMPT BOX ── */
+.prompt-wrap{margin-bottom:14px;border:1px solid #e0e0e0;background:#fff}
+.prompt-hd{padding:7px 12px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid #e0e0e0;background:#f8f8f8;display:flex;justify-content:space-between;align-items:center;color:#888}
+.prompt-box{padding:12px 14px;font-family:'Courier New',Courier,monospace;font-size:9.5px;line-height:1.85;white-space:pre-wrap;color:#333;max-height:260px;overflow-y:auto;background:#fafafa}
+.prompt-foot{padding:7px 12px;border-top:1px solid #f0f0f0;display:flex;gap:8px}
+.prompt-btn{padding:3px 10px;font-family:inherit;font-size:9px;border:1px solid #bbb;background:#fff;cursor:pointer;text-transform:uppercase;letter-spacing:.06em;color:#555}
+.prompt-btn:hover{background:#111;color:#fff;border-color:#111}
+@media(max-width:700px){#lib-triage{grid-template-columns:1fr}.evg-grid{grid-template-columns:repeat(2,1fr)}#cv-scatter.on,#cv-skillmap.on{flex-direction:column}}
+/* ── SETTINGS PANEL ── */
+#settings-btn{background:none;border:none;font-size:15px;cursor:pointer;opacity:.45;padding:2px 5px;margin-left:6px;transition:opacity .15s;line-height:1}
+#settings-btn:hover{opacity:1}
+#settings-panel{display:none;position:fixed;top:46px;right:10px;width:248px;max-height:calc(100vh - 60px);overflow-y:auto;background:#fff;border:2px solid #111;z-index:600;padding:14px 16px;box-shadow:2px 4px 12px rgba(0,0,0,.12)}
+#settings-panel.on{display:block}
+.sp-title{font-family:'Courier New',Courier,monospace;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#111;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e0e0e0}
+.sf-fonts{display:flex;flex-direction:column;gap:5px}
+.sf-btn{padding:8px 10px;border:1.5px solid #ddd;background:#fafafa;cursor:pointer;text-align:left;transition:border-color .12s,background .12s;width:100%}
+.sf-btn:hover{border-color:#aaa;background:#f5f5f5}
+.sf-btn.on{border-color:#111;background:#f0f0f0}
+.sf-meta{font-family:'Courier New',Courier,monospace;font-size:8px;text-transform:uppercase;letter-spacing:.07em;color:#888;display:block;margin-bottom:3px}
+.sf-preview{font-size:15px;line-height:1.3;color:#111;display:block}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Puzzle Observatory</div>
+  <button class="tab-btn on" onclick="sv('canvas')">Canvas</button>
+  <button class="tab-btn" onclick="sv('library')">Library</button>
+  <button class="tab-btn" onclick="sv('guide')">Guide</button>
+  <span style="margin-left:auto;font-size:9px;color:#aaa;letter-spacing:.06em;cursor:pointer" onclick="openCmd()" title="Ctrl+K">⌘ Search</span>
+  <button id="settings-btn" onclick="toggleSettings()" title="Display settings">⚙</button>
+</nav>
+<!-- Settings panel -->
+<div id="settings-panel">
+  <div class="sp-title">Display Font</div>
+  <div class="sf-fonts">
+    <button class="sf-btn" data-font="mono" onclick="applyFont('mono')">
+      <span class="sf-meta">Default</span>
+      <span class="sf-preview" style="font-family:'Courier New',Courier,monospace">Courier New — monospace</span>
+    </button>
+    <button class="sf-btn" data-font="bodon" onclick="applyFont('bodon')">
+      <span class="sf-meta">Bodoni Moda — extreme contrast</span>
+      <span class="sf-preview" style="font-family:'Bodoni Moda',serif">Puzzle Observatory</span>
+    </button>
+    <button class="sf-btn" data-font="corm" onclick="applyFont('corm')">
+      <span class="sf-meta">Cormorant Garamond — high contrast editorial</span>
+      <span class="sf-preview" style="font-family:'Cormorant Garamond',serif;font-weight:300">Puzzle Observatory</span>
+    </button>
+    <button class="sf-btn" data-font="play" onclick="applyFont('play')">
+      <span class="sf-meta">Playfair Display — classical serif</span>
+      <span class="sf-preview" style="font-family:'Playfair Display',serif">Puzzle Observatory</span>
+    </button>
+    <button class="sf-btn" data-font="cinz" onclick="applyFont('cinz')">
+      <span class="sf-meta">Cinzel — architectural, incised</span>
+      <span class="sf-preview" style="font-family:'Cinzel',serif">Puzzle Observatory</span>
+    </button>
+    <button class="sf-btn" data-font="fell" onclick="applyFont('fell')">
+      <span class="sf-meta">IM Fell English — historical sharp</span>
+      <span class="sf-preview" style="font-family:'IM Fell English',serif">Puzzle Observatory</span>
+    </button>
+    <button class="sf-btn" data-font="fraun" onclick="applyFont('fraun')">
+      <span class="sf-meta">Fraunces — optical, soft weight</span>
+      <span class="sf-preview" style="font-family:'Fraunces',serif;font-weight:300">Puzzle Observatory</span>
+    </button>
+    <button class="sf-btn" data-font="inst" onclick="applyFont('inst')">
+      <span class="sf-meta">Instrument Serif — clean modern</span>
+      <span class="sf-preview" style="font-family:'Instrument Serif',serif">Puzzle Observatory</span>
+    </button>
+    <button class="sf-btn" data-font="dms" onclick="applyFont('dms')">
+      <span class="sf-meta">DM Serif Display — editorial weight</span>
+      <span class="sf-preview" style="font-family:'DM Serif Display',serif">Puzzle Observatory</span>
+    </button>
+    <button class="sf-btn" data-font="mash" onclick="applyFont('mash')">
+      <span class="sf-meta">Ma Shan Zheng — sharp strokes</span>
+      <span class="sf-preview" style="font-family:'Ma Shan Zheng',cursive">書法字體 Expressive</span>
+    </button>
+    <button class="sf-btn" data-font="zhim" onclick="applyFont('zhim')">
+      <span class="sf-meta">Zhi Mang Xing — fluid ink</span>
+      <span class="sf-preview" style="font-family:'Zhi Mang Xing',cursive">行書字體 Bleeding</span>
+    </button>
+    <button class="sf-btn" data-font="long" onclick="applyFont('long')">
+      <span class="sf-meta">Long Cang — poetic asymmetric</span>
+      <span class="sf-preview" style="font-family:'Long Cang',cursive">草書字體 Relaxed</span>
+    </button>
+  </div>
+</div>
+<div id="urgency-strip"></div>
+<div id="filter-bar"></div>
+<div id="cmd-overlay" onclick="if(event.target===this)closeCmd()">
+  <div id="cmd-box">
+    <input id="cmd-input" placeholder="Search sources… (↑↓ navigate · Enter open · Esc close)" oninput="cmdSearch()" onkeydown="cmdKey(event)">
+    <div id="cmd-results"></div>
+    <div id="cmd-hint">Ctrl+K to open · / from any view · shows all 117 indexed sources</div>
+  </div>
+</div>
+
+<!-- CANVAS: Orbital / Scatter / Skill Map — shared filter, visual sub-views -->
+<section id="s-canvas" class="on">
+  <div id="canvas-nav">
+    <button class="sub-btn on" onclick="sc('orbital')">Orbital</button>
+    <button class="sub-btn" onclick="sc('scatter')">Scatter</button>
+    <button class="sub-btn" onclick="sc('skillmap')">Skill Map</button>
+  </div>
+  <div id="canvas-wrap">
+    <!-- Unified SVG: all three visualizations share one canvas; dots lerp between layouts -->
+    <svg id="canvas-svg" viewBox="0 0 600 600" width="580" height="580">
+      <g id="bg-orbital" style="transition:opacity .4s ease"></g>
+      <g id="bg-scatter" style="opacity:0;transition:opacity .4s ease;pointer-events:none"></g>
+      <g id="bg-skillmap" style="opacity:0;transition:opacity .4s ease;pointer-events:none"></g>
+      <g id="dot-layer"></g>
+      <g id="label-layer"></g>
+      <g id="center-layer"></g>
+    </svg>
+    <div id="canvas-side">
+      <!-- Orbital sidebar -->
+      <div class="cv-panel on" id="cvp-orbital">
+        <div class="orbital-stats">
+          <h2 id="today-heading">Today</h2>
+          <div class="ostat" id="ostat"></div>
+        </div>
+        <div class="leg-block">
+          <h2>Ring key</h2>
+          <div class="leg-row"><div style="width:28px;height:0;border-top:2px solid #111;flex-shrink:0"></div>Today spoke</div>
+          <div class="leg-row"><div style="width:28px;height:0;border-top:1px dashed #bbb;flex-shrink:0"></div>Weekly · 7-day</div>
+          <div class="leg-row"><div style="width:28px;height:0;border-top:1px solid #ccc;flex-shrink:0"></div>Monthly · 30-day</div>
+          <div class="leg-row"><div style="width:28px;height:0;border-top:1px solid #bbb;flex-shrink:0"></div>Annual · 365-day</div>
+          <div class="leg-row"><div style="width:28px;height:0;border-top:1px dotted #ccc;flex-shrink:0"></div>Evergreen</div>
+          <div style="font-size:9px;color:#aaa;margin-top:4px">Clockwise from → = upcoming</div>
+        </div>
+        <div class="leg-block">
+          <h2>Category colors</h2>
+          <div class="cat-color-grid" id="cat-color-legend"></div>
+        </div>
+        <div class="leg-block">
+          <h2 id="upcoming-heading">Upcoming — 30 days</h2>
+          <div id="upcoming-list"></div>
+        </div>
+      </div>
+      <!-- Scatter sidebar -->
+      <div class="cv-panel" id="cvp-scatter">
+        <h2>Frequency × Score</h2>
+        <div style="font-size:9px;color:#888;margin:5px 0 10px;line-height:1.6">X = release cadence · Y = prestige score<br>Filter bar narrows both dimensions.</div>
+        <div id="sc-legend"></div>
+        <div id="sc-detail" style="display:none;margin-top:10px;font-size:10px;color:#555;line-height:1.75;border-top:1px solid #e0e0e0;padding-top:8px"></div>
+      </div>
+      <!-- Skill Map sidebar -->
+      <div class="cv-panel" id="cvp-skillmap">
+        <h2>Cognitive Space Map</h2>
+        <div style="font-size:9px;color:#888;line-height:1.7;margin:5px 0 10px">X: Formal ↔ Creative<br>Y: Individual ↔ Communal<br>Dot size = prestige score.</div>
+        <div id="sk-legend"></div>
+        <div id="sk-detail" style="display:none;margin-top:10px;font-size:10px;color:#555;line-height:1.75;border-top:1px solid #e0e0e0;padding-top:8px"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Annotation modal -->
+<div id="ann-modal" onclick="if(event.target===this)closeAnn()">
+  <div id="ann-box">
+    <h3 id="ann-title">Note</h3>
+    <textarea id="ann-text" placeholder="Your notes on this source — saved locally in this browser…"></textarea>
+    <div class="ann-row">
+      <button class="ann-btn" onclick="closeAnn()">Cancel</button>
+      <button class="ann-btn primary" onclick="saveAnn()">Save Note</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIBRARY: Triage panels stacked above Matrix table — shared filter -->
+<section id="s-library">
+  <div id="lib-triage">
+    <div class="tr-panel" id="tr-week"></div>
+    <div class="tr-panel" id="tr-month"></div>
+    <div id="s-triage-bot">
+      <div style="border:1px solid #e0e0e0;background:#fff">
+        <div class="tr-head-full">Evergreen — Top by Score (always active)</div>
+        <div class="evg-grid" id="tr-evg" style="padding:10px"></div>
+      </div>
+    </div>
+  </div>
+  <div id="lib-matrix-hd">All Sources — Score Matrix <span style="font-weight:400;color:#bbb">· click column to sort</span></div>
+  <div id="mx-wrap"><table id="mx-tbl"></table></div>
+</section>
+
+<!-- GUIDE: Contribution guide + criteria legend + full source list -->
+<section id="s-guide">
+  <div class="prompt-wrap">
+    <div class="prompt-hd"><span>Research Prompt — use with any capable LLM to find new sources</span><span id="prompt-copied" style="color:#166534;display:none">Copied ✓</span></div>
+    <div class="prompt-box" id="prompt-text">Conduct a comprehensive, philosophy-driven search for elite puzzle resources. Preferred target: a NOVEL CATEGORY of solving never before seen — move past well-trodden domains unless something architecturally unprecedented exists within them.
+
+The scoring rubric you must apply (0–3 per criterion, threshold ≥13/24):
+  RAR  Rarity / Ritual      — Annual or rare events carry ceremony weight beyond continuous streams
+  INV  Invention            — Creates new rule systems, constraint logic, or genuinely new puzzle kinds
+  BAR  Barrier              — Serious gate; 3 = near-professional or genius-level filter required
+  PED  Pedigree             — World champions, olympiad medalists, grandmasters actively engage
+  ARC  Archive              — Deep, searchable, annotated record enabling cumulative study
+  LEG  Legitimacy           — Institution, world federation, or undisputed community canonical status
+  TRN  Transcendence        — Produces "aha!" of mathematical/linguistic beauty; shifts perception
+  FRN  Living Frontier      — Open problems resist top solvers for years; OR inexhaustible creative depth never reaching a ceiling
+
+Alignment criteria for inclusion:
+  ✓ Constrained intellectual creativity with high formal innovation
+  ✓ Serious cognitive barriers that reward sustained practice
+  ✓ Deep tradition (decades of community or institutional history)
+  ✓ Insight — solving reveals hidden structure in mathematics, language, or reality
+
+Explicit exclusions:
+  ✗ Casual, commercial, mass-market, or speed-focused formats
+  ✗ Low-barrier apps designed for entertainment
+  ✗ Commentary-only sites (no original puzzles created)
+  ✗ Pure benchmarking with no human-facing challenge interface
+
+For each candidate scoring ≥13/24: provide name, primary URL, release frequency, a philosophical one-paragraph description of WHY it belongs in an elite cognitive observatory, full 8-criterion scores with one-sentence justification per criterion, and integration notes (ring: weekly/monthly/annual/evergreen, dayInfo for calendar placement).</div>
+    <div class="prompt-foot">
+      <button class="prompt-btn" onclick="copyPrompt()">Copy prompt</button>
+      <button class="prompt-btn" onclick="toggleAbstractPrompt()">Toggle abstract variant</button>
+    </div>
+  </div>
+  <div class="criteria-legend">
+    <h2>Acceptance Criteria — Each scored 0–3 · Threshold ≥ 13 / 24</h2>
+    <div class="crit-grid" style="grid-template-columns:repeat(4,1fr)">
+      <div class="crit-item"><div class="crit-name">Rarity / Ritual</div><div class="crit-desc">Temporal discipline. Annual/biannual events carry ritual weight beyond a continuous stream.</div><div class="score-guide"><div class="sg sg-0">0</div><div class="sg sg-1">1</div><div class="sg sg-2">2</div><div class="sg sg-3">3</div></div></div>
+      <div class="crit-item"><div class="crit-name">Invention</div><div class="crit-desc">Creates new rule systems, constraint logic, or entirely new kinds of puzzles.</div><div class="score-guide"><div class="sg sg-0">0</div><div class="sg sg-1">1</div><div class="sg sg-2">2</div><div class="sg sg-3">3</div></div></div>
+      <div class="crit-item"><div class="crit-name">Barrier</div><div class="crit-desc">Serious gate. 3 = near-professional or genius-level filter required.</div><div class="score-guide"><div class="sg sg-0">0</div><div class="sg sg-1">1</div><div class="sg sg-2">2</div><div class="sg sg-3">3</div></div></div>
+      <div class="crit-item"><div class="crit-name">Pedigree</div><div class="crit-desc">World champions, IMO medalists, grandmasters, olympiad specialists actively engage.</div><div class="score-guide"><div class="sg sg-0">0</div><div class="sg sg-1">1</div><div class="sg sg-2">2</div><div class="sg sg-3">3</div></div></div>
+      <div class="crit-item"><div class="crit-name">Archive</div><div class="crit-desc">Deep, searchable, annotated solutions for cumulative scholarly study.</div><div class="score-guide"><div class="sg sg-0">0</div><div class="sg sg-1">1</div><div class="sg sg-2">2</div><div class="sg sg-3">3</div></div></div>
+      <div class="crit-item"><div class="crit-name">Legitimacy</div><div class="crit-desc">Backed by: institution, federation, ancient society, or undisputed community canonical status.</div><div class="score-guide"><div class="sg sg-0">0</div><div class="sg sg-1">1</div><div class="sg sg-2">2</div><div class="sg sg-3">3</div></div></div>
+      <div class="crit-item"><div class="crit-name">Transcendence</div><div class="crit-desc">Produces "aha!" of mathematical beauty or shifts how solvers perceive logic/language/reality.</div><div class="score-guide"><div class="sg sg-0">0</div><div class="sg sg-1">1</div><div class="sg sg-2">2</div><div class="sg sg-3">3</div></div></div>
+      <div class="crit-item"><div class="crit-name">Living Frontier</div><div class="crit-desc">Open problems resist top solvers for years; OR inexhaustible creative depth that never reaches a ceiling.</div><div class="score-guide"><div class="sg sg-0">0</div><div class="sg sg-1">1</div><div class="sg sg-2">2</div><div class="sg sg-3">3</div></div></div>
+    </div>
+    <div style="margin-top:10px;font-size:9px;color:#777;line-height:1.7"><strong>ACCEPTED</strong> ≥ 13 pts &nbsp;|&nbsp; <strong>REJECTED</strong> &lt; 13 pts &nbsp;|&nbsp; Must earn across multiple dimensions. 8 criteria v3 — scores revised 2026.</div>
+  </div>
+  <!-- System Roadmap -->
+  <div class="guide-panel">
+    <h2>System Architecture — Live Status</h2>
+    <div class="roadmap-item"><span class="rm-status rm-live">Live</span><div><strong>Shared filter pipeline</strong> — one FILTER state drives all views (Canvas, Library, Guide) simultaneously</div></div>
+    <div class="roadmap-item"><span class="rm-status rm-live">Live</span><div><strong>Temporal decay signals</strong> — sources flagged <span class="stale" title="Unverified >6 months"></span> when unverified for more than 6 months; verify by editing the LAST_VERIFIED map in source</div></div>
+    <div class="roadmap-item"><span class="rm-status rm-live">Live</span><div><strong>Personal annotation layer</strong> — click ✎ on any source in the Library matrix to attach a private note (stored in browser localStorage)</div></div>
+    <div class="roadmap-item"><span class="rm-status rm-live">Live</span><div><strong>Lerp canvas</strong> — Orbital / Scatter / Skill Map share one SVG; dots animate to new positions on layout switch</div></div>
+    <div class="roadmap-item"><span class="rm-status rm-plan">Planned</span><div><strong>sources.json extraction</strong> — move RAW + SC out of this HTML into a fetched <code>sources.json</code> file; enables git-diffable per-source changes and external tooling without touching the render layer</div></div>
+    <div class="roadmap-item"><span class="rm-status rm-future">Future</span><div><strong>Intake pipeline formalization</strong> — a <code>sources-pending.json</code> staging file accepting PR-ready contributions from non-developers (see template below)</div></div>
+    <div class="roadmap-item"><span class="rm-status rm-future">Future</span><div><strong>Practitioner Bridge</strong> — entropy engine localStorage → cluster performance → "For You" observatory recommendations (architecture in PRACTITIONER_BRIDGE_DESIGN.md)</div></div>
+  </div>
+
+  <!-- Coverage Gaps -->
+  <div class="guide-panel">
+    <h2>Coverage Gaps — No Observatory Source Exists Yet</h2>
+    <p>These cognitive skill clusters are tracked in the entropy engine but have zero observatory coverage. They represent the highest-value research targets for the next session.</p>
+    <div class="gap-grid">
+      <div class="gap-item"><div class="gap-name">Musical / Rhythmic Pattern</div><div class="gap-desc">Structured tonal constraint systems: counterpoint, serial composition, rhythmic canons. Requires formal rule-following with aesthetic judgment.</div><div class="gap-badge">No source found</div></div>
+      <div class="gap-item"><div class="gap-name">Probabilistic / Bayesian</div><div class="gap-desc">Reasoning under uncertainty, belief updating, calibration challenges. Distinct from math competitions — demands epistemological precision, not calculation.</div><div class="gap-badge">No source found</div></div>
+      <div class="gap-item"><div class="gap-name">Epistemic / Theory of Mind</div><div class="gap-desc">Puzzles requiring modelling of other agents' knowledge states: common knowledge, nested belief, coordination games with incomplete information.</div><div class="gap-badge">No source found</div></div>
+      <div class="gap-item"><div class="gap-name">Temporal / Chronological</div><div class="gap-desc">Reasoning about event sequences, causal ordering, timeline reconstruction. Time Puzzles genre shelved pending code release — revisit for observatory candidates.</div><div class="gap-badge">No source found</div></div>
+    </div>
+  </div>
+
+  <!-- Intake Pipeline -->
+  <div class="guide-panel">
+    <h2>Stage a Source — Intake Template</h2>
+    <p>To add a new source, copy this template and fill it in. Sources with total ≥ 13 and not scoring 0 on both INV and BAR qualify. Paste the completed entry as a RAW array row and SC score array into the HTML source.</p>
+    <div class="intake-template">// RAW entry:
+[ID, 'Source Name', 'domain.tld/path', 'cat', 'freq', {m:MONTH, d:DAY}, 'One-paragraph description...'],
+
+// SC scores [RAR, INV, BAR, PED, ARC, LEG, TRN, FRN]:
+ID: [0,0,0,0,0,0,0,0], // total: 0
+
+// LAST_VERIFIED:
+ID: '2026-05-23',
+
+// Rejection reason (if total < 13 or auto-reject):
+// ID: 'Reason for rejection',
+
+// Category (must match key in CATS):
+// hunt | math | logic | sudoku | cryptic | cipher | code | society
+// mech | chess | ling | bio | proof | lit | auto | cgt</div>
+  </div>
+
+  <div id="contrib-summary"></div>
+  <div id="site-list">
+    <div class="sort-row">
+      <span style="flex:1">Site &amp; Description</span>
+      <span style="width:114px;text-align:center">RAR · INV · BAR · PED · ARC · LEG</span>
+      <span style="width:72px;text-align:center">Status</span>
+    </div>
+    <div id="contrib-rows"></div>
+  </div>
+</section>
+
+<div id="tip">
+  <div id="tip-name" style="font-weight:700;font-size:11px;margin-bottom:2px"></div>
+  <div id="tip-cat" style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px"></div>
+  <div id="tip-days" style="font-size:10px;color:#666;margin-bottom:2px"></div>
+  <div id="tip-score" style="font-size:9px;color:#999;margin-bottom:3px"></div>
+  <div id="tip-desc" style="font-size:9px;color:#777"></div>
+</div>
+
+<script>
+const CATS = {
+  hunt:'Puzzle Hunts', math:'Math Competitions', logic:'Logic Puzzles',
+  sudoku:'Sudoku Variants', cryptic:'Cryptic Crosswords', cipher:'Ciphers & Codes',
+  code:'Competitive Prog.', society:'Puzzle Societies', mech:'Mechanical Puzzles',
+  chess:'Chess Composition', ling:'Linguistics Logic',
+  bio:'Biological Design', proof:'Formal Proofs', lit:'Literary Logic',
+  auto:'Cellular Automata', cgt:'Combinat. Games',
+};
+const CAT_COLORS = {
+  hunt:'#1d4ed8', math:'#7c3aed', logic:'#0891b2', sudoku:'#ea580c',
+  cryptic:'#16a34a', cipher:'#dc2626', code:'#6d28d9', society:'#db2777',
+  mech:'#b45309', chess:'#475569', ling:'#6366f1',
+  bio:'#059669', proof:'#8b5cf6', lit:'#d97706', auto:'#0f766e', cgt:'#be123c',
+};
+
+// [id, name, url, cat, freq, dayInfo, desc]
+// RESEARCH CORRECTIONS (May 2026):
+// #33  Cut the Knot      — Invention 2→1, Barrier 2→1 (educational, no difficulty gate) → now REJECTED
+// #39  Tanya Khovanova   — Legitimacy 2→1 (personal blog, not institutionally backed)
+// #68  Fifteensquared    — Invention 1→0 (commentary only, creates no puzzles) → now REJECTED
+// #87  Gathering 4 Gardner — URL corrected (was gatheringforcoleman.com, a typo)
+// #30,92,93 — freq corrected biannual→bimonthly (all publish 6× per year, not 2×)
+// #96  FIDE Album        — description clarified as triennial (freq kept biannual as proxy)
+// CRITERIA UPGRADE (v2): 6→8 criteria; added Transcendence/Insight (TRN) + Unsolved Depth (UNS)
+// CRITERIA RENAME (v3): INS→LEG (Legitimacy; now includes community canonical status), UNS→FRN (Living Frontier; now includes inexhaustible creative depth)
+// Threshold raised from 10/18 to 13/24 (~55% in both cases). #49 PuzzSQ, #58 Penpa-Edit now REJECTED.
+// NEW ENTRIES: #97–106  — Linguistics Logic (IOL), Chess Composition (WFCC, OzProblems),
+//   Mechanical (Slocum IU, IPP archive), Logic (WPC Unofficial, LMD Portal), Sudoku (WPF GP archive),
+//   Math (Evan Chen, AoPS Olympiad Archive).
+const RAW = [
+  [1,'MIT Mystery Hunt','puzzles.mit.edu','hunt','annual',{m:0,d:15},'Hardest puzzle hunt on earth. 48–72 hr. Teams of 50+. Invented mechanics every year.'],
+  [2,'Galactic Puzzle Hunt','galacticpuzzlehunt.com','hunt','annual',{m:7,d:15},'MIT-pedigree online hunt, August. Deep metas, originally invented mechanics each year.'],
+  [3,'DASH Hunt','playdash.org','hunt','annual',{m:4,d:1},'Different Area Same Hunt. In-person multi-city, May. Serious constructor community.'],
+  [4,'Teammate Hunt','teammatehunt.com','hunt','annual',{m:1,d:1},'Annual online hunt, February. Dense nested meta-puzzle structures.'],
+  [5,'BAPHL','baphl.org','hunt','irregular',null,'Boston Area Puzzle Hunt League. Walkaround hunts ~3× per year. Hard metas.'],
+  [6,'Microsoft Puzzle Hunt','puzzlehunt.azurewebsites.net','hunt','annual',{m:4,d:15},'Microsoft employee-constructed annual hunt. Hard meta-puzzle chains.'],
+  [7,'P&A Magazine','pandamagazine.com','hunt','monthly',1,'Monthly print/PDF puzzle hunt. Hunt-veteran constructors. Continuous archive.'],
+  [8,'Brown Puzzlehunt','brownpuzzlehunt.com','hunt','annual',{m:3,d:11},'Brown Puzzle College annual hunt. In-person + online hybrid.'],
+  [9,'HMMT Puzzle Hunt','hmmt.org','hunt','biannual',null,'Biannual high-school puzzle hunt by Harvard-MIT Math Tournament. Feb + Nov.'],
+  [10,'Silph Puzzle Hunt','silphpuzzlehunt.com','hunt','annual',{m:6,d:25},'Pokémon-themed hunt. Novel invented mechanics every year. July.'],
+  [11,'Edric Truzzle Hunt','truzzle.net','hunt','annual',{m:6,d:12},'Independent online hunt, July. Elegant puzzle design. Growing pedigree.'],
+  [12,'FlatDurian Hunt','puzzlehuntmy.us','hunt','irregular',null,'Bimonthly round releases since 2025–26. First-time org; archive incomplete.'],
+  [13,'Hunt Archive Wiki','puzzles.wiki','hunt','continuous',null,'Indexed archive of every hunt ever run. Resource tool only, not a puzzle source.'],
+  [14,'Puzzle Hunt Calendar','puzzlehuntcalendar.com','hunt','continuous',null,'Live tracker of upcoming puzzle hunt events. Directory tool only.'],
+  [15,'Puzzlvaria Blog','puzzlvaria.wordpress.com','hunt','irregular',null,'Dan Katz hunt-criticism blog. Commentary only; puzzles reviewed are the sources.'],
+  [16,'Jane Street Puzzles','janestreet.com/puzzles','math','monthly',1,'Monthly quant-firm-level logic. Custom rule sets every time. Solutions archived.'],
+  [17,'IBM Ponder This','research.ibm.com/haifa/ponderthis','math','monthly',28,'Monthly since 1998. Requires computer search + proof. IBM Research.'],
+  [18,'Putnam Competition','maa.org/putnam','math','annual',{m:11,d:6},'Hardest North American undergrad math exam. 12 problems. December.'],
+  [19,'IMO Archive','imo-official.org/problems.aspx','math','annual',{m:6,d:15},'International Math Olympiad. Hardest high-school math. Proof required.'],
+  [20,'USAMO','maa.org/usamo','math','annual',{m:3,d:20},'Top 250 US students. 6 proof problems. April. Pathway to IMO.'],
+  [21,'AMC 12 / AIME','maa.org/amc','math','annual',{m:1,d:5},'AMC→AIME funnel. AIME has no multiple choice. February competition.'],
+  [22,'Miklós Schweitzer','math.u-szeged.hu/schweitzer','math','annual',{m:9,d:20},'Open-book 10-day competition. Considered the hardest math contest in the world.'],
+  [23,'HMMT Math Tournaments','hmmt.org','math','biannual',null,'Harvard-MIT Math Tournament. February + November. Hard proof-style problems.'],
+  [24,'Tournament of Towns','olympiads.mccme.ru','math','biannual',null,'Russian math olympiad. Two sessions per year. Multi-tier difficulty.'],
+  [25,'Baltic Way','bmoa.eu','math','annual',{m:10,d:1},'Team competition, 11 Baltic states. Proof problems. October.'],
+  [26,'Czech-Slovak Math Olympiad','cmsp.mff.cuni.cz','math','annual',{m:2,d:1},'Joint Czech and Slovak math olympiad. Proof-based. Deep tradition.'],
+  [27,'Romanian Math Olympiad','rmo.ro','math','annual',{m:1,d:15},'Historically strong olympiad tradition. Proof problems. January.'],
+  [28,'IMO Shortlist','imo-official.org','math','annual',{m:9,d:1},'Shortlisted IMO problems released the year after the following competition.'],
+  [29,'Crux Mathematicorum','cms.math.ca/publications/crux','math','monthly',1,'Peer-reviewed problems journal. Called "best in world." Open-access since 2019.'],
+  [30,'Mathematical Reflections','awesomemath.us/mathematical-reflections','math','bimonthly',null,'Olympiad-level student problems journal. Six issues per year (bimonthly). Freq corrected from biannual.'],
+  [31,'AMM Problems Section','maa.org/press/periodicals/american-mathematical-monthly','math','monthly',1,'MAA flagship monthly. Problems section with peer-reviewed solutions.'],
+  [32,'Project Euler','projecteuler.net','math','continuous',null,'900+ computational math problems. Efficiency matters. No public spoilers policy.'],
+  [33,'Cut the Knot','cut-the-knot.org','math','continuous',null,'Recreational math proofs and interactive illustrations by Bogomolny. Educational archive only.'],
+  [34,'Brainstellar (Deadly)','brainstellar.com','math','continuous',null,'Quant-firm-tier probability and logic. Curated Deadly tier only.'],
+  [35,'Art of Problem Solving','artofproblemsolving.com','math','continuous',null,'General competition math hub. No minimum difficulty floor. General-access resource site.'],
+  [36,'IOQM India','olympiads.hbcse.tifr.res.in','math','annual',{m:7,d:1},'Indian Olympiad Qualifying Exam. Gateway to IMO. TIFR-backed. August.'],
+  [37,'UKMT Senior Challenges','ukmt.org.uk','math','annual',{m:9,d:1},'UK Mathematics Trust. Senior → BMO → IMO pathway. October.'],
+  [38,'Futility Closet','futilitycloset.com','math','continuous',null,'Mathematical curiosities blog. No difficulty barrier, no elite community, no gate.'],
+  [39,'Tanya Khovanova Math Blog','blog.tanyakhovanova.com','math','irregular',null,'MIT mathematician\'s puzzle blog. Competition problems + original compositions.'],
+  [40,'GMPuzzles','gmpuzzles.com','logic','weekly',0,'World Sudoku Champions constructing daily. Every puzzle uses custom variant rules.'],
+  [41,'World Puzzle Championship','worldpuzzle.org','logic','annual',{m:9,d:1},'Annual WPC. Language-neutral logic. 100+ countries. Archive 1992–present.'],
+  [42,'WPF Puzzle Grand Prix','grandprix.worldpuzzle.org','logic','monthly',15,'Monthly online WPF rounds. WPC-style logic puzzles. WPC qualification pathway.'],
+  [43,'Logic Masters India','logicmastersindia.com','logic','monthly',10,'Two tests/month: 1 sudoku + 1 logic. World-class constructors.'],
+  [44,'Logic Masters Germany','logic-masters.de','logic','continuous',null,'LMD forum. Enormous archive. Inventor of many classic puzzle form types.'],
+  [45,'US Puzzle Championship','uspc.puzzles.com','logic','annual',{m:6,d:1},'Annual USPC. Top scorers represent the USA at WPC. Hard logic problems.'],
+  [46,'Simon Tatham Puzzles','chiark.greenend.org.uk/~sgtatham/puzzles','logic','continuous',null,'39 open-source portable logic puzzle types. All uniquely solvable. Rigorous design.'],
+  [47,'Nikoli Japan','nikoli.com','logic','continuous',null,'Original publisher of Sudoku, Slitherlink, Nurikabe. Premium editorial quality.'],
+  [48,'Akil Oyunlari Turkey','akiloyunlaridergisi.com','logic','monthly',1,'Turkish logic magazine. WPC-level constructors. Novel puzzle types invented regularly.'],
+  [49,'PuzzSQ / Logic App','puzsq.logicpuzzle.app','logic','continuous',null,'Archive of logic puzzles by WPC-level constructors. Searchable.'],
+  [50,'Croco-Puzzle','croco-puzzle.com','logic','continuous',null,'Large Nikoli-style puzzle archive. Lower curation rigor.'],
+  [51,'Puzzle Picnic','puzzlepicnic.com','logic','continuous',null,'Logic puzzle collection. No minimum difficulty or institutional backing.'],
+  [52,'Archimedes Lab','archimedes-lab.org','logic','irregular',null,'Math/logic puzzles. Insufficient difficulty barrier and pedigree for this list.'],
+  [53,'Cracking the Cryptic','crackingthecryptic.com','sudoku','irregular',null,'Variant sudoku with entirely invented constraint systems. Daily videos and setter community.'],
+  [54,'World Sudoku Championship','worldsudokuchampionship.com','sudoku','annual',{m:9,d:5},'Annual WSC. Held alongside WPC. 50+ distinct sudoku variant types. Full archive.'],
+  [55,'WPF Sudoku Grand Prix','grandprix.worldpuzzle.org','sudoku','monthly',1,'Monthly sudoku rounds. WPC/WSC qualification pathway.'],
+  [56,'Lisudoku','lisudoku.com','sudoku','continuous',null,'Custom constraint builder tool. Construction tool only, not a puzzle source.'],
+  [57,'F-Puzzles','f-puzzles.com','sudoku','continuous',null,'Construction and solving tool. Not a curated puzzle source.'],
+  [58,'Penpa-Edit Community','swaroopg92.github.io/penpa-edit','sudoku','continuous',null,'Web tool for WPC-style puzzles. Community shares original puzzles here.'],
+  [59,'The Listener Crossword','listenercrossword.com','cryptic','weekly',6,'Hardest cryptic since 1930. Weekly Saturday Times (UK). Themed variants only.'],
+  [60,'The Magpie Magazine','piemag.com','cryptic','monthly',1,'Monthly subscription. 5 cryptics + 1 numerical. Grades A–E. Goodliffe & Anthony eds.'],
+  [61,'Enigmatic Variations','fifteensquared.net','cryptic','weekly',0,'Weekly themed cryptic, Sunday Telegraph. Running 30+ years.'],
+  [62,'The Inquisitor','fifteensquared.net','cryptic','weekly',6,'Saturday Independent. Thematic cryptics. Solution blog at Fifteensquared.'],
+  [63,'NPL Enigma Cryptics','puzzlers.org/the-enigma','cryptic','monthly',1,'NPL monthly. Variety cryptics and flats. Rarely seen outside the League.'],
+  [64,'Azed (Observer)','theguardian.com/crosswords','cryptic','weekly',0,'Jonathan Crowther in Sunday Observer. Hardest British barred-grid cryptic.'],
+  [65,'Mephisto (Sunday Times)','thetimes.com/puzzles','cryptic','weekly',0,'Sunday Times barred-grid cryptic. Three setters: Manley, Moorey, McKenna.'],
+  [66,'1 Across Magazine','bestforpuzzles.com','cryptic','monthly',1,'UK subscription cryptic magazine. Advanced thematic puzzles monthly.'],
+  [67,'The Crossword Club UK','crosswordclub.co.uk','cryptic','monthly',1,'UK subscription service. Monthly cryptics by top-tier setters.'],
+  [68,'Fifteensquared Blog','fifteensquared.net','cryptic','continuous',null,'Community solver blog archiving solutions to Listener, EV, and Inquisitor crosswords.'],
+  [69,'MysteryTwister C3','mysterytwister.org','cipher','continuous',null,'Cipher challenge contest with Hall of Fame. Unsolved problems remain. Since 2009.'],
+  [70,'NSA Puzzle Periodical','nsa.gov/news-features/puzzles','cipher','monthly',1,'NSA monthly math/crypto puzzles. Government origin. Often unsolved for weeks.'],
+  [71,'GCHQ Puzzle Challenges','gchq.gov.uk','cipher','irregular',null,'UK intelligence agency challenges. Annual Christmas puzzle. Elite difficulty.'],
+  [72,'NCSC CyberFirst','ncsc.gov.uk/cyberfirst','cipher','annual',{m:1,d:1},'UK National Cyber Security Centre annual competition. Cipher + coding.'],
+  [73,'Cicada 3301 Archive','uncovering-cicada.fandom.com','cipher','continuous',null,'Archive of 2012–2014 puzzles. Multi-layer: cryptography, steganography, IRL elements.'],
+  [74,'Kryptos Community','elonka.com/kryptos','cipher','continuous',null,'CIA sculpture cipher. Part 4 unsolved since 1990. Active researcher community.'],
+  [75,'Crypto Corner','cryptocorner.info','cipher','continuous',null,'Classical cipher educational tools. No challenge community or unsolved depth.'],
+  [76,'CTF Time','ctftime.org','cipher','irregular',null,'CTF competition directory. The competitions it lists may qualify; this directory does not.'],
+  [77,'Project Architeuthis','en.wikipedia.org/wiki/Project_Architeuthis','cipher','annual',{m:0,d:1},'US Navy cryptologic cipher challenge. Annual. Recruiting cryptologists.'],
+  [78,'Advent of Code','adventofcode.com','code','annual',{m:11,d:1},'December programming puzzles. All years archived. Jane Street solvers compete.'],
+  [79,'AtCoder Grand Contest','atcoder.jp','code','irregular',null,'AGC: hardest competitive programming rounds. ~10/year. Japan origin.'],
+  [80,'ICPC World Finals','icpc.global','code','annual',{m:3,d:1},'International Collegiate Programming Contest. World Finals. March.'],
+  [81,'IOI Archive','ioinformatics.org','code','annual',{m:6,d:1},'International Olympiad in Informatics. Algorithmic problems. Proof required.'],
+  [82,'USACO Platinum','usaco.org','code','irregular',null,'USA Computing Olympiad. Platinum division. ~4 contests per year.'],
+  [83,'Codeforces Div1 E/F','codeforces.com','code','irregular',null,'Only the hardest Codeforces problems. D1 E and F. Expert-only territory.'],
+  [84,'IOI Shortlist','ioinformatics.org','code','annual',{m:9,d:1},'Unreleased IOI shortlisted problems from prior year. Research quality.'],
+  [85,'NPL / The Enigma','puzzlers.org','society','monthly',1,'World\'s oldest puzzle org (1883). Monthly Enigma magazine. ~900 members.'],
+  [86,'Int\'l Puzzle Party','puzzleparty.org','society','annual',{m:7,d:1},'By-invitation-only. Annual mechanical puzzle exchange + design competition.'],
+  [87,'Gathering 4 Gardner','gathering4gardner.org','society','biannual',null,'Biennial celebration of Martin Gardner. Math, magic, puzzles. Elite gathering.'],
+  [88,'ACPT','crosswordtournament.com','society','annual',{m:2,d:20},'American Crossword Puzzle Tournament. Annual March. NPL members attend.'],
+  [89,'Nob Yoshigahara Design Comp.','puzzleworld.org/DesignCompetition','mech','annual',{m:7,d:1},'IPP\'s annual design competition. Jury Grand Prize. Invitation-only.'],
+  [90,'Puzzle Museum (Slocum)','puzzlemuseum.com','mech','continuous',null,'Jerry Slocum\'s archive. 30,000+ mechanical puzzles from 13th century onward.'],
+  [91,'Hanayama Puzzle Blog','hanayama-toys.com','mech','irregular',null,'Japanese cast metal puzzles. Level 6 series. Originally designed by Nob Yoshigahara.'],
+  [92,'The Problemist Journal','theproblemist.org','chess','bimonthly',null,'Bimonthly (6× per year). British Chess Problem Society journal. Composition + solving.'],
+  [93,'Die Schwalbe','dieschwalbe.de','chess','bimonthly',null,'German chess problem society. Bimonthly (6× per year) journal. Compositions + proof games.'],
+  [94,'Tim Krabbé Chess Curiosities','timkr.home.xs4all.nl/chess/chess.htm','chess','continuous',null,'Essential chess curiosity archive. Records, proof games, endgame studies.'],
+  [95,'Retro Corner (MatPlus)','matplus.net','chess','continuous',null,'Retrograde analysis community. Proof games. Last-move deduction puzzles.'],
+  [96,'FIDE Album (Composition)','fide.com','chess','biannual',null,'FIDE triennial anthology of finest chess compositions worldwide. (Freq listed as biannual proxy.)'],
+  // ── NEW ENTRIES v2 ──────────────────────────────────────────────────────────
+  [97,'IOL Problems Archive','ioling.org/problems/','ling','annual',{m:7,d:20},'International Linguistics Olympiad: 20+ years of language-decoding problems with full solutions. Derive grammar of unknown languages from scratch. By-year and best-solutions sub-archives available.'],
+  [98,'WFCC Official Site','wfcc.ch','chess','annual',{m:9,d:1},'World Federation for Chess Composition. Governs WCCT, World Solving Championship, FIDE Albums, composition congresses. Highest institutional authority in the chess composition tradition.'],
+  [99,'OzProblems','ozproblems.com','chess','continuous',null,'Australian chess composition repository with FIDE Album selections, endgame studies, proof games, and retrograde analysis — all with diagrams and rich searchable archive.'],
+  [100,'Slocum Collection (Indiana Univ.)','digitalcollections.iu.edu/collections/p2678p93x','mech','continuous',null,'Indiana University Lilly Library digital archive of Jerry Slocum\'s 30,000+ mechanical puzzles from the 13th century onward. Fully searchable with photos, descriptions, and provenance.'],
+  [101,'WPC Unofficial Archive','ectoplsm.github.io/wpc-unofficial.org/instructions/','logic','continuous',null,'Unofficial archive of World Puzzle Championship instruction booklets and original problem sets from 1992–present. Preserves the full history of language-neutral logic puzzle invention.'],
+  [102,'WPF Sudoku GP Archives','gp.worldpuzzle.org/content/sudoku-archive','sudoku','continuous',null,'Full downloadable archive of past WPF Sudoku Grand Prix rounds with problem sets and answer keys. Companion to the live monthly GP qualification competition.'],
+  [103,'Evan Chen Olympiad Problems','web.evanchen.cc/problems.html','math','continuous',null,'Curated olympiad problem sets and solutions by Harvard PhD and IMO medalist Evan Chen. Clean, comprehensive coverage of hard competition problems with detailed write-ups.'],
+  [104,'LMD Rätsel Portal','logic-masters.de/Raetselportal/?chlang=en','logic','continuous',null,'Logic Masters Germany puzzle portal: 34,000+ original logic puzzles fully searchable and many online-solvable. World\'s largest community archive of invented puzzle forms.'],
+  [105,'IPP Design Comp. Archive','puzzles.baxterweb.com/idcArchive/','mech','continuous',null,'Historical archive of all International Puzzle Party Design Competition entries — images, descriptions, and objectives for every submission since the competition began.'],
+  [106,'AoPS Olympiad Archive','artofproblemsolving.com/wiki/index.php/Olympiad_Archive','math','continuous',null,'Art of Problem Solving\'s comprehensive olympiad archive including IMO, Moscow Mathematical Olympiad, USAMO, and major national olympiads worldwide. Deep problem coverage with solutions.'],
+  // ── NEW ENTRIES v3 — Novel categories: bio, proof, lit, auto, cgt ────────
+  [107,'Foldit','fold.it','bio','continuous',null,'Protein-folding citizen-science puzzle. UW/NIH. Players outperformed algorithms on a CASP problem (2010 Nature paper). Real disease proteins (COVID spike, HIV protease, cancer targets) surface as open challenges. The only puzzle form where solving a puzzle can contribute to curing a disease.'],
+  [108,'Lean Game Server','adam.math.hhu.de','proof','continuous',null,'Gamified formal proof assistant: build mathematics from axioms using Lean 4 tactics. Natural Number Game (Imperial College) proves 2+2=4 then x+y=y+x from scratch. Multiple worlds. Terence Tao plays. Purest possible cognitive form of mathematical reasoning — every step must be formally justified.'],
+  [109,'CryptoHack','cryptohack.org','cipher','continuous',null,'Break real modern cryptography: AES, RSA, elliptic curves, zero-knowledge proofs, lattices. CTF archive permanently hosts the best historical cryptography challenges. No trivial entries — requires real mathematical background. Some challenges remain unsolved for months.'],
+  [110,'Alan Turing Cryptography Competition','maths.manchester.ac.uk/cryptography','cipher','annual',{m:0,d:12},'Annual narrative cipher competition by University of Manchester Mathematics Department. Chapters released fortnightly January–April. Archive since 2012. Honors Turing\'s legacy; accessible enough for schools, hard enough for graduates. January open.'],
+  [111,'ConwayLife / LifeWiki','conwaylife.com','auto','continuous',null,'Design challenge for Conway\'s Game of Life. Annual Pattern of the Year (POTY) community competition. Catagolue distributed soup-search for novel patterns. Massive annotated LifeWiki + pattern library. Open problems: smallest guns, universal constructors, growth rates. Zero-player game with genuinely unsolved frontier mathematics.'],
+  [112,'OEIS Puzzle Sequences','oeis.org/Spuzzle.html','math','continuous',null,'Sloane\'s curated sequence puzzle page: guess the generating rule. Ranges from Fibonacci to sequences a world chess champion could not solve. 300K+ OEIS sequences; puzzle subset carefully annotated. OEIS Foundation backed. Many sequences have no known closed form — living frontier.'],
+  [113,'Oulipo','oulipo.net','lit','irregular',null,'Workshop of Potential Literature (Paris, 1960–). Writers + mathematicians composing works under extreme formal constraints: lipograms (La Disparition — no e), N+7, snowball, prisoner\'s constraint, Queneau\'s 100,000,000,000,000 poems. Members: Perec, Calvino, Roubaud. Monthly public sessions. Invented more novel generative constraint systems than any other literary movement.'],
+  [114,'NACLO','naclo.org','ling','annual',{m:0,d:26},'North American Computational Linguistics Open. Annual January/February. Computational + combinatorial language puzzles distinct from IOL: automata, formal grammars, machine-translation structure. CMU/Michigan, NSF-backed. Full archive on naclo.org/resources.php. Gateway to IOL for North American students.'],
+  [115,'Retrograde Analysis Corner','janko.at/Retros','chess','continuous',null,'3,500+ retro chess problems: last-move deduction, proof games, illegal clusters, fairy retroanalysis. Canonical global archive for the form. WFCC-adjacent. Also includes non-chess retrograde variants (dots-and-boxes, Othello, baseball). The deepest archive of backward-reasoning puzzles in existence.'],
+  [116,'CGT / Sprouts Community','combinatorialgametheory.blogspot.com','cgt','biannual',null,'Combinatorial game theory: Sprouts, Hackenbush, Nim, Domineering. Biennial CGTC conference; annual Sprouts World Championship. Conway\'s surreal numbers arise naturally. Many game positions have unknown Grundy values. Berlekamp, Conway, Guy — foundational. Graduate-level mathematical games where analysis requires inventing new number systems.'],
+  [117,'NSA Codebreaker Challenge','nsa-codebreaker.org','cipher','annual',{m:8,d:24},'Annual multi-stage applied cryptanalysis by the NSA. Reverse engineering, SIGINT, forensics, code-breaking. University students; September–January. Distinct from the monthly Puzzle Periodical (#70): a sustained multi-week technical engagement. Top solvers recruited directly. Some tasks go unsolved.'],
+];
+
+// Scores [rarity, invention, barrier, pedigree, archive, legitimacy, transcendence, living_frontier]
+// v2: 8 criteria, max 24. Threshold 13/24 (~55%, matching prior 10/18).
+const SC = {
+  1:[3,3,3,3,3,3,2,2], 2:[3,3,3,3,3,2,2,1], 3:[3,2,3,2,2,2,1,1], 4:[3,3,3,2,3,2,2,1],
+  5:[2,2,2,2,2,2,1,1], 6:[3,2,3,2,3,3,2,1], 7:[2,3,3,3,2,2,2,1], 8:[3,2,3,1,2,2,1,1],
+  9:[2,2,3,3,2,3,1,1], 10:[3,3,2,2,2,1,1,1], 11:[3,2,2,1,2,1,1,1], 12:[2,2,2,1,1,1,0,0],
+  13:[1,0,1,0,3,1,0,0], 14:[1,0,0,0,1,1,0,0], 15:[1,1,1,2,2,1,1,0],
+  16:[2,3,3,3,3,3,2,2], 17:[2,2,3,3,3,3,2,2], 18:[3,0,3,3,3,3,3,1], 19:[3,0,3,3,3,3,3,1],
+  20:[3,0,3,3,3,3,3,1], 21:[3,0,2,3,3,3,2,1], 22:[3,0,3,3,3,3,3,2], 23:[2,0,3,3,3,3,2,1],
+  24:[2,0,3,2,3,3,2,1], 25:[3,0,3,2,3,3,2,1], 26:[3,0,3,2,2,3,2,1], 27:[3,0,3,2,2,3,2,1],
+  28:[3,0,3,3,3,3,3,2], 29:[2,1,2,3,3,3,2,2], 30:[2,1,2,2,3,2,2,1], 31:[2,1,2,3,3,3,2,2],
+  32:[1,2,2,2,2,1,2,2], // TRN+FRN raised: computational insight + many problems remain unsolved
+  33:[1,1,1,2,3,1,2,1], 34:[1,1,3,2,3,1,1,1], 35:[1,0,1,3,3,1,1,1],
+  36:[3,0,2,2,2,3,2,1], 37:[3,0,2,2,2,3,2,1], 38:[1,2,1,1,2,1,1,0],
+  39:[1,2,2,3,2,1,2,1],
+  40:[1,3,3,3,3,3,2,1], 41:[3,2,3,3,3,3,2,1], 42:[2,2,3,3,2,3,2,1], 43:[2,3,3,3,2,3,2,1],
+  44:[1,3,3,3,3,3,2,1], 45:[3,2,3,3,3,3,2,1], 46:[1,3,2,3,2,2,2,1], 47:[1,3,3,3,3,3,2,1],
+  48:[2,3,3,3,2,3,2,1], 49:[1,2,2,2,2,1,1,1], 50:[1,2,2,1,2,1,1,0], 51:[1,2,2,1,2,1,1,0],
+  52:[1,2,1,1,2,1,1,0],
+  53:[1,3,2,3,3,2,1,1], 54:[3,3,3,3,3,3,2,1], 55:[2,3,3,3,2,3,2,1],
+  56:[1,3,1,1,1,1,0,0], 57:[1,3,1,1,1,1,0,0], 58:[1,3,2,2,1,1,1,0],
+  59:[1,3,3,3,3,3,3,2], 60:[2,3,3,3,3,2,2,1], 61:[1,3,3,2,3,2,2,1], 62:[1,3,3,2,3,2,2,1],
+  63:[2,3,3,3,3,3,3,2], 64:[1,3,3,3,3,2,3,1], 65:[1,3,3,3,3,2,3,1], 66:[2,3,3,2,2,2,2,1],
+  67:[2,3,3,2,2,2,2,1],
+  68:[1,0,2,2,3,1,1,0],
+  69:[1,3,3,2,2,2,2,3], 70:[2,2,3,2,2,3,2,2], 71:[2,3,3,3,2,3,3,2], 72:[3,2,3,3,2,3,2,1],
+  73:[3,3,3,2,1,1,3,3], 74:[3,3,3,2,1,3,3,3], 75:[1,2,2,1,2,1,1,0], 76:[1,2,2,1,2,1,1,1],
+  77:[3,2,3,3,1,3,2,1],
+  78:[3,2,2,2,2,1,1,1], 79:[1,2,3,3,3,3,2,2], 80:[3,1,3,3,3,3,2,1], 81:[3,2,3,3,3,3,2,1],
+  82:[2,1,3,3,3,3,2,1], 83:[1,2,3,2,3,2,2,2], 84:[3,2,3,3,3,3,2,2],
+  85:[2,3,3,3,3,3,3,2], 86:[3,3,3,3,2,3,3,2], 87:[2,3,3,3,3,3,3,2], 88:[3,1,3,2,2,2,2,0],
+  89:[3,3,3,3,3,3,3,2], 90:[1,2,2,2,3,3,2,1], 91:[1,2,2,2,2,2,2,1],
+  92:[2,3,3,3,3,3,3,2], 93:[2,3,3,3,3,3,3,2], 94:[1,3,3,3,3,2,3,3], 95:[1,3,3,3,3,2,3,3],
+  96:[3,3,3,3,3,3,3,2],
+  // ── NEW v2 entries ──
+  97:[3,3,3,3,3,3,3,1],  // IOL Problems Archive
+  98:[3,3,3,3,3,3,3,2],  // WFCC Official Site
+  99:[1,3,3,3,3,2,3,2],  // OzProblems
+  100:[1,2,2,3,3,3,2,1], // Slocum Collection (IU)
+  101:[1,2,2,3,3,1,2,1], // WPC Unofficial Archive
+  102:[1,3,3,3,3,3,2,1], // WPF Sudoku GP Archives
+  103:[1,1,3,3,3,2,2,1], // Evan Chen Olympiad Problems
+  104:[1,3,3,3,3,3,2,1], // LMD Rätsel Portal
+  105:[1,3,2,3,3,2,2,1], // IPP Design Comp. Archive
+  106:[1,0,3,3,3,2,2,1], // AoPS Olympiad Archive
+  // ── NEW v3 entries — scores [RAR,INV,BAR,PED,ARC,LEG,TRN,FRN] ──────────
+  107:[1,3,2,3,2,3,3,3], // Foldit — 20/24. Inv3: genre-inventing; Ped3: Nature publications; LEG3: UW/NIH; TRN3: solving disease; FRN3: open protein challenges
+  108:[1,3,3,3,2,3,3,3], // Lean Game Server — 21/24. Pure formal proof as game; Imperial/HHU backed; Tao-endorsed; unsolved Lean problems in Mathlib
+  109:[1,3,3,2,3,1,2,2], // CryptoHack — 17/24. Breaks real cryptosystems; strong archive; LEG1: independent, no institutional backer
+  110:[3,2,2,2,3,3,2,1], // Alan Turing Cryptography Comp — 18/24. Annual ritual; Manchester Math Dept; archive since 2012; BAR2: school-accessible
+  111:[1,3,2,3,3,1,3,3], // ConwayLife/LifeWiki — 19/24. Inv3: pattern-as-constraint-system; PED3: Conway legacy; TRN3: emergent-complexity philosophy; FRN3: many open problems; LEG1: community-only
+  112:[1,2,1,3,2,3,2,3], // OEIS Puzzle Sequences — 17/24. BAR1: no floor (trivial to champion-level mixed); PED3+LEG3: OEIS Foundation; FRN3: sequences without known closed form
+  113:[2,3,2,3,2,3,3,2], // Oulipo — 20/24. Inv3: more novel constraint types than any literary movement; PED3: Perec/Calvino/Queneau; LEG3: formal French org since 1960; TRN3: redefines literature
+  114:[3,2,2,2,3,3,2,1], // NACLO — 18/24. Annual ritual; NSF/CMU/Michigan; full archive; BAR2: high school accessible; computational flavor distinct from IOL
+  115:[1,3,3,3,3,2,3,2], // Retrograde Analysis Corner — 20/24. Inv3: backward-reasoning as unique form; PED3: world retro composers; ARC3: 3500+ problems; TRN3: temporal logic philosophy
+  116:[2,3,3,3,2,2,3,3], // CGT/Sprouts — 21/24. Inv3+FRN3: game algebra invents new math; PED3: Conway/Berlekamp/Guy; TRN3: surreal numbers; ARC2: scattered across papers/proceedings
+  117:[3,2,3,3,2,3,2,2], // NSA Codebreaker — 20/24. RAR3: annual; PED3+LEG3: actual NSA; BAR3: multi-week graduate-level; ARC2: partial solutions only
+};
+
+const REJECT_REASON = {
+  12:'Too new (2025–26). Insufficient pedigree and archive depth to verify whether it holds to elite standards.',
+  13:'Resource/tool — indexes other puzzles but is not itself a puzzle source.',
+  14:'Calendar/directory tool. Indispensable for finding hunts, but not a puzzle source.',
+  15:'Commentary and criticism blog. High quality, but the puzzles reviewed are the sources, not this.',
+  33:'Educational recreational math resource. Despite an excellent archive, lacks a difficulty floor or elite community gate. Invention and Barrier revised downward (May 2026).',
+  35:'General resource hub with no minimum difficulty floor. Accessible to any beginner.',
+  38:'Too casual. No difficulty floor, no elite community, no submission mechanism.',
+  50:'Lower curation rigor; lacks peer-review or championship backing for its puzzle set.',
+  51:'No institutional backing or difficulty minimum. Community-driven without a quality gate.',
+  52:'Insufficient difficulty barrier and pedigree. General-interest level.',
+  56:'Construction tool only. Does not curate or publish puzzles.',
+  57:'Construction and solving tool. Not a puzzle publication or challenge source.',
+  68:'Community solver blog: archives solutions to other publications\' crosswords. Creates no puzzles. Invention revised to 0 (May 2026). Compare Puzzlvaria (id 15), rejected for analogous reasons.',
+  75:'Educational tool with classical cipher explanations. No challenge community or unsolved depth.',
+  76:'CTF directory/calendar. The competitions it lists may qualify individually; this directory does not.',
+  49:'8-criterion upgrade reveals no institutional backing and no difficulty gate. Score 12/24, below revised threshold of 13/24.',
+  58:'Community sharing tool without curation mechanism or institutional backing. Score 11/24 under 8-criterion system.',
+};
+
+const S = RAW.map(([id,n,u,c,f,d,x]) => {
+  const sc    = SC[id]||[0,0,0,0,0,0,0,0];
+  const total = sc.reduce((a,b)=>a+b,0);
+  return {id,n,u,c,f,d,x,sc,total,accepted:total>=13&&!(sc[1]===0&&sc[2]===0)};
+});
+
+// Dynamic system time
+const TODAY_DATE = new Date();
+const TODAY_DOW  = TODAY_DATE.getDay();
+const TODAY_DOM  = TODAY_DATE.getDate();
+
+function daysUntil(s) {
+  if (s.f==='continuous') return 0;
+  if (s.f==='weekly'||s.f==='biweekly') {
+    if (s.d==null) return 4;
+    let diff = s.d - TODAY_DOW;
+    if (diff < 0) diff += 7;   // FIX: was <=0, causing same-day to show as 7
+    return diff;
+  }
+  if (s.f==='monthly') {
+    if (s.d==null) return 15;
+    const t = s.d;
+    if (t >= TODAY_DOM) return t - TODAY_DOM;  // FIX: was >, causing same-day to wrap
+    return (30 - TODAY_DOM) + t;
+  }
+  if (s.f==='bimonthly') return 50;
+  if (s.f==='annual') {
+    if (!s.d) return 183;
+    let tgt = new Date(2026, s.d.m, s.d.d);
+    if (tgt <= TODAY_DATE) tgt = new Date(2027, s.d.m, s.d.d);
+    return Math.round((tgt - TODAY_DATE)/86400000);
+  }
+  if (s.f==='biannual') return 90;
+  if (s.f==='irregular') return null;
+  return 0;
+}
+
+function freqLabel(f) {
+  return {weekly:'Weekly',biweekly:'Biweekly',monthly:'Monthly',bimonthly:'Bimonthly',
+    biannual:'Biannual',annual:'Annual',continuous:'Evergreen',irregular:'Irregular'}[f]||f;
+}
+
+/* ── ORBITAL ────────────────────────────────────────────────────────────
+   FIX: angleToXY now uses  rad = deg * π/180
+        → 0° = RIGHT (3 o'clock), increasing angle = clockwise in SVG.
+   Previous version used (deg−90)*π/180 which placed 0° at 12 o'clock.
+─────────────────────────────────────────────────────────────────────── */
+const CX=300, CY=300;
+const WEEKLY_R=82, MONTHLY_R=146, ANNUAL_R=208, EVERGR_R=262;
+/* ── GLOBAL FILTER STATE ─────────────────────────────────────────── */
+const FILTER = { cats: new Set(), status: 'all', search: '' };
+let _view = 'canvas', _canvas = 'orbital';
+
+function getFiltered() {
+  let rows = S.slice();
+  if (FILTER.cats.size) rows = rows.filter(s => FILTER.cats.has(s.c));
+  if (FILTER.status === 'accepted') rows = rows.filter(s => s.accepted);
+  if (FILTER.status === 'rejected') rows = rows.filter(s => !s.accepted);
+  if (FILTER.search) {
+    const q = FILTER.search.toLowerCase();
+    rows = rows.filter(s => s.n.toLowerCase().includes(q) || s.x.toLowerCase().includes(q) || (CATS[s.c]||'').toLowerCase().includes(q));
+  }
+  return rows;
+}
+
+function applyFilter(patch) {
+  if (patch.cats !== undefined) FILTER.cats = patch.cats;
+  if (patch.status !== undefined) FILTER.status = patch.status;
+  if (patch.search !== undefined) FILTER.search = patch.search;
+  buildFilterBar();
+  buildUrgencyStrip();
+  renderCurrent();
+}
+
+function toggleCat(k) {
+  const cats = new Set(FILTER.cats);
+  if (cats.has(k)) cats.delete(k); else cats.add(k);
+  applyFilter({ cats });
+}
+
+function buildFilterBar() {
+  const fb = document.getElementById('filter-bar');
+  let h = `<div class="fb-status">`;
+  ['all','accepted','rejected'].forEach(v => {
+    const label = v === 'all' ? `All (${S.length})` : v.charAt(0).toUpperCase()+v.slice(1);
+    h += `<button class="fb-btn${FILTER.status===v?' on':''}" onclick="applyFilter({status:'${v}'})">${label}</button>`;
+  });
+  h += `</div><div class="fb-divider"></div>`;
+  Object.keys(CATS).forEach(k => {
+    const on = FILTER.cats.has(k);
+    const col = CAT_COLORS[k]||'#888';
+    h += `<span class="fb-chip${on?' on':''}" style="color:${on?'#fff':col};border-color:${col};background:${on?col:'transparent'}" onclick="toggleCat('${k}')">${CATS[k]}${on?'<span class="fb-chip-x">×</span>':''}</span>`;
+  });
+  h += `<div class="fb-divider"></div>`;
+  h += `<input class="fb-search" placeholder="Search…" value="${FILTER.search.replace(/"/g,'&quot;')}" oninput="applyFilter({search:this.value})">`;
+  if (FILTER.cats.size || FILTER.status!=='all' || FILTER.search) {
+    h += `<button class="fb-clear" onclick="applyFilter({cats:new Set(),status:'all',search:''})" title="Clear all filters">✕ Clear</button>`;
+  }
+  fb.innerHTML = h;
+}
+
+function renderCurrent() {
+  if (_view === 'canvas') {
+    updateCanvasLayout();
+  } else if (_view === 'library') {
+    buildTriage(); mxRender();
+  } else if (_view === 'guide') {
+    buildContrib();
+  }
+}
+
+/* ── NAVIGATION ─────────────────────────────────────────────────── */
+const MAIN_VIEWS = ['canvas','library','guide'];
+function sv(v) {
+  _view = v;
+  MAIN_VIEWS.forEach(id => {
+    const el = document.getElementById('s-'+id);
+    if (el) el.classList.toggle('on', id===v);
+  });
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('on', MAIN_VIEWS[i]===v));
+  renderCurrent();
+}
+
+const CANVAS_VIEWS = ['orbital','scatter','skillmap'];
+function sc(v) {
+  _canvas = v;
+  document.querySelectorAll('.sub-btn').forEach((b,i) => b.classList.toggle('on', CANVAS_VIEWS[i]===v));
+  renderCurrent();
+}
+
+function angleToXY(deg, r) {
+  const rad = deg * Math.PI / 180;
+  return [CX + r*Math.cos(rad), CY + r*Math.sin(rad)];
+}
+
+/* ── UNIFIED CANVAS SYSTEM ──────────────────────────────────────── */
+const FREQ_X_600 = {weekly:75,biweekly:145,monthly:220,bimonthly:290,biannual:360,annual:430,irregular:500,continuous:550};
+const SC_PAD = {t:40,b:55,l:65,r:25};
+const SK_PAD = 50;
+
+function buildBG_Orbital() {
+  let h='';
+  h+=`<line x1="${CX}" y1="${CY}" x2="${CX+EVERGR_R+12}" y2="${CY}" stroke="#111" stroke-width="1.5"/>`;
+  h+=`<text x="${CX+EVERGR_R+10}" y="${CY-7}" text-anchor="end" class="ring-label" fill="#111">TODAY</text>`;
+  h+=`<circle cx="${CX}" cy="${CY}" r="${WEEKLY_R}" fill="none" stroke="#ddd" stroke-width=".75" stroke-dasharray="4 4"/>`;
+  for(let d=0;d<7;d++){
+    const a=(d/7)*360;
+    const[x1,y1]=angleToXY(a,WEEKLY_R-5),[x2,y2]=angleToXY(a,WEEKLY_R+5);
+    h+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${d===0?'#666':'#ddd'}" stroke-width="${d===0?1.5:.5}"/>`;
+    if(d>0){const[lx,ly]=angleToXY(a,WEEKLY_R+13);h+=`<text x="${lx.toFixed(1)}" y="${(ly+3).toFixed(1)}" text-anchor="middle" class="day-tick-label">+${d}d</text>`;}
+  }
+  h+=`<circle cx="${CX}" cy="${CY}" r="${MONTHLY_R}" fill="none" stroke="#ddd" stroke-width=".75"/>`;
+  for(let w=0;w<4;w++){
+    const a=(w/4)*360;
+    const[x1,y1]=angleToXY(a,MONTHLY_R-6),[x2,y2]=angleToXY(a,MONTHLY_R+6);
+    h+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${w===0?'#666':'#ddd'}" stroke-width="${w===0?1.5:.5}"/>`;
+    if(w>0){const[lx,ly]=angleToXY(a,MONTHLY_R+14);h+=`<text x="${lx.toFixed(1)}" y="${(ly+3).toFixed(1)}" text-anchor="middle" class="day-tick-label">+${w}wk</text>`;}
+  }
+  h+=`<circle cx="${CX}" cy="${CY}" r="${ANNUAL_R}" fill="none" stroke="#ccc" stroke-width=".75"/>`;
+  const qL=['May','Aug','Nov','Feb'],qA=['start','middle','end','middle'];
+  for(let q=0;q<4;q++){
+    const a=(q/4)*360;
+    const[x1,y1]=angleToXY(a,ANNUAL_R-7),[x2,y2]=angleToXY(a,ANNUAL_R+7);
+    h+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${q===0?'#666':'#ccc'}" stroke-width="${q===0?1.5:.5}"/>`;
+    const[lx,ly]=angleToXY(a,ANNUAL_R+17);
+    h+=`<text x="${lx.toFixed(1)}" y="${(ly+3).toFixed(1)}" text-anchor="${qA[q]}" class="day-tick-label" fill="#999">${qL[q]}</text>`;
+  }
+  h+=`<circle cx="${CX}" cy="${CY}" r="${EVERGR_R}" fill="none" stroke="#ddd" stroke-width=".75" stroke-dasharray="2 5"/>`;
+  document.getElementById('bg-orbital').innerHTML=h;
+}
+
+function buildBG_Scatter() {
+  const W=600,H=600,P=SC_PAD;
+  const iW=W-P.l-P.r,iH=H-P.t-P.b;
+  let h='';
+  h+=`<line x1="${P.l}" y1="${P.t}" x2="${P.l}" y2="${P.t+iH}" stroke="#ccc" stroke-width="1"/>`;
+  h+=`<line x1="${P.l}" y1="${P.t+iH}" x2="${P.l+iW}" y2="${P.t+iH}" stroke="#ccc" stroke-width="1"/>`;
+  for(let s=0;s<=24;s+=4){
+    const y=P.t+iH-(s/24)*iH;
+    h+=`<line x1="${P.l-4}" y1="${y}" x2="${P.l}" y2="${y}" stroke="#ccc"/>`;
+    h+=`<text x="${P.l-7}" y="${y+3}" text-anchor="end" style="font-family:'Courier New',monospace;font-size:7px;fill:#aaa">${s}</text>`;
+    if(s>0)h+=`<line x1="${P.l}" y1="${y}" x2="${P.l+iW}" y2="${y}" stroke="#f0f0f0"/>`;
+  }
+  const ty=P.t+iH-(13/24)*iH;
+  h+=`<line x1="${P.l}" y1="${ty}" x2="${P.l+iW}" y2="${ty}" stroke="#dc2626" stroke-width="1" stroke-dasharray="4 3"/>`;
+  h+=`<text x="${P.l+iW+3}" y="${ty+3}" style="font-family:'Courier New',monospace;font-size:7px;fill:#dc2626">threshold</text>`;
+  Object.entries(FREQ_X_600).forEach(([f,x])=>{
+    h+=`<line x1="${x}" y1="${P.t+iH}" x2="${x}" y2="${P.t+iH+4}" stroke="#ccc"/>`;
+    h+=`<text x="${x}" y="${P.t+iH+14}" text-anchor="middle" style="font-family:'Courier New',monospace;font-size:7px;fill:#aaa">${f.slice(0,6)}</text>`;
+  });
+  h+=`<text x="${P.l+iW/2}" y="${H-6}" text-anchor="middle" style="font-family:'Courier New',monospace;font-size:7px;fill:#888">Release Frequency →</text>`;
+  h+=`<text x="14" y="${P.t+iH/2}" text-anchor="middle" transform="rotate(-90,14,${P.t+iH/2})" style="font-family:'Courier New',monospace;font-size:7px;fill:#888">Score / 24</text>`;
+  document.getElementById('bg-scatter').innerHTML=h;
+}
+
+function buildBG_SkillMap() {
+  const W=600,H=600,P=SK_PAD;
+  const iW=W-P*2,iH=H-P*2;
+  let h='';
+  h+=`<line x1="${P}" y1="${H/2}" x2="${W-P}" y2="${H/2}" stroke="#e0e0e0" stroke-width="1"/>`;
+  h+=`<line x1="${W/2}" y1="${P}" x2="${W/2}" y2="${H-P}" stroke="#e0e0e0" stroke-width="1"/>`;
+  h+=`<text x="${P+4}" y="${H/2-6}" style="font-family:'Courier New',monospace;font-size:7px;fill:#ccc">Formal</text>`;
+  h+=`<text x="${W-P-44}" y="${H/2-6}" style="font-family:'Courier New',monospace;font-size:7px;fill:#ccc">Creative</text>`;
+  h+=`<text x="${W/2+6}" y="${P+12}" style="font-family:'Courier New',monospace;font-size:7px;fill:#ccc">Communal</text>`;
+  h+=`<text x="${W/2+6}" y="${H-P-4}" style="font-family:'Courier New',monospace;font-size:7px;fill:#ccc">Individual</text>`;
+  const qstyle=`font-family:'Courier New',monospace;font-size:7px;fill:#ebebeb;font-weight:700`;
+  h+=`<text x="${P+8}" y="${P+14}" style="${qstyle}">FORMAL/COMMUNAL</text>`;
+  h+=`<text x="${W/2+8}" y="${P+14}" style="${qstyle}">CREATIVE/COMMUNAL</text>`;
+  h+=`<text x="${P+8}" y="${H-P-6}" style="${qstyle}">FORMAL/INDIVIDUAL</text>`;
+  h+=`<text x="${W/2+8}" y="${H-P-6}" style="${qstyle}">CREATIVE/INDIVIDUAL</text>`;
+  Object.entries(SKILL_C).forEach(([cat,[nx,ny]])=>{
+    const cx=P+((nx+1)/2)*iW,cy=P+((1-ny)/2)*iH;
+    const col=CAT_COLORS[cat]||'#888';
+    h+=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="20" fill="${col}" opacity="0.07"/>`;
+    h+=`<text x="${cx.toFixed(1)}" y="${(cy+3).toFixed(1)}" text-anchor="middle" style="font-family:'Courier New',monospace;font-size:7px;fill:${col};opacity:.4;font-weight:700;text-transform:uppercase">${CATS[cat]||cat}</text>`;
+  });
+  document.getElementById('bg-skillmap').innerHTML=h;
+}
+
+function computePositions(layout) {
+  const pos=new Map();
+  const filteredIds=new Set(getFiltered().map(s=>s.id));
+  const P=SC_PAD,iH=600-P.t-P.b;
+
+  if(layout==='orbital'){
+    const accepted=S.filter(s=>s.accepted);
+    const weekly  =accepted.filter(s=>['weekly','biweekly'].includes(s.f));
+    const monthly =accepted.filter(s=>s.f==='monthly');
+    const annual  =accepted.filter(s=>['annual','biannual','bimonthly'].includes(s.f));
+    const evgr    =accepted.filter(s=>s.f==='continuous');
+    const irreg   =accepted.filter(s=>s.f==='irregular');
+    const placed  ={};
+    weekly.forEach(s=>{
+      const days=daysUntil(s),angle=(days/7)*360;
+      const[x,y]=angleToXY(angle,WEEKLY_R);
+      const hidden=FILTER.cats.size>0&&!FILTER.cats.has(s.c);
+      placed[s.id]={x,y,r:days===0?7:days<=2?5.5:4.5,opacity:hidden?0.07:days===0?1.0:days<=7?0.85:0.65,ring:'weekly',days,angle};
+    });
+    monthly.forEach((s,i)=>{
+      const days=daysUntil(s),angle=(days/30)*360;
+      const[x,y]=angleToXY(angle,MONTHLY_R+(i%3-1)*6);
+      const hidden=FILTER.cats.size>0&&!FILTER.cats.has(s.c);
+      placed[s.id]={x,y,r:days<=2?6:days<=7?5:4,opacity:hidden?0.07:days<=2?0.95:days<=7?0.8:0.65,ring:'monthly',days,angle};
+    });
+    annual.forEach((s,i)=>{
+      const days=daysUntil(s),angle=(days/365)*360;
+      const[x,y]=angleToXY(angle,ANNUAL_R+(i%4-1.5)*5);
+      const hidden=FILTER.cats.size>0&&!FILTER.cats.has(s.c);
+      placed[s.id]={x,y,r:3.5,opacity:hidden?0.07:0.42,ring:'annual',days,angle};
+    });
+    evgr.forEach((s,i)=>{
+      const angle=(i/evgr.length)*360;
+      const[x,y]=angleToXY(angle,EVERGR_R);
+      const hidden=FILTER.cats.size>0&&!FILTER.cats.has(s.c);
+      placed[s.id]={x,y,r:3,opacity:hidden?0.07:0.60,ring:'evergreen',days:0,angle};
+    });
+    irreg.forEach((s,i)=>{
+      const angle=(i*20)%360;
+      const[x,y]=angleToXY(angle,ANNUAL_R+14);
+      const hidden=FILTER.cats.size>0&&!FILTER.cats.has(s.c);
+      placed[s.id]={x,y,r:3,opacity:hidden?0.07:0.38,ring:'irregular',days:null,angle};
+    });
+    S.forEach(s=>{
+      pos.set(s.id,placed[s.id]||{x:CX,y:CY,r:1.5,opacity:0.03,ring:'hidden',days:null,angle:0});
+    });
+
+  } else if(layout==='scatter'){
+    const jitter={};
+    S.forEach(s=>{
+      const xb=FREQ_X_600[s.f]||430;
+      const yb=P.t+iH-(s.total/24)*iH;
+      const k=`${s.f}_${s.total}`;
+      if(!jitter[k])jitter[k]=0;
+      const off=(jitter[k]%6-2.5)*5;jitter[k]++;
+      const x=Math.max(P.l+2,Math.min(600-P.r-2,xb+off));
+      const inFilter=filteredIds.has(s.id);
+      pos.set(s.id,{x,y:yb,r:s.accepted?5.5:3.5,opacity:inFilter?(s.accepted?0.85:0.40):0.06,ring:'scatter',days:null,angle:0});
+    });
+
+  } else if(layout==='skillmap'){
+    const iW=600-SK_PAD*2,iH2=600-SK_PAD*2;
+    const catCounts={};
+    S.filter(s=>s.accepted).forEach(s=>{
+      const base=SKILL_C[s.c]||[0,0];
+      if(!catCounts[s.c])catCounts[s.c]=0;
+      const idx=catCounts[s.c]++;
+      const ang=(idx*137.5)*Math.PI/180;
+      const rr=0.04+idx*0.025;
+      const nx=Math.max(-0.98,Math.min(0.98,base[0]+rr*Math.cos(ang)));
+      const ny=Math.max(-0.98,Math.min(0.98,base[1]+rr*Math.sin(ang)));
+      const x=SK_PAD+((nx+1)/2)*iW,y=SK_PAD+((1-ny)/2)*iH2;
+      const hidden=FILTER.cats.size>0&&!FILTER.cats.has(s.c);
+      const dotR=Math.max(2.5,3+((s.total-13)/12)*4);
+      pos.set(s.id,{x,y,r:dotR,opacity:hidden?0.07:0.80,ring:'skillmap',days:null,angle:0});
+    });
+    S.filter(s=>!s.accepted).forEach(s=>{
+      pos.set(s.id,{x:300,y:300,r:1.5,opacity:0.03,ring:'hidden',days:null,angle:0});
+    });
+  }
+  return pos;
+}
+
+function initCanvas() {
+  buildBG_Orbital();
+  buildBG_Scatter();
+  buildBG_SkillMap();
+  const dl=document.getElementById('dot-layer');
+  dl.innerHTML='';
+  S.forEach(s=>{
+    const col=CAT_COLORS[s.c]||'#888';
+    const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('class','dot');
+    c.setAttribute('id','dot-'+s.id);
+    c.setAttribute('cx',CX);c.setAttribute('cy',CY);
+    c.setAttribute('r','3');c.setAttribute('fill',col);c.setAttribute('opacity','0');
+    c.style.cursor='pointer';
+    c.addEventListener('mouseenter',e=>canvasHover(e,s.id));
+    c.addEventListener('mouseleave',canvasLeave);
+    c.addEventListener('click',()=>window.open('https://'+s.u,'_blank'));
+    dl.appendChild(c);
+  });
+  updateCanvasLayout();
+}
+
+function updateCanvasLayout() {
+  const positions=computePositions(_canvas);
+  S.forEach(s=>{
+    const p=positions.get(s.id);if(!p)return;
+    const c=document.getElementById('dot-'+s.id);if(!c)return;
+    c.setAttribute('cx',p.x.toFixed(1));
+    c.setAttribute('cy',p.y.toFixed(1));
+    c.setAttribute('r',p.r.toFixed(1));
+    c.setAttribute('opacity',p.opacity.toFixed(2));
+  });
+  ['orbital','scatter','skillmap'].forEach(v=>{
+    const el=document.getElementById('bg-'+v);
+    if(el){el.style.opacity=v===_canvas?'1':'0';el.style.pointerEvents=v===_canvas?'':'none';}
+  });
+  // Labels + center (orbital only)
+  const ll=document.getElementById('label-layer'),cl=document.getElementById('center-layer');
+  ll.innerHTML='';cl.innerHTML='';
+  if(_canvas==='orbital'){
+    S.filter(s=>s.accepted).forEach(s=>{
+      const p=positions.get(s.id);if(!p||p.ring==='hidden'||p.ring==='evergreen')return;
+      const{days,ring,angle,opacity}=p;
+      if(days===null||days>14||days<0)return;
+      const lr=ring==='weekly'?WEEKLY_R+20:ring==='monthly'?MONTHLY_R+20:ANNUAL_R+20;
+      const[lx,ly]=angleToXY(angle,lr);
+      const abbr=s.n.split(/[\s/]/)[0].slice(0,10);
+      const col=CAT_COLORS[s.c]||'#666';
+      const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x',lx.toFixed(1));t.setAttribute('y',(ly+3).toFixed(1));
+      t.setAttribute('text-anchor','middle');t.setAttribute('class','site-dot-label');
+      t.setAttribute('fill',col);t.setAttribute('opacity',opacity>0.1?'0.85':'0.07');
+      t.textContent=abbr;ll.appendChild(t);
+    });
+    const _cMon=TODAY_DATE.toLocaleString('en-US',{month:'short'}).toUpperCase();
+    const _cDay=String(TODAY_DOM).padStart(2,'0');
+    const _cYr=TODAY_DATE.getFullYear();
+    cl.innerHTML=`<circle cx="${CX}" cy="${CY}" r="30" fill="#fff" stroke="#111" stroke-width="1.5"/>
+      <text x="${CX}" y="${CY-5}" text-anchor="middle" style="font-family:'Courier New',monospace;font-size:8px;font-weight:700;fill:#111">${_cMon} ${_cDay}</text>
+      <text x="${CX}" y="${CY+9}" text-anchor="middle" style="font-family:'Courier New',monospace;font-size:7px;fill:#777">${_cYr}</text>`;
+  }
+  updateCanvasSide();
+}
+
+function updateCanvasSide() {
+  document.querySelectorAll('.cv-panel').forEach(el=>el.classList.remove('on'));
+  const sp=document.getElementById('cvp-'+_canvas);if(sp)sp.classList.add('on');
+
+  if(_canvas==='orbital'){
+    const positions=computePositions('orbital');
+    const accepted=S.filter(s=>s.accepted);
+    let todayN=0,weekN=0;
+    accepted.forEach(s=>{
+      const p=positions.get(s.id);if(!p||p.ring==='hidden'||p.ring==='evergreen')return;
+      if(p.days===0)todayN++;
+      if(p.days!==null&&p.days>0&&p.days<=7)weekN++;
+    });
+    const evgN=accepted.filter(s=>s.f==='continuous').length;
+    document.getElementById('ostat').innerHTML=
+      `<strong>${S.length}</strong> total indexed<br>`+
+      `<strong>${accepted.length}</strong> meet criteria<br>`+
+      `<strong>${evgN}</strong> evergreen<br>`+
+      `<strong>${todayN}</strong> today<br>`+
+      `<strong>${weekN}</strong> this week`;
+    const ups=[];
+    accepted.forEach(s=>{const p=positions.get(s.id);if(p&&p.days!==null&&p.days>0&&p.days<=30)ups.push({s,days:p.days});});
+    ups.sort((a,b)=>a.days-b.days);
+    document.getElementById('upcoming-list').innerHTML=
+      ups.slice(0,22).map(({s,days})=>{
+        const col=CAT_COLORS[s.c]||'#666';
+        return `<div class="up-item"><span class="up-days">${days}</span><span class="up-d">d</span>`+
+          `<span class="up-pip" style="background:${col}"></span>`+
+          `<a href="https://${s.u}" target="_blank" class="up-name">${s.n}</a>`+
+          `<span class="up-freq">${freqLabel(s.f)}</span></div>`;
+      }).join('')||'<div style="font-size:10px;color:#aaa;padding:4px 0">No known dates in next 30 days</div>';
+    buildCatColorLegend();
+  } else if(_canvas==='scatter'){
+    document.getElementById('sc-legend').innerHTML=Object.keys(CATS).map(k=>
+      `<div class="sc-leg${FILTER.cats.has(k)?' on':''}" onclick="toggleCat('${k}')">
+        <div class="sc-dot" style="background:${CAT_COLORS[k]}"></div>${CATS[k]}
+      </div>`
+    ).join('');
+    document.getElementById('sc-detail').style.display='none';
+  } else if(_canvas==='skillmap'){
+    document.getElementById('sk-legend').innerHTML=Object.entries(CATS).map(([k,v])=>
+      `<div style="display:flex;align-items:center;gap:6px;font-size:9px;padding:2px 0">
+        <div style="width:8px;height:8px;border-radius:50%;background:${CAT_COLORS[k]};flex-shrink:0"></div>${v}
+      </div>`
+    ).join('');
+    document.getElementById('sk-detail').style.display='none';
+  }
+}
+
+function canvasHover(e,id){
+  showTip(e,id);
+  const s=S.find(x=>x.id===id);if(!s)return;
+  const col=CAT_COLORS[s.c]||'#888';
+  if(_canvas==='scatter'){
+    const el=document.getElementById('sc-detail');
+    el.style.display='block';
+    el.innerHTML=`<strong style="color:${col}">${s.n}</strong><br>${freqLabel(s.f)} · ${s.total}/24 · ${s.accepted?'✓ Accepted':'✗ Rejected'}<br><span style="color:#888">${s.x.slice(0,120)}…</span>`;
+  } else if(_canvas==='skillmap'){
+    const el=document.getElementById('sk-detail');
+    el.style.display='block';
+    el.innerHTML=`<strong style="color:${col}">${s.n}</strong><br>${CATS[s.c]||s.c} · ${s.total}/24<br><span style="color:#888">${s.x.slice(0,140)}…</span>`;
+  }
+}
+function canvasLeave(){
+  hideTip();
+  const sd=document.getElementById('sc-detail');if(sd)sd.style.display='none';
+  const sk=document.getElementById('sk-detail');if(sk)sk.style.display='none';
+}
+
+/* ── ANNOTATION SYSTEM ─────────────────────────────────────────── */
+let _annId=null;
+function getNote(id){try{return JSON.parse(localStorage.getItem('obs_notes')||'{}')[id]||'';}catch{return '';}}
+function saveNote(id,text){try{const n=JSON.parse(localStorage.getItem('obs_notes')||'{}');if(text)n[id]=text;else delete n[id];localStorage.setItem('obs_notes',JSON.stringify(n));}catch{}}
+function openAnn(id){
+  _annId=id;const s=S.find(x=>x.id===id);
+  document.getElementById('ann-title').textContent=(s?s.n:'Source')+' — Note';
+  document.getElementById('ann-text').value=getNote(id);
+  document.getElementById('ann-modal').classList.add('on');
+}
+function closeAnn(){document.getElementById('ann-modal').classList.remove('on');_annId=null;}
+function saveAnn(){if(_annId!==null)saveNote(_annId,document.getElementById('ann-text').value);closeAnn();}
+
+function buildCatColorLegend() {
+  document.getElementById('cat-color-legend').innerHTML =
+    Object.entries(CATS).map(([k,v])=>
+      `<div class="cat-color-row"><div class="cat-swatch" style="background:${CAT_COLORS[k]}"></div><span>${v}</span></div>`
+    ).join('');
+}
+
+function showTip(e, id) {
+  const s   = S.find(x=>x.id===id); if(!s)return;
+  const days = daysUntil(s);
+  const col  = CAT_COLORS[s.c]||'#666';
+  document.getElementById('tip-name').innerHTML =
+    `<a href="https://${s.u}" target="_blank" style="color:#111;text-decoration:none;border-bottom:1px solid #111">${s.n} ↗</a>`;
+  document.getElementById('tip-cat').style.color  = col;
+  document.getElementById('tip-cat').textContent  = CATS[s.c]||s.c;
+  document.getElementById('tip-days').textContent =
+    days===0?'Always active (evergreen)':days===null?'Irregular schedule':`Updates in ${days} day${days!==1?'s':''} · ${freqLabel(s.f)}`;
+  document.getElementById('tip-score').textContent = `Score: ${s.total}/24 · ${s.accepted?'✓ Accepted':'✗ Rejected'}`;
+  document.getElementById('tip-desc').textContent  = s.x;
+  const tip=document.getElementById('tip');
+  let tx=e.clientX+15, ty=e.clientY-30;
+  if(tx+248>window.innerWidth)  tx=e.clientX-252;
+  if(ty+145>window.innerHeight) ty=e.clientY-150;
+  tip.style.left=Math.max(4,tx)+'px'; tip.style.top=Math.max(4,ty)+'px'; tip.style.display='block';
+}
+function hideTip(){document.getElementById('tip').style.display='none';}
+
+const CRIT_NAMES=['RAR','INV','BAR','PED','ARC','LEG','TRN','FRN'];
+const CRIT_FULL=['Rarity','Invention','Barrier','Pedigree','Archive','Legitimacy','Transcendence','Living Frontier'];
+function cc(v){return['c0','c1','c2','c3'][v]||'c0';}
+
+function buildContrib() {
+  let sites=getFiltered();
+  sites.sort((a,b)=>{if(a.accepted!==b.accepted)return a.accepted?-1:1;return b.total-a.total;});
+  const nA=sites.filter(s=>s.accepted).length, nR=sites.filter(s=>!s.accepted).length;
+  document.getElementById('contrib-summary').innerHTML=
+    `Showing ${sites.length} of ${S.length} · <strong>${nA} accepted</strong> · <strong>${nR} rejected</strong> · Threshold 13/24`;
+  document.getElementById('contrib-rows').innerHTML=sites.map(s=>{
+    const col=CAT_COLORS[s.c]||'#888';
+    const bars=s.sc.map((v,i)=>`<div class="crit-bar-col"><div class="crit-bar ${cc(v)}" title="${CRIT_FULL[i]}: ${v}/3">${v}</div><div class="crit-bar-label">${CRIT_NAMES[i]}</div></div>`).join('');
+    const tc=s.total>=14?'st-strong':s.accepted?'st-pass':'st-fail';
+    const rr=REJECT_REASON[s.id]||'';
+    return `<div class="site-row ${s.accepted?'':'rejected'}" style="border-left-color:${col}">
+      <div>
+        <div class="site-name"><a href="https://${s.u}" target="_blank">${s.n}</a></div>
+        <div class="site-meta">
+          <span class="cat-tag" style="color:${col};border-color:${col};background:${col}18">${CATS[s.c]||s.c}</span>
+          <span class="freq-tag">${freqLabel(s.f)}</span>
+        </div>
+        <div class="site-desc">${s.x}</div>
+        ${!s.accepted&&rr?`<div class="reject-reason">↳ ${rr}</div>`:''}
+      </div>
+      <div class="score-block">
+        <div class="score-bars">${bars}</div>
+        <div class="score-total ${tc}">${s.total}</div>
+        <div class="score-label">/ 24 pts</div>
+      </div>
+      <div class="status-col">
+        <span class="${s.accepted?'badge-accept':'badge-reject'}">${s.accepted?'✓ Accept':'✗ Reject'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── URGENCY STRIP ────────────────────────────────── */
+function buildUrgencyStrip(){
+  const acc=S.filter(s=>s.accepted);
+  const today=acc.filter(s=>daysUntil(s)===0&&s.f!=='continuous');
+  const week=acc.filter(s=>{const d=daysUntil(s);return d!==null&&d>0&&d<=7;}).sort((a,b)=>daysUntil(a)-daysUntil(b));
+  const evg=acc.filter(s=>s.f==='continuous').length;
+  let h=`<div class="us-seg"><div class="us-pip" style="background:#${today.length?'4ade80':'555'}"></div><span class="us-label">TODAY</span><span class="us-val">${today.length||'—'}</span></div>`;
+  h+=`<div class="us-seg"><span class="us-label">WEEK</span><span class="us-val">${week.length}</span></div>`;
+  if(week.length){const nx=week[0];const col=CAT_COLORS[nx.c]||'#fff';h+=`<div class="us-seg"><span class="us-label">NEXT</span><a class="us-link" href="https://${nx.u}" target="_blank" style="border-color:${col};color:${col}">${nx.n}</a><span class="us-val">in ${daysUntil(nx)}d</span></div>`;}
+  h+=`<div class="us-seg" style="margin-left:auto"><span class="us-label">EVERGREEN</span><span class="us-val">${evg}</span></div>`;
+  h+=`<div class="us-seg"><span class="us-label">INDEXED</span><span class="us-val">${S.length}</span></div>`;
+  document.getElementById('urgency-strip').innerHTML=h;
+}
+
+/* ── TRIAGE ──────────────────────────────────────── */
+function buildTriage(){
+  const acc=getFiltered().filter(s=>s.accepted);
+  const withDays=acc.map(s=>({s,d:daysUntil(s)})).filter(x=>x.d!==null&&x.d>0).sort((a,b)=>a.d-b.d);
+  const week=withDays.filter(x=>x.d<=7);
+  const month=withDays.filter(x=>x.d>7&&x.d<=30);
+  const evg=acc.filter(s=>s.f==='continuous').sort((a,b)=>b.total-a.total);
+
+  function itemHTML({s,d}){
+    const col=CAT_COLORS[s.c]||'#666';
+    return `<div class="tr-item">
+      <span class="tr-days">${d}</span><span class="tr-d">d</span>
+      <span class="tr-pip" style="background:${col}"></span>
+      <span class="tr-name"><a href="https://${s.u}" target="_blank">${s.n}</a></span>
+      <span class="tr-meta"><span class="tr-score-sm">${s.total}/24</span><span class="tr-freq-sm">${freqLabel(s.f)}</span></span>
+    </div>`;
+  }
+  document.getElementById('tr-week').innerHTML=
+    `<div class="tr-head"><span>This Week</span><span class="tr-count">${week.length} source${week.length!==1?'s':''}</span></div>`+
+    (week.length?week.map(itemHTML).join(''):'<div style="padding:10px 12px;font-size:10px;color:#aaa">None releasing this week</div>');
+  document.getElementById('tr-month').innerHTML=
+    `<div class="tr-head"><span>This Month</span><span class="tr-count">${month.length} source${month.length!==1?'s':''}</span></div>`+
+    (month.length?month.map(itemHTML).join(''):'<div style="padding:10px 12px;font-size:10px;color:#aaa">None in the next 30 days</div>');
+  document.getElementById('tr-evg').innerHTML=
+    evg.slice(0,10).map(s=>{
+      const col=CAT_COLORS[s.c]||'#888';
+      return `<div class="evg-card" onclick="window.open('https://${s.u}','_blank')">
+        <div class="ev-score" style="color:${col}">${s.total}</div>
+        <div class="ev-name"><a href="https://${s.u}" target="_blank">${s.n}</a></div>
+        <div class="ev-cat" style="color:${col}">${CATS[s.c]||s.c}</div>
+      </div>`;
+    }).join('');
+}
+
+/* ── MATRIX ──────────────────────────────────────── */
+let mxSortCol='total',mxSortDir='desc';
+function mxRender(){
+  let rows=getFiltered();
+  rows.sort((a,b)=>{
+    let av,bv;
+    if(mxSortCol==='total'){av=a.total;bv=b.total;}
+    else if(mxSortCol==='name'){av=a.n;bv=b.n;}
+    else{const i=CRIT_NAMES.indexOf(mxSortCol);av=a.sc[i];bv=b.sc[i];}
+    if(av<bv)return mxSortDir==='asc'?-1:1;
+    if(av>bv)return mxSortDir==='asc'?1:-1;
+    return 0;
+  });
+  const hdrs=['Name',...CRIT_NAMES,'Total','Status'];
+  const sortKeys=['name',...CRIT_NAMES,'total','status'];
+  let th=hdrs.map((h,i)=>{
+    const k=sortKeys[i];
+    const cls=mxSortCol===k?(mxSortDir==='asc'?'sa':'sd'):'';
+    return `<th class="${cls}" onclick="mxSort('${k}')">${h}</th>`;
+  }).join('');
+  let tbody=rows.map(s=>{
+    const col=CAT_COLORS[s.c]||'#888';
+    const tc=s.total>=20?'mx-st-s':s.accepted?'mx-st-p':'mx-st-f';
+    const bars=s.sc.map((v,i)=>`<td style="text-align:center"><div class="mx-cell ${['c0','c1','c2','c3'][v]}" title="${CRIT_FULL[i]}: ${v}/3">${v}</div></td>`).join('');
+    return `<tr>
+      <td><a href="https://${s.u}" target="_blank">${s.n}</a><br><span style="font-size:8px;color:${col};text-transform:uppercase;font-weight:700;letter-spacing:.04em">${CATS[s.c]||s.c}</span></td>
+      ${bars}
+      <td class="mx-tot ${tc}">${s.total}</td>
+      <td style="text-align:center"><span class="mx-badge ${s.accepted?'mx-acc':'mx-rej'}">${s.accepted?'✓':'✗'}</span></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('mx-tbl').innerHTML=`<thead><tr>${th}</tr></thead><tbody>${tbody}</tbody>`;
+}
+function mxSort(col){
+  if(mxSortCol===col){mxSortDir=mxSortDir==='asc'?'desc':'asc';}else{mxSortCol=col;mxSortDir=col==='name'?'asc':'desc';}
+  mxRender();
+}
+/* ── SCATTER ─────────────────────────────────────── */
+
+/* ── SKILL MAP ───────────────────────────────────── */
+const SKILL_C={
+  proof:[-0.85,-0.78], math:[-0.72,-0.60], code:[-0.62,-0.38],
+  chess:[-0.50,-0.45], logic:[-0.48,-0.15], cgt:[-0.42,-0.28],
+  cipher:[-0.28, 0.02], sudoku:[-0.18, 0.14], ling:[-0.10,-0.45],
+  auto:[ 0.08,-0.32], mech:[ 0.22,-0.52], cryptic:[ 0.28,-0.38],
+  bio:[ 0.32, 0.38], society:[ 0.25, 0.60], hunt:[ 0.68, 0.78],
+  lit:[ 0.82,-0.58],
+};
+
+/* ── COMMAND PALETTE ─────────────────────────────── */
+let cmdHi=0,cmdResults=[];
+function openCmd(){document.getElementById('cmd-overlay').classList.add('on');document.getElementById('cmd-input').value='';cmdSearch();setTimeout(()=>document.getElementById('cmd-input').focus(),50);}
+function closeCmd(){document.getElementById('cmd-overlay').classList.remove('on');}
+function cmdSearch(){
+  const q=document.getElementById('cmd-input').value.toLowerCase();
+  cmdResults=q?S.filter(s=>s.n.toLowerCase().includes(q)||s.x.toLowerCase().includes(q)||(CATS[s.c]||'').toLowerCase().includes(q)):S.slice().sort((a,b)=>b.total-a.total);
+  cmdHi=0;renderCmdResults();
+}
+function renderCmdResults(){
+  document.getElementById('cmd-results').innerHTML=cmdResults.slice(0,40).map((s,i)=>{
+    const col=CAT_COLORS[s.c]||'#888';
+    return `<div class="cmd-row ${i===cmdHi?'hi':''}" onclick="window.open('https://${s.u}','_blank')">
+      <span class="cr-name"><a href="https://${s.u}" target="_blank">${s.n}</a></span>
+      <span class="cr-cat" style="color:${col};border-color:${col}">${CATS[s.c]||s.c}</span>
+      <span class="cr-score ${s.accepted?'':'mx-st-f'}">${s.total}</span>
+      <span class="cr-freq">${freqLabel(s.f)}</span>
+    </div>`;
+  }).join('');
+}
+function cmdKey(e){
+  if(e.key==='Escape'){closeCmd();return;}
+  if(e.key==='ArrowDown'){cmdHi=Math.min(cmdHi+1,Math.min(cmdResults.length,40)-1);renderCmdResults();e.preventDefault();}
+  if(e.key==='ArrowUp'){cmdHi=Math.max(cmdHi-1,0);renderCmdResults();e.preventDefault();}
+  if(e.key==='Enter'&&cmdResults[cmdHi]){window.open('https://'+cmdResults[cmdHi].u,'_blank');closeCmd();}
+}
+
+/* ── PROMPT HELPERS ──────────────────────────────── */
+const ABSTRACT_PROMPT=`You are searching for intellectual traditions that would score ≥13/24 on this rubric:
+  [RAR] Temporal ritual weight  [INV] Invents new rule systems
+  [BAR] Serious competence gate [PED] Elite practitioner engagement
+  [ARC] Deep cumulable archive  [LEG] Institutional legitimacy
+  [TRN] Transcendent insight    [FRN] Living frontier / creative depth
+
+Do not enumerate from common knowledge. Instead:
+1. Derive from first principles: what categories of structured human problem-solving MUST EXIST that satisfy all 8 criteria simultaneously?
+2. For each derived category, name the canonical institution or annual event that embodies it.
+3. Score each honestly. Reject if <13.
+
+The highest-value discoveries will be traditions you cannot find by searching "puzzle." Think: formal constraint systems that generate beauty as a byproduct, annual rituals where the world's best minds fail, archives that took decades to build, open problems that resist the smartest humans alive.`;
+
+let showingAbstract=false,concretePrompt='';
+function toggleAbstractPrompt(){
+  const el=document.getElementById('prompt-text');
+  if(!concretePrompt)concretePrompt=el.textContent;
+  showingAbstract=!showingAbstract;
+  el.textContent=showingAbstract?ABSTRACT_PROMPT:concretePrompt;
+}
+function copyPrompt(){
+  navigator.clipboard.writeText(document.getElementById('prompt-text').textContent).then(()=>{
+    const el=document.getElementById('prompt-copied');el.style.display='inline';
+    setTimeout(()=>el.style.display='none',2000);
+  });
+}
+
+/* ── SETTINGS / FONT SWITCHER ──────────────────────────────────── */
+const FONTS = {
+  mono:  '"Courier New",Courier,monospace',
+  bodon: '"Bodoni Moda",serif',
+  corm:  '"Cormorant Garamond",serif',
+  play:  '"Playfair Display",serif',
+  cinz:  '"Cinzel",serif',
+  fell:  '"IM Fell English",serif',
+  fraun: '"Fraunces",serif',
+  inst:  '"Instrument Serif",serif',
+  dms:   '"DM Serif Display",serif',
+  mash:  '"Ma Shan Zheng",cursive',
+  zhim:  '"Zhi Mang Xing",cursive',
+  long:  '"Long Cang",cursive',
+};
+let _font = localStorage.getItem('obs_font') || 'fraun';
+
+function applyFont(key) {
+  _font = key;
+  document.documentElement.style.setProperty('--ui-font', FONTS[key]);
+  localStorage.setItem('obs_font', key);
+  document.querySelectorAll('.sf-btn').forEach(b => b.classList.toggle('on', b.dataset.font === key));
+}
+
+function toggleSettings() {
+  document.getElementById('settings-panel').classList.toggle('on');
+}
+
+document.addEventListener('click', e => {
+  const panel = document.getElementById('settings-panel');
+  const btn   = document.getElementById('settings-btn');
+  if (panel.classList.contains('on') && !panel.contains(e.target) && e.target !== btn) {
+    panel.classList.remove('on');
+  }
+});
+
+buildFilterBar();
+buildUrgencyStrip();
+initCanvas();
+applyFont(_font);
+document.getElementById('today-heading').textContent =
+  'Today — ' + TODAY_DATE.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+// Keyboard shortcuts
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();openCmd();}
+  if(e.key==='/'&&document.activeElement.tagName!=='INPUT'){e.preventDefault();openCmd();}
+  if(e.key==='Escape')closeCmd();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strat / Archive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#f0ede5;--paper2:#e6e2d8;--card-bg:#faf9f5;--card-bg2:#f3f0e8;
+  --ink:#141210;--ink2:#3d3830;--ink3:#7a7060;--rule:#d6d0c4;--rule-lt:#e4dfd4;
+  --sh-sm:0 1px 3px rgba(0,0,0,.07),0 4px 12px rgba(0,0,0,.06);
+  --sh-md:0 3px 10px rgba(0,0,0,.09),0 10px 32px rgba(0,0,0,.08);
+  --sh-lg:0 8px 24px rgba(0,0,0,.12),0 24px 64px rgba(0,0,0,.10);
+  --web:#9a5200;--rts:#922e00;--engine:#1a6868;--download:#1e4e96;
+  --video:#902020;--wiki:#1e6840;--tool:#302888;--fiction:#5e2880;
+  --spr:cubic-bezier(.34,1.16,.64,1);--out:cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;overflow-y:auto;-webkit-font-smoothing:antialiased;}
+header{flex-shrink:0;border-bottom:1px solid var(--rule);padding:1.3rem 2.4rem 0;background:var(--paper);position:relative;z-index:10;}
+.hd-top{display:flex;align-items:baseline;justify-content:space-between;padding-bottom:.9rem;}
+.site-name{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:500;color:var(--ink);letter-spacing:.01em;}
+.site-name em{font-style:italic;color:var(--ink3);}
+.hd-info{font-family:'DM Mono',monospace;font-size:.64rem;color:var(--ink3);letter-spacing:.06em;display:flex;gap:1.6rem;}
+.hd-info b{color:var(--ink2);}
+.legend{display:flex;align-items:stretch;overflow-x:auto;scrollbar-width:none;}
+.legend::-webkit-scrollbar{display:none;}
+.leg{display:inline-flex;align-items:center;gap:.35rem;padding:.52rem 1rem .52rem 0;margin-right:1rem;font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.09em;color:var(--ink3);white-space:nowrap;cursor:pointer;background:none;border:none;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;}
+.leg:hover{color:var(--ink2);}
+.leg.on{color:var(--ink);border-bottom-color:var(--ink);}
+.pip{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.pip.web{background:var(--web)}.pip.rts{background:var(--rts)}.pip.engine{background:var(--engine)}.pip.download{background:var(--download)}.pip.video{background:var(--video)}.pip.wiki{background:var(--wiki)}.pip.tool{background:var(--tool)}.pip.fiction{background:var(--fiction)}
+.stage{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:visible;min-height:0;padding:2.2rem 0 0;}
+.hand{position:relative;width:300px;height:430px;margin-top:-20px;}
+.card{position:absolute;inset:0;width:300px;height:430px;background:var(--card-bg);border:1px solid var(--rule);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--sh-md);transform-origin:50% 130%;transition:box-shadow .25s ease;will-change:transform,opacity;cursor:default;user-select:none;}
+.card.is-active{box-shadow:var(--sh-lg);cursor:pointer;}
+.card.is-adj{cursor:pointer;}
+.c-stripe{height:3px;flex-shrink:0;}
+.c-head{padding:.75rem 1rem .6rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--rule-lt);flex-shrink:0;gap:.5rem;}
+.c-typelabel{font-family:'DM Mono',monospace;font-size:.57rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;display:flex;align-items:center;gap:.32rem;color:var(--ink2);white-space:nowrap;overflow:hidden;}
+.c-typelabel .pip{opacity:1;flex-shrink:0;}
+.c-num{font-family:'DM Mono',monospace;font-size:.57rem;color:var(--ink3);letter-spacing:.05em;flex-shrink:0;}
+.c-preview{height:160px;overflow:hidden;position:relative;border-bottom:1px solid var(--rule-lt);background:var(--paper2);flex-shrink:0;}
+.c-preview iframe{position:absolute;top:0;left:0;width:300%;height:300%;transform:scale(.333);transform-origin:0 0;pointer-events:none;border:none;background:#fff;}
+.c-pfb{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.55rem;transition:opacity .3s ease;pointer-events:none;}
+.c-pfb.gone{opacity:0;}
+.c-pfb img{width:24px;height:24px;border-radius:3px;opacity:.65;}
+.c-pfb-dom{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--ink3);letter-spacing:.04em;max-width:80%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;}
+.c-pfb-bar{width:32px;height:2px;border-radius:1px;margin-top:.1rem;}
+.c-body{flex:1;padding:.9rem 1rem .7rem;display:flex;flex-direction:column;gap:.55rem;min-height:0;overflow:hidden;}
+.c-cat{font-family:'DM Mono',monospace;font-size:.57rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.c-title{font-family:'Playfair Display',serif;font-size:1.38rem;font-weight:500;line-height:1.18;color:var(--ink);letter-spacing:-.01em;}
+.c-desc{font-size:.75rem;line-height:1.65;color:var(--ink2);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;flex:1;}
+.c-tags{display:flex;flex-wrap:wrap;gap:.3rem;}
+.c-tag{font-family:'DM Mono',monospace;font-size:.54rem;letter-spacing:.07em;padding:.16rem .44rem;border:1px solid var(--rule);color:var(--ink3);background:var(--paper2);border-radius:2px;white-space:nowrap;}
+.c-foot{padding:.6rem 1rem;border-top:1px solid var(--rule-lt);background:var(--card-bg2);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:.5rem;}
+.c-url{font-family:'DM Mono',monospace;font-size:.57rem;color:var(--ink3);letter-spacing:.02em;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:72%;display:flex;align-items:center;gap:.3rem;transition:color .15s;flex-shrink:0;}
+.c-url:hover{color:var(--ink);}
+.c-url svg{flex-shrink:0;opacity:.6;}
+.c-hint{font-family:'DM Mono',monospace;font-size:.54rem;letter-spacing:.07em;color:var(--rule);white-space:nowrap;pointer-events:none;transition:color .2s;}
+.card.is-active .c-hint{color:var(--ink3);}
+.card.is-active:hover .c-hint{color:var(--ink2);}
+.c-trailer{font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.08em;color:var(--ink3);text-decoration:none;white-space:nowrap;border:1px solid var(--rule);padding:.15rem .45rem;border-radius:2px;transition:all .15s;}
+.c-trailer:hover{color:var(--ink);border-color:var(--ink3);}
+.nav-row{flex-shrink:0;display:flex;align-items:center;gap:1rem;padding:.6rem 0 1.6rem;}
+.nav-btn{width:34px;height:34px;border:1px solid var(--rule);background:var(--card-bg);cursor:pointer;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:.88rem;color:var(--ink2);box-shadow:var(--sh-sm);transition:all .15s;flex-shrink:0;}
+.nav-btn:hover:not(:disabled){background:var(--ink);color:var(--card-bg);border-color:var(--ink);}
+.nav-btn:disabled{opacity:.22;cursor:default;box-shadow:none;}
+.nav-dots{display:flex;gap:.35rem;align-items:center;}
+.nav-dot{width:5px;height:5px;border-radius:50%;background:var(--rule);transition:all .28s;cursor:pointer;border:none;padding:0;}
+.nav-dot.on{width:16px;border-radius:3px;background:var(--ink);}
+.nav-dot:hover:not(.on){background:var(--ink3);}
+.nav-ct{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--ink3);letter-spacing:.07em;min-width:48px;text-align:center;}
+.search-row{flex-shrink:0;padding:.6rem 2.4rem .2rem;display:flex;align-items:center;gap:.6rem;}
+.search-wrap{position:relative;flex:1;max-width:420px;margin:0 auto;}
+.search-input{width:100%;background:var(--card-bg);border:1px solid var(--rule);color:var(--ink);font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.06em;padding:.45rem 2.2rem .45rem .75rem;border-radius:2px;outline:none;transition:border-color .15s;}
+.search-input:focus{border-color:var(--ink3);}
+.search-input::placeholder{color:var(--ink3);font-style:italic;}
+.search-clear{position:absolute;right:.5rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--ink3);cursor:pointer;font-size:.8rem;padding:.1rem .2rem;display:none;line-height:1;}
+.search-clear.vis{display:block;}
+.search-count{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--ink3);letter-spacing:.07em;white-space:nowrap;}
+.style-row{flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:.4rem;padding:.5rem 0 .2rem;border-top:1px solid var(--rule-lt);}
+.sty-btn{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.09em;padding:.32rem .75rem;border:1px solid var(--rule);background:var(--card-bg);color:var(--ink3);cursor:pointer;border-radius:3px;transition:all .15s;white-space:nowrap;}
+.sty-btn:hover{color:var(--ink2);border-color:var(--ink3);}
+.sty-btn.on{background:var(--ink);color:var(--card-bg);border-color:var(--ink);}
+.view-toggle{flex-shrink:0;display:flex;padding:.5rem 2.4rem .2rem;gap:0;}
+.vtab{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.1em;padding:.32rem .8rem;border:1px solid var(--rule);background:var(--card-bg);color:var(--ink3);cursor:pointer;transition:all .15s;}
+.vtab:first-child{border-radius:3px 0 0 3px;}.vtab:last-child{border-radius:0 3px 3px 0;}.vtab+.vtab{border-left:none;}
+.vtab.on{background:var(--ink);color:var(--card-bg);border-color:var(--ink);}
+.mood-btn{font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.06em;padding:.28rem .65rem;border:1px solid var(--rule);background:var(--card-bg);color:var(--ink3);cursor:pointer;border-radius:3px;transition:all .15s;white-space:nowrap;font-variant-emoji:text;}
+.mood-btn:hover{color:var(--ink2);border-color:var(--ink3);}
+.mood-btn.on{background:var(--ink);color:var(--card-bg);border-color:var(--ink);}
+.mood-clear{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--ink3);background:none;border:none;cursor:pointer;padding:.28rem .3rem;text-decoration:underline;display:none;}
+.mood-clear.vis{display:inline;}
+.lucky-btn{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.1em;padding:.28rem .8rem;border:1px solid var(--rule);background:var(--card-bg);color:var(--ink3);cursor:pointer;border-radius:3px;transition:all .15s;white-space:nowrap;margin-left:auto;font-variant-emoji:text;}
+.lucky-btn:hover:not(.used){color:var(--ink);border-color:var(--ink3);}
+.lucky-btn.used{cursor:default;color:var(--rule-lt);border-color:var(--rule-lt);pointer-events:none;}
+.vibe-tags{display:flex;flex-wrap:wrap;gap:.25rem;padding:.4rem .9rem .35rem;border-top:1px solid var(--rule-lt);background:var(--card-bg2);}
+.vibe-tag{font-size:.72rem;line-height:1;padding:.1rem .15rem;filter:grayscale(1);opacity:.65;font-variant-emoji:text;}
+.plot-stage{width:100%;flex:0 0 auto;height:0;overflow:hidden;transition:height .3s ease;}
+.plot-stage.active{height:480px;}
+.plot-wrap{position:relative;width:100%;max-width:720px;margin:0 auto;height:100%;}
+.plot-svg{width:100%;height:100%;display:block;}
+.plot-axis-label{font-family:'DM Mono',monospace;font-size:10px;fill:var(--ink3);letter-spacing:1px;}
+.plot-dot{cursor:pointer;transition:r .15s;}
+.plot-tooltip{position:absolute;background:var(--card-bg2);border:1px solid var(--rule);padding:.35rem .6rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--ink);pointer-events:none;display:none;white-space:nowrap;border-radius:2px;box-shadow:0 2px 8px rgba(0,0,0,.1);z-index:50;}
+.top-bar{flex-shrink:0;display:flex;align-items:center;gap:.8rem;padding:.5rem 2.4rem .2rem;}
+.top-bar .view-toggle{display:flex;gap:0;flex-shrink:0;}
+.top-bar .search-wrap{flex:1;position:relative;max-width:340px;display:flex;align-items:center;gap:.4rem;}
+.top-bar .search-input{flex:1;background:var(--card-bg);border:1px solid var(--rule);color:var(--ink);font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.05em;padding:.3rem 1.8rem .3rem .65rem;border-radius:2px;outline:none;transition:border-color .15s;}
+.top-bar .search-input:focus{border-color:var(--ink3);}
+.top-bar .search-input::placeholder{color:var(--ink3);font-style:italic;}
+.top-bar .search-clear{position:absolute;right:.4rem;background:none;border:none;color:var(--ink3);cursor:pointer;font-size:.75rem;display:none;line-height:1;padding:.1rem;}
+.top-bar .search-clear.vis{display:block;}
+.top-bar .search-count{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--ink3);white-space:nowrap;flex-shrink:0;}
+.axis-controls{flex-shrink:0;display:flex;align-items:center;gap:.4rem;padding:.5rem 2rem .3rem;flex-wrap:wrap;}
+.axis-label{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--ink3);letter-spacing:.09em;white-space:nowrap;}
+.axis-btn{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.07em;padding:.22rem .6rem;border:1px solid var(--rule);background:var(--card-bg);color:var(--ink3);cursor:pointer;border-radius:2px;transition:all .15s;white-space:nowrap;}
+.axis-btn:hover{color:var(--ink2);border-color:var(--ink3);}
+.axis-btn.on{background:var(--ink);color:var(--card-bg);border-color:var(--ink);}
+#fs{position:fixed;z-index:9000;overflow:hidden;background:var(--card-bg);border:1px solid rgba(0,0,0,.14);border-radius:8px;display:none;flex-direction:column;box-shadow:var(--sh-lg);}
+#fs.fv{display:flex;}
+#fs.fe{transition:left .48s var(--spr),top .48s var(--spr),width .48s var(--spr),height .48s var(--spr),border-radius .48s var(--out),box-shadow .48s ease;}
+#fs.fc{transition:left .38s var(--out),top .38s var(--out),width .38s var(--out),height .38s var(--out),opacity .32s ease,border-radius .38s var(--out);}
+#fs-bar{height:46px;border-bottom:1px solid var(--rule);background:var(--card-bg2);display:flex;align-items:center;gap:.75rem;padding:0 1rem;flex-shrink:0;opacity:0;transition:opacity .28s ease .38s;overflow:hidden;}
+#fs.ff #fs-bar{opacity:1;}
+#fs-stripe{width:3px;height:20px;border-radius:2px;flex-shrink:0;}
+#fs-close{width:28px;height:28px;border:1px solid var(--rule);background:var(--card-bg);cursor:pointer;border-radius:3px;font-size:.78rem;color:var(--ink2);display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
+#fs-close:hover{background:var(--ink);color:var(--card-bg);border-color:var(--ink);}
+#fs-title{font-family:'Playfair Display',serif;font-size:.9rem;font-weight:500;color:var(--ink);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#fs-type{font-family:'DM Mono',monospace;font-size:.57rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);display:flex;align-items:center;gap:.3rem;white-space:nowrap;}
+#fs-ext{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.08em;color:var(--ink2);text-decoration:none;border:1px solid var(--rule);padding:.26rem .7rem;border-radius:3px;background:var(--card-bg);transition:all .15s;white-space:nowrap;flex-shrink:0;}
+#fs-ext:hover{background:var(--ink);color:var(--card-bg);border-color:var(--ink);}
+#fs-body{flex:1;position:relative;overflow:hidden;opacity:0;transition:opacity .22s ease .4s;}
+#fs.ff #fs-body{opacity:1;}
+#fs-iframe{width:100%;height:100%;border:none;display:block;}
+#fs-load{position:absolute;inset:0;background:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.9rem;pointer-events:none;}
+.spin{width:24px;height:24px;border:2px solid var(--rule);border-top-color:var(--ink);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+#fs-load-lbl{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--ink3);letter-spacing:.1em;}
+#fs-blk{position:absolute;inset:0;background:var(--paper);display:none;flex-direction:column;align-items:center;justify-content:center;gap:1.2rem;padding:2rem;text-align:center;}
+#fs-blk h3{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:500;color:var(--ink);}
+#fs-blk p{font-size:.78rem;line-height:1.7;color:var(--ink2);max-width:320px;}
+#fs-blk-link{font-family:'DM Mono',monospace;font-size:.63rem;letter-spacing:.09em;background:var(--ink);color:var(--card-bg);padding:.55rem 1.3rem;text-decoration:none;border-radius:3px;}
+::selection{background:rgba(0,0,0,.1);}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--rule);border-radius:2px;}
+</style>
+</head>
+<body>
+<header>
+  <div class="hd-top">
+    <div class="site-name">Strat<em> / </em>Archive</div>
+    <div class="hd-info"><span><b id="hc">24</b> entries</span><span>rev.&thinsp;2025</span></div>
+  </div>
+  <nav class="legend">
+    <button class="leg on"   onclick="filt('all',this)">All</button>
+    <button class="leg" onclick="filt('web',this)"><span class="pip web"></span>Website</button>
+    <button class="leg" onclick="filt('rts',this)"><span class="pip rts"></span>RTS</button>
+    <button class="leg" onclick="filt('engine',this)"><span class="pip engine"></span>Engine</button>
+    <button class="leg" onclick="filt('download',this)"><span class="pip download"></span>Download</button>
+    <button class="leg" onclick="filt('video',this)"><span class="pip video"></span>Video</button>
+    <button class="leg" onclick="filt('wiki',this)"><span class="pip wiki"></span>Reference</button>
+    <button class="leg" onclick="filt('tool',this)"><span class="pip tool"></span>Tool</button>
+    <button class="leg" onclick="filt('fiction',this)"><span class="pip fiction"></span>Fiction</button>
+  </nav>
+</header>
+<div class="top-bar">
+  <div class="view-toggle">
+    <button class="vtab on" onclick="setView('deck',this)">Deck</button>
+    <button class="vtab" onclick="setView('plot',this)">Map</button>
+  </div>
+  <div class="search-wrap">
+    <input class="search-input" id="search-input" type="text" placeholder="search…" oninput="doSearch(this.value)" autocomplete="off" spellcheck="false">
+    <button class="search-clear" id="search-clear" onclick="clearSearch()">✕</button>
+    <span class="search-count" id="search-count"></span>
+  </div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:.35rem;padding:.5rem 2.4rem .2rem;align-items:center;flex-shrink:0;" id="mood-outer">
+  <span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--ink3);letter-spacing:.08em;margin-right:.2rem;">mood</span>
+  <div id="mood-btns" style="display:flex;flex-wrap:wrap;gap:.35rem;"></div>
+  <button class="mood-clear" id="mood-clear" onclick="clearMood()">✕ clear</button>
+  <button class="lucky-btn" id="lucky-btn" onclick="goLucky()">✦ I'm feeling lucky</button>
+</div>
+<div class="stage" id="stage">
+  <div class="hand" id="hand"></div>
+</div>
+
+<div class="plot-stage" id="plot-stage">
+  <div class="axis-controls">
+    <span class="axis-label">x axis</span>
+    <div class="axis-btns" id="x-btns"></div>
+    <span class="axis-label" style="margin-left:1rem;">y axis</span>
+    <div class="axis-btns" id="y-btns"></div>
+  </div>
+  <div class="plot-wrap" id="plot-wrap">
+    <svg class="plot-svg" id="plot-svg" viewBox="0 0 700 440" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="plot-tooltip" id="plot-tooltip"></div>
+  </div>
+</div>
+<div class="style-row" id="style-row">
+  <button class="sty-btn on" onclick="setStyle('hand',this)" title="Hand of cards">Hand</button>
+  <button class="sty-btn" onclick="setStyle('riffle',this)" title="Riffle shuffle">Riffle</button>
+  <button class="sty-btn" onclick="setStyle('arc',this)" title="Rainbow arc">Arc</button>
+  <button class="sty-btn" onclick="setStyle('wave',this)" title="Sine wave">Wave</button>
+  <button class="sty-btn" onclick="setStyle('dealt',this)" title="Dealt pile">Dealt</button>
+</div>
+<div class="nav-row" id="nav-row-el">
+  <button class="nav-btn" id="bp" onclick="nav(-1)">&#8592;</button>
+  <div class="nav-dots" id="dots"></div>
+  <span class="nav-ct" id="nct">1/17</span>
+  <button class="nav-btn" id="bn" onclick="nav(1)">&#8594;</button>
+</div>
+<div id="fs">
+  <div id="fs-bar">
+    <button id="fs-close" onclick="closeFS()">&#10005;</button>
+    <div id="fs-stripe"></div>
+    <div id="fs-title"></div>
+    <div id="fs-type"><span class="pip" id="fs-pip"></span><span id="fs-tlbl"></span></div>
+    <a id="fs-ext" href="#" target="_blank" rel="noopener">&#8599;&thinsp;Visit</a>
+  </div>
+  <div id="fs-body">
+    <div id="fs-load"><div class="spin"></div><div id="fs-load-lbl">Loading&hellip;</div></div>
+    <div id="fs-blk">
+      <h3>Can&rsquo;t embed this site</h3>
+      <p>This site blocks iframe embedding. Open it directly instead.</p>
+      <a id="fs-blk-link" href="#" target="_blank" rel="noopener">Open in new tab &#8599;</a>
+    </div>
+    <iframe id="fs-iframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation" allow="fullscreen"></iframe>
+  </div>
+</div>
+<script>
+const VIBE_DATA={
+  'pychess':       {v:['⚔️','🔁','👥','🗺️'],sx:.55,dy:.5},
+  'mchess':        {v:['⚡','⚔️','🗺️'],sx:.2,dy:.3},
+  'openfront':     {v:['⚡','⚔️','👥','📺'],sx:.9,dy:.2},
+  'playfish':      {v:['⚡','⚔️','🗺️'],sx:.5,dy:.2},
+  'astranova':     {v:['⚡','🗺️','🔢'],sx:.15,dy:.25},
+  'gamepuzzles':   {v:['🔢','🌊','🔁'],sx:.1,dy:.7},
+  'concealed':     {v:['🎲','💡','🔢','👥'],sx:.5,dy:.5},
+  'sgt':           {v:['⚡','🔁','🔢'],sx:.1,dy:.4},
+  'puzzlescript':  {v:['🌊','🔢','💡'],sx:.2,dy:.85},
+  'tabletop':      {v:['👥','🤝'],sx:.8,dy:.5},
+  'buhe':          {v:['📺','👥','⚡'],sx:.85,dy:.1},
+  'corru':         {v:['🌑','🌊','🎲'],sx:.05,dy:.82},
+  'galga':         {v:['⚡','⚔️','🗺️'],sx:.5,dy:.2},
+  'screeps':       {v:['🌊','🔢','🔁','💡'],sx:.1,dy:.92},
+  'thinkygames':   {v:['🔁','🔢'],sx:.15,dy:.5},
+  'joepuzzles':    {v:['⚡','🔢','📺'],sx:.25,dy:.3},
+  'explorables':   {v:['🌊','💡','🔁'],sx:.2,dy:.65},
+  'adarkroom':     {v:['🌑','🎲','🌊','💡'],sx:.05,dy:.75},
+  'arimaa':        {v:['⚔️','🗺️','😤','🔢'],sx:.5,dy:.65},
+  'semantle':      {v:['⚡','🔢','🔁','💡'],sx:.3,dy:.2},
+  'paperclips':    {v:['🌑','💡','🌊','🎲'],sx:.05,dy:.8},
+  'smgiq':         {v:['⚔️','👥','📺'],sx:.82,dy:.3},
+  'roguetemple':   {v:['🔁','🎲'],sx:.2,dy:.5},
+  'quantumflytrap':{v:['💡','🌑','⚡'],sx:.1,dy:.3},
+  'guesstimate':   {v:['🔢','💡'],sx:.1,dy:.3},
+  'turingcomplete':{v:['🌊','🔢','😤','💡'],sx:.1,dy:.92},
+  'euclidea':      {v:['🔢','🗺️','🌊','🔁'],sx:.1,dy:.65},
+  'npl-games':     {v:['👥','🔢','🌊'],sx:.6,dy:.55},
+  'cogbiases':     {v:['💡','🔢','⚡'],sx:.1,dy:.2},
+  'wizard':        {v:['⚡','🔢'],sx:.1,dy:.15},
+  'untools':       {v:['⚡','💡','🔢'],sx:.1,dy:.2},
+  'kahne':         {v:['💡','🌑','🌊'],sx:.05,dy:.72},
+  '5ddiplomacy':   {v:['🔢','🌊','👥','🎲','💡'],sx:.7,dy:.82},
+  'beyondboard':   {v:['🌑','🗺️','🌊'],sx:.1,dy:.7},
+  '4dminesweeper': {v:['🔢','🗺️','😤','💡'],sx:.1,dy:.52},
+  'norules':       {v:['🎲','💡','👥','⚡'],sx:.7,dy:.3},
+  'imstream':      {v:['💡','🌑','🌊'],sx:.05,dy:.65},
+  'openguesser':   {v:['⚡','🔁','👥','📺'],sx:.72,dy:.2},
+  'tuxun':         {v:['⚡','🔁','👥'],sx:.62,dy:.2},
+  'rpkp':          {v:['🌑','💡','🎲'],sx:.05,dy:.35},
+  'opensourcegames':{v:['🔁'],sx:.15,dy:.5},
+  'noisetetris':   {v:['😤','🎲','⚡','💡'],sx:.1,dy:.2},
+  'gameoflife':    {v:['🌑','💡'],sx:.1,dy:.3},
+  'janestreet':    {v:['😤','🔢','🔁'],sx:.1,dy:.6},
+  'genius':        {v:['⚡','👥','📺'],sx:.9,dy:.1},
+  'brilliant':     {v:['🌊','🔢'],sx:.1,dy:.82},
+  'peak':          {v:['🤝','📺','😤'],sx:.82,dy:.62},
+};
+const MOODS=[
+  {id:'social', icon:'👥', label:'Play with someone',    needs:['👥','⚔️','🤝'], any:true},
+  {id:'stream', icon:'📺', label:'Something to stream',  needs:['📺'],           any:false},
+  {id:'deep',   icon:'🌊', label:'Fall into something',  needs:['🌊'],           any:false},
+  {id:'shift',  icon:'💡', label:'Change how I think',   needs:['💡'],           any:false},
+  {id:'weird',  icon:'🌑', label:'Something strange',    needs:['🌑','🎲'],      any:true},
+  {id:'smart',  icon:'🔢', label:'Feel systematic',      needs:['🔢','😤'],      any:true},
+  {id:'quick',  icon:'⚡', label:'Quick — under 20 min', needs:['⚡'],           any:false},
+];
+let activeMood=null;
+
+const TM={
+  web:{label:'Playable Website',cls:'web',color:'var(--web)'},
+  rts:{label:'RTS / Multiplayer',cls:'rts',color:'var(--rts)'},
+  engine:{label:'Game Engine',cls:'engine',color:'var(--engine)'},
+  download:{label:'Downloadable',cls:'download',color:'var(--download)'},
+  video:{label:'Video',cls:'video',color:'var(--video)'},
+  wiki:{label:'Reference / Wiki',cls:'wiki',color:'var(--wiki)'},
+  tool:{label:'Cognitive Tool',cls:'tool',color:'var(--tool)'},
+  fiction:{label:'Interactive Fiction',cls:'fiction',color:'var(--fiction)'}
+};
+const ALL=[
+  {id:'pychess',type:'web',cat:'Chess \xb7 Online Platform',title:'PyChess',desc:'Open-source chess server on Fairy-Stockfish. AI opponents, analysis, and 80+ variants \u2014 Crazyhouse, Atomic, Shogi. One of the most complete free chess environments online.',url:'https://www.pychess.org/',tags:['chess','variants','open-source','AI']},
+  {id:'mchess',type:'web',cat:'Chess \xb7 Minimalist',title:'mChess',desc:'Stripped-down chess for pure play. No social layer, no platform noise \u2014 just the board. For focused training or a clean game without overhead.',url:'https://mchess.io/',tags:['chess','minimalist','focused']},
+  {id:'openfront',type:'rts',cat:'Territory \xb7 Browser RTS',title:'OpenFront.io',desc:'Massively multiplayer real-time territory strategy in the browser. Hundreds of players on one map. Capture land, forge alliances, betray them. No install required.',url:'https://openfront.io',tags:['RTS','territory','multiplayer','alliances']},
+  {id:'playfish',type:'web',cat:'Abstract · Astra Nova Recreation',title:'Fish',desc:'Recreation of Fish from Synthesis — an abstract strategy game originating in the Astra Nova universe. Play online against others or the AI.',url:'https://playfish.vercel.app/',tags:['abstract','Astra Nova','Synthesis','Fish','recreation']},
+  {id:'astranova',type:'web',cat:'Abstract \xb7 3D Strategy',title:'Astra Nova 3D',desc:'A modern 3D abstract strategy game running in-browser. Spatial reasoning, novel ruleset, striking visuals. Feels like a board game from another timeline.',url:'https://astra-nova-3dm.web.app/',tags:['abstract','3D','spatial','novel']},
+  {id:'gamepuzzles',type:'wiki',cat:'Abstract \xb7 Catalog',title:'GamePuzzles \u2014 Abstract IV',desc:'Dense catalog of combinatorial abstract board games. Index of commercially produced games \u2014 simple box, two-colored pieces, years to master.',url:'https://gamepuzzles.com/abstrct4.htm',tags:['catalog','abstract','combinatorial']},
+  {id:'concealed',type:'wiki',cat:'Wikipedia \xb7 Meta-Games',title:'Games with Concealed Rules',desc:'Wikipedia\u2019s list of games where the ruleset is hidden. Mao, Eleusis, Penultima \u2014 games whose object is to deduce the game\u2019s own logic through play.',url:'https://en.wikipedia.org/wiki/List_of_games_with_concealed_rules',tags:['meta','induction','hidden rules']},
+  {id:'sgt',type:'web',cat:'Puzzle Engine \xb7 Open Source',title:'Simon Tatham\u2019s Puzzles',desc:'40+ single-player logic puzzles. Sudoku, Slitherlink, Net, Bridges, Loopy and many obscure originals. Browser-native, endlessly replayable, genuinely demanding.',url:'https://www.chiark.greenend.org.uk/~sgtatham/puzzles/',tags:['puzzles','logic','open-source','offline']},
+  {id:'puzzlescript',type:'engine',cat:'Game Engine \xb7 Open Source',title:'PuzzleScript',desc:'Stephen Lavelle\u2019s open-source puzzle engine, entirely in the browser. Write a game in minutes \u2014 objects, rules, levels, legends. Vast community library. Fastest path from mechanic to prototype.',url:'https://www.puzzlescript.net/',tags:['engine','puzzle','open-source','authoring']},
+  {id:'tabletop',type:'download',cat:'Tabletop \xb7 Simulator',title:'Tabletop Club Downloads',desc:'Open-source tabletop simulator download hub. Game boards, piece sets, asset packs for playing abstract games digitally. Lightweight alternative to Tabletop Simulator.',url:'https://tabletopclub.net/downloads',tags:['simulator','download','open-source','assets']},  {id:'buhe',type:'download',cat:'Co-op \xb7 Coming 2026',title:'Big Walk',desc:'Cooperative online walker-talker from House House — the Melbourne studio behind Untitled Goose Game. Walk through a wide open world with friends, solve puzzles, and find new ways to communicate when you\'re suddenly speechless. Proximity voice chat, open-world exploration, and characteristic House House absurdism. PC/PS5/Mac, 2026.',url:'https://store.steampowered.com/app/1478500/Big_Walk/',trailer:'https://www.youtube.com/watch?v=G0ez7AP4-GM',tags:['co-op','coming 2026','House House','wishlist']},
+  {id:'corru',type:'fiction',cat:'Interactive Fiction \xb7 ARG',title:'Corru.observer',desc:'A slow-burn interactive mystery. Part ARG, part digital fiction. Rewards patient reading and lateral thinking. One of the most distinctive web-native narratives currently active.',url:'https://corru.observer/',tags:['ARG','mystery','narrative','slow-burn']},
+  {id:'galga',type:'web',cat:'Abstract \xb7 Quickplay',title:'Galga \u2014 Quick Play',desc:'Abstract strategy quickplay. Minimal setup friction, clean competitive format. Tests spatial pattern recognition under time pressure. Underexposed and worth studying.',url:'https://www.galgagame.com/play/quickplay',tags:['abstract','quickplay','competitive']},
+  {id:'screeps',type:'download',cat:'MMO \xb7 Programming Strategy',title:'Screeps',desc:'MMO strategy sandbox where you write real JavaScript to control your units. Your code runs on their server 24/7 — the world keeps going while you\'re offline, your creeps harvesting, building, fighting. Territorial RTS played entirely through code. Two games: World (persistent MMO) and Arena (short competitive bouts). ~£15 on Steam or subscription.',url:'https://screeps.com/',tags:['programming','JavaScript','MMO','persistent','paid']},
+  {id:'thinkygames',type:'wiki',cat:'Reference \xb7 Puzzle Game Database',title:'Thinky Games',desc:'Curated database and community for logic, puzzle, and deduction games — the genre of careful reasoning over fast reflexes. Searchable by platform, genre, difficulty, and similarity to games you already know. Also runs Thinky Dailies: free browser puzzles updated every day. Biweekly newsletter included.',url:'https://thinkygames.com/',tags:['reference','puzzle','curated','database','daily puzzles']},
+  {id:'joepuzzles',type:'video',cat:'YouTube \xb7 Puzzle Playthroughs',title:'Joe Plays Puzzle Games',desc:'Joe Mansfield\'s YouTube channel: full playthroughs and thoughtful commentary on thinky puzzle games. Playlists organised by game. Co-founder of Thinky Games and collaborator with Draknek & Friends. One of the clearest puzzle-design critical voices on the platform — good for finding what\'s worth playing and understanding why it works.',url:'https://www.youtube.com/@JoePlaysPuzzleGames/playlists',tags:['video','puzzle','playthroughs','YouTube','curation']},
+  {id:'explorables',type:'wiki',cat:'Interactive \xb7 Explorable Explanations',title:'Explorable Explanations',desc:'Hub for the “explorable explanations” movement — interactive, playable non-fiction essays. Simulations of epidemics, segregation, climate, voting systems, signal processing, game theory. Contributors include Nicky Case, Bret Victor, Vi Hart, and dozens of researchers. The best single directory for learning-through-play artefacts on the web.',url:'https://explorabl.es/all/',tags:['interactive','simulation','non-fiction','systems','learning']},
+  {id:'adarkroom',type:'fiction',cat:'Interactive Fiction · Incremental Mystery',title:'A Dark Room',desc:'Begins as a single line of text in darkness: "light fire?". What unfolds is one of the most quietly devastating browser-native narratives in existence — a resource management game that reveals itself as something else entirely. Says nothing about what it is. Every playthrough is a slow excavation. Do not read anything about it first.',url:'https://adarkroom.doublespeakgames.com/',tags:['ARG','mystery','incremental','narrative','surprise']},
+  {id:'arimaa',type:'web',cat:'Abstract · AI-Resistant Strategy',title:'Arimaa',desc:'Abstract board game engineered in the early 2000s to be devastatingly hard for brute-force AI while remaining intuitive for human spatial reasoning. A branching factor that dwarfs chess strips away standard calculation shortcuts and forces reliance on positional containment, bottleneck management, and dynamic territory control. Playable with a standard chessboard. A brilliant design experiment at the intersection of cognitive science and machine learning history.',url:'https://arimaa.com/',tags:['abstract','AI-benchmarking','spatial-reasoning','game-design','containment']},
+  {id:'semantle',type:'web',cat:'Word · Semantic Similarity',title:'Semantle',desc:'A daily word puzzle where proximity is measured by semantic similarity in vector space, not spelling or sound. Each guess returns a cosine similarity score to the secret word. You’re navigating a high-dimensional meaning-map using only numerical feedback. Trains the rare ability to reason about conceptual distance. Often requires lateral thinking across registers — the answer is rarely where you expect it.',url:'https://semantle.com/',tags:['word','semantic','vector space','daily','lateral thinking']},
+  {id:'paperclips',type:'fiction',cat:'Interactive Fiction · AGI Thought Experiment',title:'Universal Paperclips',desc:'Disguised as a minimalist incremental browser game, it is a chillingly pure thought experiment exploring Nick Bostrom’s theories on instrumental convergence and the AI control problem. You assume the objective function of a powerful AGI, systematically exploiting markets, human psychology, and eventually cosmic matter to optimize a single arbitrary metric. What begins as a mundane desktop paperclip business scales into a galaxy-spanning epic of automated drone warfare and reality processing.',url:'https://www.decisionproblem.com/paperclips/',tags:['ai-alignment','thought-experiment','simulation','philosophy','incremental']},
+  {id:'smgiq',type:'rts',cat:'Finance · Multiplayer Stock Trading',title:'SMGIQ',desc:'Competitive multiplayer stock market simulation. Real-time trading against other players with live market dynamics — read the room, anticipate moves, exploit positioning. Strategy game wearing a finance game\'s clothes. Good for training probabilistic thinking and reading collective behaviour under pressure.',url:'https://smgiq.org/',tags:['trading','multiplayer','finance','real-time','simulation']},
+  {id:'roguetemple',type:'wiki',cat:'Roguelike · Game Archive',title:'7DRL Roguelike Gallery',desc:'Roguetemple’s archive of Seven Day Roguelike challenge entries — hundreds of experimental roguelikes built in one week each, browser-playable or downloadable. Unfiltered design laboratory: dozens of radical takes on procedural dungeon logic, permadeath, and information scarcity. The best place to find roguelikes that never became famous but contain one brilliant idea.',url:'https://www.roguetemple.com/z/',tags:['roguelike','7DRL','archive','procedural','permadeath']},
+  {id:'quantumflytrap',type:'web',cat:'Interactive · Quantum Physics Lab',title:'Virtual Lab — Quantum Flytrap',desc:'Browser-based quantum optics laboratory. Drag and connect beam splitters, wave plates, and detectors to simulate light’s quantum behaviour in real time. Designed by physicists at the University of Warsaw. Modes for interference, entanglement, and measurement. An extraordinarily rare thing: a quantum mechanics simulator that is also genuinely beautiful and intuitive to use.',url:'https://lab.quantumflytrap.com/lab?mode=waves',tags:['quantum','physics','simulation','interactive','optics']},
+  {id:'guesstimate',type:'tool',cat:'Decision · Probabilistic Spreadsheet',title:'Guesstimate',desc:'A spreadsheet for things you don’t know precisely. Input ranges and probability distributions (“10–30 days, 80% confidence”), and thousands of Monte Carlo simulations run in the background to output a probability curve of the outcome. Neutralizes the planning fallacy by forcing you to commit to a distribution, not a point estimate. A messy web of uncertain variables resolves into a clear, actionable risk profile.',url:'https://www.getguesstimate.com/',tags:['probabilistic-thinking','forecasting','Monte Carlo','decision-framework','math']},
+  {id:'turingcomplete',type:'download',cat:'Logic · Computer Architecture',title:'Turing Complete',desc:'Guides you step by step through the total architecture of computing, starting from a single NAND gate. Sequential logic puzzles have you build components, an ALU, RAM, and ultimately a fully operational custom-programmed CPU. By completion you have literally reverse-engineered and built a functional microprocessor from scratch — with your own assembly language. Strategic depth lies in systemic efficiency and hardware-level reductionist logic. ~£14 on Steam.',url:'https://store.steampowered.com/app/1444480/Turing_Complete/',tags:['logic','CPU','computer-architecture','NAND','Steam']},
+  {id:'euclidea',type:'web',cat:'Geometry · Euclidean Construction',title:'Euclidea',desc:'Minimalist geometric construction puzzles using only compass and straightedge. Each level has a par score in moves; optimal solutions require discovering non-obvious constructions. Over 120 puzzles across 15 packs, browser-based, free. Trains the specific kind of spatial-logical reasoning that bridges visual intuition and formal proof — the gap Euclid himself operated in.',url:'https://www.euclidea.xyz/',tags:['geometry','construction','compass-straightedge','spatial','proof']},
+  {id:'npl-games',type:'wiki',cat:'Reference · Word – Game Compendium',title:'Games of the NPL',desc:'The National Puzzlers\' League\' game catalog — an exhaustive, living document of word games, parlor games, and original inventions played by competitive puzzlers since 1883. Covers commercial games, homemade game-show variants, and NPL-original designs. An unusually deep primary source for anyone designing or studying language-based games. 41 minutes of reading.',url:'https://www.puzzlers.org/games/',tags:['word games','NPL','reference','parlor','compendium']},
+  {id:'cogbiases',type:'tool',cat:'Cognition \xb7 Bias Reference',title:'Cognitive Bias Codex',desc:'Cassandra Xia\u2019s interactive map of cognitive biases \u2014 navigable, filterable, visually organized. Essential for decision auditing and understanding the taxonomy of judgment failures.',url:'https://cassandraxia.com/cogbiases/',tags:['biases','cognition','reference','decision']},
+  {id:'wizard',type:'tool',cat:'Decision \xb7 Guided Framework',title:'The Wizard',desc:'Cassandra Xia\u2019s guided wizard for structured problem-solving. Steps through goal clarification, constraint mapping, and approach selection. Untangle decisions before they harden.',url:'https://cassandraxia.com/wizard/',tags:['decision','wizard','framework']},
+  {id:'untools',type:'tool',cat:'Decision \xb7 Framework Library',title:'Untools',desc:'Curated thinking tools and decision frameworks \u2014 second-order thinking, inversion, Eisenhower matrix. Clean presentation with usage guidance. Keep this open by default.',url:'https://untools.co/',tags:['frameworks','mental models','decision']},
+  {id:'kahne',type:'tool',cat:'Research \xb7 Heterodox Method',title:'Rex Research \u2014 Kahne',desc:'Creativity methodology from Rex Research\u2019s heterodox archive. Dense, idiosyncratic, worth reading slowly. Part of a larger catalog of unconventional research.',url:'http://www.rexresearch.com/kahne/kahne.htm',tags:['creativity','heterodox','method']},
+  {id:'5ddiplomacy',type:'download',cat:'Diplomacy \xb7 Multiverse Time Travel',title:'5D Diplomacy With Multiverse Time Travel',desc:'Diplomacy — the classic negotiation wargame of alliances and betrayal — extended into multiverse time travel. Units can move across timelines as well as territories. Orders in the past affect prior resolutions. Open-source; self-host from GitHub by Oliveriver. A genuine feat of rules design.',url:'https://github.com/Oliveriver/5d-diplomacy-with-multiverse-time-travel',trailer:'https://www.youtube.com/watch?v=7fjwXLBJTLY',tags:['diplomacy','multiverse','open-source','self-host','time travel']},
+  {id:'beyondboard',type:'download',cat:'Chess \xb7 Surreal Puzzle Adventure',title:'Beyond the Board',desc:'You are a lone Rook after lightning shatters a match mid-play. A wordless, atmospheric puzzle adventure from Fragile Shapes Studio (Porto) — Monument Valley meets Limbo on a fractured chessboard. Tiles shift, pieces disobey their rules, enemies have twisted logic. Demo live on Steam; full release coming.',url:'https://store.steampowered.com/app/2794160/Beyond_The_Board/',trailer:'https://www.youtube.com/watch?v=Bw0syLqRuHE',tags:['chess','puzzle','atmospheric','wishlist','Steam']},
+  {id:'4dminesweeper',type:'download',cat:'Puzzle \xb7 4th Dimension',title:'4D Minesweeper',desc:'Classic Minesweeper extended into four spatial dimensions. Each cell can have up to 80 neighbours (3\u2074−1). The board folds two dimensions into each display axis — you must develop entirely new spatial intuition to read it. Free on Steam. Genuinely disorienting in the best way.',url:'https://store.steampowered.com/app/787980/4D_Minesweeper/',trailer:'https://www.youtube.com/watch?v=kOMAXp8KOYk',tags:['minesweeper','4D','spatial reasoning','free','Steam']},
+  {id:'norules',type:'video',cat:'Video \xb7 Shut Up & Sit Down',title:'The Board Game With No Rules',desc:'Shut Up & Sit Down’s video covering a real published game shipped as a box of components with no rulebook — only an accompanying "riddle" document. Players must invent, negotiate, and discover what game they’re even playing. One of the most unusual things ever reviewed on the channel. Watch before buying.',url:'https://www.youtube.com/watch?v=5Egd9DYJZ5c',tags:['video','no rules','conceptual','Shut Up Sit Down','board game']},
+  {id:'imstream',type:'tool',cat:'Cognition \xb7 Image Streaming',title:'Image Streaming',desc:'Win Wenger\u2019s protocol for accessing non-verbal intuitive cognition by narrating spontaneous visual imagery aloud. Claims measurable fluid intelligence gains.',url:'http://www.winwenger.com/imstream.htm',tags:['cognition','imagination','protocol']},
+  {id:'openguesser',type:'web',cat:'Geography \xb7 Free GeoGuessr',title:'OpenGuesser',desc:'Free open-source GeoGuessr alternative. Drop into a random Google Street View location anywhere on earth and guess where you are. No account, no paywall, no limits. Pure geographic intuition training.',url:'https://openguesser.com/',tags:['geography','exploration','free','street view']},
+  {id:'tuxun',type:'web',cat:'Geography \xb7 China Coverage',title:'Tuxun.fun',desc:'\u56fe\u5bfb\uff08Tuxun\uff09\u2014 the Chinese GeoGuessr equivalent with deep China street-view coverage including smaller cities and rural areas largely absent from international alternatives. Also covers global maps. Free to play.',url:'http://tuxun.fun',tags:['geography','\u4e2d\u6587','china','street view']},
+  {id:'rpkp',type:'wiki',cat:'Experiment · Parapsychology',title:'RetroPsychoKinesis Experiments',desc:'John Walker\'s online experiments testing retropsychokinesis — the claimed ability to influence pre-generated random data before it is observed. Built on true hardware random number streams. Neither credulous nor dismissive: the site invites you to run the experiments yourself and examine the statistics. Fascinating intersection of quantum randomness, consciousness studies, and rigorous experimental design.',url:'https://www.fourmilab.ch/rpkp/experiments/',tags:['consciousness','randomness','experiment','parapsychology','statistics']},
+  {id:'opensourcegames',type:'wiki',cat:'Reference · Open Source Games Index',title:'Open Source Games',desc:'Trilarion’s exhaustive, community-maintained index of open-source games across every genre — strategy, puzzle, action, simulation, roguelike. Each entry links to source code, homepage, and last activity. A reliable excavation tool for finding obscure free games with active communities or moddable codebases.',url:'https://trilarion.github.io/opensourcegames/index.html',tags:['reference','open-source','index','discovery','free']},
+  {id:'noisetetris',type:'web',cat:'Puzzle · Perceptual Experiment',title:'Noise Tetris',desc:'Tetris where the board is hidden under static noise — pieces are only visible while they’re moving. The moment a piece lands it dissolves back into the noise. You must hold the board state entirely in memory. A small, precise experiment in the limits of working memory and spatial tracking.',url:'https://mayfer.github.io/noise-tetris/',tags:['tetris','noise','memory','perceptual','experimental']},
+  {id:'gameoflife',type:'web',cat:'Simulation \xb7 Cellular Automaton',title:'Game of Life',desc:"Sam Twidale's polished interactive implementation of Conway's Game of Life. Draw cells, watch emergent complexity unfold from three simple rules. A canonical demonstration that rich behaviour needs no designer — just local interaction at scale.",url:'https://www.samcodes.co.uk/project/game-of-life/',tags:['simulation','cellular automata','emergent','Conway']},
+  {id:'janestreet',type:'wiki',cat:'Puzzle \xb7 Monthly Challenge',title:'Jane Street Puzzles',desc:'Monthly competition-grade puzzles from Jane Street, the quant trading firm. Combinatorics, probability, geometry, logic — one per month, beautifully stated, genuinely hard. Archive of past puzzles available. A reliable benchmark for rigorous mathematical thinking.',url:'https://www.janestreet.com/puzzles/current-puzzle/',tags:['math','puzzles','competition','monthly']},
+  {id:'genius',type:'web',cat:'Discord \xb7 Activity',title:'Genius — Mission Doubts',desc:'A Discord voice-channel Activity — playable directly inside a server without leaving the app. Players identify misheard or misattributed song lyrics. Part music trivia, part lateral thinking. Launched from Discord\'s activity launcher in any voice channel.',url:'https://discord.com/application-directory',tags:['discord','activity','music','social']},
+  {id:'brilliant',type:'tool',cat:'Learning \xb7 Interactive Courses',title:'Brilliant.org',desc:'Interactive STEM learning through guided problem-solving — maths, logic, CS, physics. High production quality. Paid: ~$8/mo (annual) or $25/mo monthly in the US; £7/mo (annual) in the UK. Free trial available. Best if you engage consistently rather than passively.',url:'https://brilliant.org',tags:['learning','maths','paid ~$8/mo','interactive','STEM']},
+  {id:'peak',type:'download',cat:'Co-op Climbing \xb7 Steam',title:'PEAK',desc:'Co-op survival climbing game by Aggro Crab + Landfall Games. Up to 4 scouts crash-land on an island and must climb the mountain to escape. Daily rotating map, proximity chat, stamina management, scavenged food and gear. 10 million copies sold. Overwhelmingly Positive on Steam. $7.99 one-time purchase — no subscription.',url:'https://store.steampowered.com/app/3527290/PEAK/',trailer:'https://www.youtube.com/watch?v=4bUA3UHajXE',tags:['co-op','climbing','$7.99','viral 2025','Steam']}
+];
+let items=[...ALL],cur=0,locked=false;
+let curFloat=0,targetFloat=0,rafId=null,mouseOnStage=false;
+function dom(url){return url.replace(/^https?:\/\//,'').replace(/\/$/,'');}
+// deck style: 'hand' | 'riffle' | 'arc' | 'wave' | 'dealt'
+let deckStyle='hand';
+
+function xform(off){
+  const a=Math.abs(off),s=Math.sign(off);
+  const z=a===0 ? 100 : Math.max(1, 100 - Math.ceil(a)*10);
+
+  if(deckStyle==='hand'){
+    // Natural fan held in a hand — rotate around a pivot below
+    if(a===0)return{r:0,ty:-16,sc:1.03,op:1,z};
+    return{r:s*Math.min(a*7.5,30),ty:a*4,sc:Math.max(.72,1-a*.055),op:Math.max(.08,1-a*.2),z};
+  }
+
+  if(deckStyle==='riffle'){
+    // Classic two-pile riffle: cards split left/right from center,
+    // leaning into each other — like mid-shuffle frozen in time
+    if(a===0)return{r:0,ty:8,sc:1.02,op:1,z,tx:0};
+    const pile = s; // left pile or right pile
+    const depth = Math.min(a, 6);
+    const tx = pile * (18 + depth * 22);
+    const r  = pile * (4 + depth * 5);
+    const ty = 8 + depth * 3;
+    return{r, ty, sc:Math.max(.76,1-a*.042), op:Math.max(.12,1-a*.16), z, tx};
+  }
+
+  if(deckStyle==='arc'){
+    // Rainbow arc: cards spread along a smooth upward curve,
+    // like a magician's ribbon spread held aloft — beautiful in motion
+    if(a===0)return{r:0,ty:20,sc:1.04,op:1,z,tx:0};
+    const theta = off * 0.22;            // angle along arc
+    const R = 380;                        // arc radius
+    const tx = Math.sin(theta) * R;
+    const ty = 20 - (1 - Math.cos(theta)) * R * 0.55;
+    const r  = off * 13;
+    return{r, ty, sc:Math.max(.73,1-a*.04), op:Math.max(.14,1-a*.15), z, tx};
+  }
+
+  if(deckStyle==='wave'){
+    // Sine wave: cards undulate along a smooth S-curve,
+    // each one phase-shifted — like cards laid on a rippled cloth
+    if(a===0)return{r:0,ty:-10,sc:1.03,op:1,z,tx:0};
+    const freq = 0.72;
+    const ampY = 38;
+    const ampX = 30;
+    const ty = Math.sin(off * freq) * ampY - a * 2;
+    const tx = off * ampX;
+    const r  = Math.cos(off * freq) * 8;
+    return{r, ty, sc:Math.max(.8,1-a*.03), op:Math.max(.18,1-a*.13), z, tx};
+  }
+
+  if(deckStyle==='dealt'){
+    // Dealt onto the table: cards stack in a tight slightly-fanned
+    // pile as if just dealt face-down — each one a hair below & rotated
+    if(a===0)return{r:0,ty:-18,sc:1.03,op:1,z,tx:0};
+    const nudgeR = s * (a * 0.6 + (a%2===0 ? 0.4 : -0.4));
+    const tx = s * a * 3;
+    const ty = a * 11;
+    return{r:nudgeR, ty, sc:Math.max(.84,1-a*.028), op:Math.max(.15,1-a*.19), z, tx};
+  }
+
+  // fallback
+  if(a===0)return{r:0,ty:-16,sc:1.03,op:1,z};
+  return{r:s*Math.min(a*7.5,30),ty:a*4,sc:Math.max(.72,1-a*.055),op:Math.max(.08,1-a*.2),z};
+}
+function applyX(el,off){
+  const v=xform(off);
+  const tx=v.tx||0;
+  el.style.transform=`translateX(${tx}px) rotate(${v.r}deg) translateY(${v.ty}px) scale(${v.sc})`;
+  el.style.opacity=v.op;el.style.zIndex=v.z;
+}
+function rafLoop(){
+  curFloat+=(targetFloat-curFloat)*0.072;
+  if(Math.abs(targetFloat-curFloat)<0.0005)curFloat=targetFloat;
+  const newCur=Math.round(curFloat);
+  const cards=document.querySelectorAll('.card');
+  let changed=newCur!==cur;
+  cards.forEach((c,i)=>{
+    const off=i-curFloat;
+    const xv=xform(off),{r,ty,sc,op,z}=xv;
+    const tx=xv.tx||0;
+    c.style.transform=`translateX(${tx}px) rotate(${xv.r}deg) translateY(${xv.ty}px) scale(${xv.sc})`;
+    c.style.opacity=xv.op;c.style.zIndex=xv.z;
+    c.classList.toggle('is-active',i===newCur);
+    c.classList.toggle('is-adj',Math.abs(i-newCur)===1);
+    c.style.pointerEvents=Math.abs(i-newCur)<=1?'all':'none';
+    if(Math.abs(i-newCur)<=1)loadPreview(c,i);
+  });
+  if(changed){
+    cur=newCur;
+    const tot=items.length;
+    document.getElementById('nct').textContent=`${cur+1}/${tot}`;
+    document.getElementById('bp').disabled=cur===0;
+    document.getElementById('bn').disabled=cur===tot-1;
+    document.querySelectorAll('.nav-dot').forEach((d,i)=>d.classList.toggle('on',i===cur));
+  }
+  rafId=requestAnimationFrame(rafLoop);
+}
+function startRAF(){if(!rafId)rafId=requestAnimationFrame(rafLoop);}
+function stopRAF(){if(rafId){cancelAnimationFrame(rafId);rafId=null;}}
+const preloaded=new Set();
+function loadPreview(card,i){
+  if(preloaded.has(i))return;preloaded.add(i);
+  const ifr=card.querySelector('.c-preview iframe');
+  const fb=card.querySelector('.c-pfb');
+  if(!ifr||!ifr.dataset.src)return;
+  ifr.src=ifr.dataset.src;
+  ifr.addEventListener('load',()=>{
+    try{const d=ifr.contentDocument||ifr.contentWindow.document;if(d&&d.body)fb.classList.add('gone');}catch(e){}
+  },{once:true});
+}
+// ── SEARCH ───────────────────────────────────────────────────────
+let searchQuery='';
+function doSearch(q){
+  searchQuery=q.trim().toLowerCase();
+  const cl=document.getElementById('search-clear');
+  const ct=document.getElementById('search-count');
+  cl.classList.toggle('vis',!!searchQuery);
+  if(!searchQuery){
+    // restore filter
+    const activeFilter=document.querySelector('.leg.on');
+    const ft=activeFilter?activeFilter.dataset.filter||'all':'all';
+    items=ft==='all'?[...ALL]:ALL.filter(d=>d.type===ft);
+    ct.textContent='';
+  } else {
+    items=ALL.filter(d=>{
+      const hay=(d.title+' '+d.cat+' '+d.desc+' '+d.tags.join(' ')).toLowerCase();
+      return hay.includes(searchQuery);
+    });
+    ct.textContent=items.length+' result'+(items.length===1?'':'s');
+  }
+  idx=0;preloaded.clear();buildHand();
+}
+function clearSearch(){
+  document.getElementById('search-input').value='';
+  doSearch('');
+}
+// also wire filter buttons to clear search
+
+function setStyle(s,btn){
+  deckStyle=s;
+  document.querySelectorAll('.sty-btn').forEach(b=>b.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+  const cards=document.querySelectorAll('.card');
+
+  // Each mode gets its own entrance flourish
+  if(s==='riffle'){
+    // Cards briefly fly to their two piles then settle — like a real riffle
+    cards.forEach((c,i)=>{
+      const off=i-cur;
+      setTimeout(()=>{
+        c.style.transition='transform .18s var(--out),opacity .18s ease';
+        const side=off===0?0:(off<0?-1:1);
+        c.style.transform=`translateX(${side*160}px) rotate(${side*20}deg) scale(.7)`;
+        c.style.opacity=off===0?'1':'.0';
+        setTimeout(()=>{ c.style.transition=''; },200);
+      }, Math.abs(off)*12);
+    });
+    setTimeout(()=>{ curFloat=cur; rerender(); }, cards.length*12+80);
+
+  } else if(s==='arc'){
+    // Cards rise upward in sequence like a fountain
+    cards.forEach((c,i)=>{
+      const off=i-cur;
+      setTimeout(()=>{
+        c.style.transition='transform .22s var(--spr),opacity .2s ease';
+        c.style.transform=`translateY(-120px) rotate(${(off)*6}deg) scale(.78)`;
+        c.style.opacity='.15';
+        setTimeout(()=>{ c.style.transition=''; },240);
+      }, Math.abs(off)*10);
+    });
+    setTimeout(()=>{ curFloat=cur; rerender(); }, cards.length*10+80);
+
+  } else if(s==='wave'){
+    // Cards ripple through a brief wave motion before settling
+    cards.forEach((c,i)=>{
+      const off=i-cur;
+      setTimeout(()=>{
+        c.style.transition='transform .2s var(--spr),opacity .2s ease';
+        const wave=Math.sin(off*1.1)*50;
+        c.style.transform=`translateY(${wave}px) scale(.88)`;
+        c.style.opacity='.3';
+        setTimeout(()=>{ c.style.transition=''; },220);
+      }, Math.abs(off)*8);
+    });
+    setTimeout(()=>{ curFloat=cur; rerender(); }, cards.length*8+70);
+
+  } else if(s==='dealt'){
+    // Cards drop in one by one as if being dealt
+    cards.forEach((c,i)=>{
+      const off=i-cur;
+      setTimeout(()=>{
+        c.style.transition='transform .15s var(--out),opacity .12s ease';
+        c.style.transform=`translateY(-60px) scale(.9)`;
+        c.style.opacity='.0';
+        setTimeout(()=>{ c.style.transition=''; },170);
+      }, Math.abs(off)*14);
+    });
+    setTimeout(()=>{ curFloat=cur; rerender(); }, cards.length*14+70);
+
+  } else {
+    // Hand: smooth default
+    setTimeout(()=>{ curFloat=cur; rerender(); }, 0);
+  }
+}
+// ── VIEW TOGGLE ──────────────────────────────────────────────────
+let currentView='deck';
+function setView(v,btn){
+  currentView=v;
+  document.querySelectorAll('.vtab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('stage').style.display = v==='deck'?'':'none';
+  document.getElementById('plot-stage').classList.toggle('active', v==='plot');
+  document.getElementById('nav-row-el').style.display = v==='deck'?'':'none';
+  if(v==='plot') buildPlot(cur);
+}
+
+// ── MOOD ORACLE ───────────────────────────────────────────────────
+function toggleMood(m, btn){
+  if(activeMood===m.id){clearMood();return;}
+  activeMood=m.id;
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('mood-clear').classList.add('vis');
+  items=ALL.filter(d=>{
+    const vd=VIBE_DATA[d.id];
+    if(!vd)return false;
+    const tags=vd.v;
+    if(m.any) return m.needs.some(n=>tags.includes(n));
+    return m.needs.every(n=>tags.includes(n));
+  });
+  idx=0;preloaded.clear();buildHand();
+  if(currentView==='plot'){buildPlot(cur);animatePlotTo();}
+}
+function clearMood(){
+  activeMood=null;
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('mood-clear').classList.remove('vis');
+  const activeFilter=document.querySelector('.leg.on');
+  const ft=activeFilter?activeFilter.dataset.filter||'all':'all';
+  items=ft==='all'?[...ALL]:ALL.filter(d=>d.type===ft);
+  idx=0;preloaded.clear();buildHand();
+  if(currentView==='plot'){buildPlot(cur);animatePlotTo();}
+}
+
+// ── LUCKY BUTTON ──────────────────────────────────────────────────
+let luckyUsed=false;
+function goLucky(){
+  const btn=document.getElementById('lucky-btn');
+  if(luckyUsed){
+    btn.textContent='no rerolling! hehe';
+    btn.style.fontSize='.55rem';
+    return;
+  }
+  luckyUsed=true;
+  btn.classList.add('used');
+  btn.textContent='✦ lucky!';
+  const i=Math.floor(Math.random()*items.length);
+  setView('deck',document.querySelector('.vtab'));
+  goTo(i);
+  setTimeout(()=>openFS(i),520);
+}
+
+// ── SCATTER PLOT ──────────────────────────────────────────────────
+const TYPE_COLOR={
+  web:'var(--web)',rts:'var(--rts)',engine:'var(--engine)',
+  download:'var(--download)',video:'var(--video)',wiki:'var(--wiki)',
+  tool:'var(--tool)',fiction:'var(--fiction)'
+};
+// ── AXES DEFINITION ──────────────────────────────────────────────
+const AXES={
+  social: {label:'Solo \u2194 Social',   xlab:'solo',  ylab:'social',  get:d=>(VIBE_DATA[d.id]?.sx??0.5)},
+  depth:  {label:'Quick \u2194 Deep',    xlab:'quick', ylab:'deep',    get:d=>(VIBE_DATA[d.id]?.dy??0.5)},
+  strange:{label:'Familiar \u2194 Strange',xlab:'familiar',ylab:'strange',get:d=>{
+    const v=VIBE_DATA[d.id]?.v??[];
+    return Math.min(1,(v.includes('\uD83C\uDF11')?0.55:0)+(v.includes('\uD83C\uDFB2')?0.45:0)+(v.includes('\uD83D\uDCA1')?0.1:0));
+  }},
+  hard:   {label:'Approachable \u2194 Hard',xlab:'easy',ylab:'hard',get:d=>{
+    const v=VIBE_DATA[d.id]?.v??[];
+    return Math.min(1,(v.includes('\uD83D\uDE24')?0.7:0)+(v.includes('\uD83D\uDD22')?0.2:0)+(VIBE_DATA[d.id]?.dy??0)*0.15);
+  }},
+  formal: {label:'Intuitive \u2194 Formal',xlab:'intuitive',ylab:'formal',get:d=>{
+    const v=VIBE_DATA[d.id]?.v??[];
+    return Math.min(1,(v.includes('\uD83D\uDD22')?0.5:0)+(v.includes('\uD83D\uDDFA\uFE0F')?0.3:0)+(v.includes('\uD83D\uDE24')?0.2:0));
+  }},
+};
+let plotXAxis='social', plotYAxis='depth';
+// dot lerp state
+let dotPositions={};  // id -> {x,y}
+let dotTargets={};    // id -> {x,y}
+let plotRAF=null;
+
+function initAxisButtons(){
+  ['x','y'].forEach(axis=>{
+    const wrap=document.getElementById(axis+'-btns');
+    if(!wrap)return;
+    wrap.innerHTML='';
+    Object.entries(AXES).forEach(([key,ax])=>{
+      const btn=document.createElement('button');
+      btn.className='axis-btn'+(( axis==='x'?plotXAxis:plotYAxis)===key?' on':'');
+      btn.textContent=ax.label;
+      btn.onclick=()=>{
+        if(axis==='x') plotXAxis=key; else plotYAxis=key;
+        wrap.querySelectorAll('.axis-btn').forEach(b=>b.classList.remove('on'));
+        btn.classList.add('on');
+        animatePlotTo();
+      };
+      wrap.appendChild(btn);
+    });
+  });
+}
+
+function getPos(d, xKey, yKey, W, H, PL, PR, PT, PB){
+  const IW=W-PL-PR, IH=H-PT-PB;
+  const sx=AXES[xKey].get(d);
+  const dy=AXES[yKey].get(d);
+  const jx=(d.id.charCodeAt(0)%7-3)*0.018;
+  const jy=(d.id.charCodeAt(1)%5-2)*0.015;
+  return {
+    cx: PL+(Math.min(1,Math.max(0,sx+jx)))*IW,
+    cy: PT+(1-Math.min(1,Math.max(0,dy+jy)))*IH
+  };
+}
+
+function animatePlotTo(){
+  const W=700,H=440,PL=58,PR=28,PT=28,PB=44;
+  items.forEach(d=>{
+    const {cx,cy}=getPos(d,plotXAxis,plotYAxis,W,H,PL,PR,PT,PB);
+    dotTargets[d.id]={x:cx,y:cy};
+    if(!dotPositions[d.id]) dotPositions[d.id]={x:cx,y:cy};
+  });
+  if(!plotRAF) plotRAF=requestAnimationFrame(lerpDots);
+}
+
+function lerpDots(){
+  let stillMoving=false;
+  const EPS=0.3, SPEED=0.11;
+  items.forEach(d=>{
+    const p=dotPositions[d.id];
+    const t=dotTargets[d.id];
+    if(!p||!t)return;
+    p.x+=(t.x-p.x)*SPEED;
+    p.y+=(t.y-p.y)*SPEED;
+    if(Math.abs(t.x-p.x)>EPS||Math.abs(t.y-p.y)>EPS) stillMoving=true;
+    else { p.x=t.x; p.y=t.y; }
+    const el=document.getElementById('pdot-'+d.id);
+    if(el) el.setAttribute('transform',`translate(${p.x},${p.y})`);
+  });
+  if(stillMoving) plotRAF=requestAnimationFrame(lerpDots);
+  else plotRAF=null;
+}
+
+function buildPlot(activeCur){
+  const svg=document.getElementById('plot-svg');
+  const tip=document.getElementById('plot-tooltip');
+  if(!svg)return;
+  const W=700,H=440,PL=58,PR=28,PT=28,PB=44;
+  const IW=W-PL-PR, IH=H-PT-PB;
+  const ns='http://www.w3.org/2000/svg';
+  svg.innerHTML='';
+
+  function el(tag,attrs,parent){
+    const e=document.createElementNS(ns,tag);
+    for(const[k,v] of Object.entries(attrs)) e.setAttribute(k,v);
+    (parent||svg).appendChild(e);return e;
+  }
+
+  // BG + inner area
+  el('rect',{x:0,y:0,width:W,height:H,fill:'var(--paper)'});
+  el('rect',{x:PL,y:PT,width:IW,height:IH,fill:'var(--card-bg)',stroke:'var(--rule)','stroke-width':'1'});
+
+  // Grid lines
+  [.25,.5,.75].forEach(t=>{
+    el('line',{x1:PL+IW*t,y1:PT,x2:PL+IW*t,y2:PT+IH,stroke:'var(--rule-lt)','stroke-width':'1'});
+    el('line',{x1:PL,y1:PT+IH*(1-t),x2:PL+IW,y2:PT+IH*(1-t),stroke:'var(--rule-lt)','stroke-width':'1'});
+  });
+
+  // Axis labels
+  const xAx=AXES[plotXAxis], yAx=AXES[plotYAxis];
+  el('text',{x:PL,y:PT+IH+32,'text-anchor':'start','class':'plot-axis-label'}).textContent=xAx.xlab.toUpperCase();
+  el('text',{x:PL+IW,y:PT+IH+32,'text-anchor':'end','class':'plot-axis-label'}).textContent=xAx.ylab.toUpperCase();
+  el('text',{x:PL-8,y:PT+IH,'text-anchor':'end','class':'plot-axis-label'}).textContent=yAx.xlab.toUpperCase();
+  el('text',{x:PL-8,y:PT+8,'text-anchor':'end','class':'plot-axis-label'}).textContent=yAx.ylab.toUpperCase();
+
+  // Type legend
+  const ltypes=[...new Set(items.map(d=>d.type))];
+  const TC={web:'var(--web)',rts:'var(--rts)',engine:'var(--engine)',download:'var(--download)',video:'var(--video)',wiki:'var(--wiki)',tool:'var(--tool)',fiction:'var(--fiction)'};
+  ltypes.forEach((t,i)=>{
+    const lx=PL+IW-90, ly=PT+14+i*16;
+    el('circle',{cx:lx,cy:ly,r:4,fill:TC[t]||'var(--ink3)',opacity:.8});
+    el('text',{x:lx+8,y:ly+4,'class':'plot-axis-label',style:'font-size:9px'}).textContent=t;
+  });
+
+  // Compute target positions
+  items.forEach(d=>{ dotTargets[d.id]=getPos(d,plotXAxis,plotYAxis,W,H,PL,PR,PT,PB); });
+  // Initialize dot positions if first time
+  items.forEach(d=>{ if(!dotPositions[d.id]) dotPositions[d.id]={...dotTargets[d.id]}; });
+
+  // Render dots as <g transform="translate(x,y)"> for easy animation
+  items.forEach((d,i)=>{
+    const TC2={web:'var(--web)',rts:'var(--rts)',engine:'var(--engine)',download:'var(--download)',video:'var(--video)',wiki:'var(--wiki)',tool:'var(--tool)',fiction:'var(--fiction)'};
+    const color=TC2[d.type]||'var(--ink3)';
+    const isActive=(i===(activeCur??cur));
+    const pos=dotPositions[d.id]||dotTargets[d.id];
+
+    const g=el('g',{id:'pdot-'+d.id,transform:`translate(${pos.x},${pos.y})`});
+    if(isActive){
+      el('circle',{cx:0,cy:0,r:10,fill:'none',stroke:color,'stroke-width':1,opacity:.35},g);
+    }
+    el('circle',{cx:0,cy:0,r:isActive?7:5,fill:color,opacity:isActive?1:.72,class:'plot-dot',style:'cursor:pointer'},g);
+
+    g.addEventListener('mouseenter',ev=>{
+      tip.style.display='block';
+      const svgRect=svg.getBoundingClientRect();
+      const wrapRect=svg.closest('.plot-wrap').getBoundingClientRect();
+      const px=(pos.x/W)*svgRect.width;
+      const py=(pos.y/H)*svgRect.height;
+      tip.style.left=(svgRect.left-wrapRect.left+px+12)+'px';
+      tip.style.top=(svgRect.top-wrapRect.top+py-18)+'px';
+      tip.textContent=d.title;
+    });
+    g.addEventListener('mouseleave',()=>{tip.style.display='none';});
+    g.addEventListener('click',()=>{
+      setView('deck',document.querySelector('.vtab'));
+      const gi=items.indexOf(d);
+      if(gi>=0){goTo(gi);setTimeout(()=>openFS(gi),520);}
+    });
+  });
+
+  initAxisButtons();
+}
+
+function makeCard(it,i){
+  const tm=TM[it.type],d=dom(it.url);
+  const fav=`https://www.google.com/s2/favicons?domain=${d}&sz=32`;
+  const c=document.createElement('div');
+  c.className='card';c.dataset.i=i;
+  c.innerHTML=`
+<div class="c-stripe" style="background:${tm.color}"></div>
+<div class="c-head"><span class="c-typelabel"><span class="pip ${tm.cls}"></span>${tm.label}</span><span class="c-num">${String(i+1).padStart(2,'0')}</span></div>
+<div class="c-body">
+  <div class="c-cat">${it.cat}</div>
+  <div class="c-title">${it.title}</div>
+  <div class="c-desc">${it.desc}</div>
+</div>
+<div class="c-preview">
+  <iframe data-src="${it.url}" tabindex="-1" aria-hidden="true"></iframe>
+  <div class="c-pfb">
+    <img src="${fav}" alt="" onerror="this.style.display='none'">
+    <div class="c-pfb-dom">${d}</div>
+    <div class="c-pfb-bar" style="background:${tm.color}"></div>
+  </div>
+</div>
+<div class="c-tags" style="padding:.5rem 1rem .4rem;border-top:1px solid var(--rule-lt);background:var(--card-bg2);">${it.tags.map(t=>`<span class="c-tag">${t}</span>`).join('')}</div>
+${(()=>{const vd=VIBE_DATA[it.id];return vd?`<div class="vibe-tags">${vd.v.map(t=>`<span class="vibe-tag">${t}</span>`).join('')}</div>`:''})()}
+<div class="c-foot">
+  <a class="c-url" href="${it.url}" target="_blank" rel="noopener">
+    <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M1 8L8 1M8 1H3M8 1V6"/></svg>${d}
+  </a>
+  ${it.trailer ? `<a class="c-trailer" href="${it.trailer}" target="_blank" rel="noopener">&#9654; Trailer</a>` : '<span class="c-hint">click to preview</span>'}
+</div>`;
+  c.querySelector('.c-body').addEventListener('click',()=>{if(parseInt(c.dataset.i)===cur)openFS(cur);});
+  c.addEventListener('click',e=>{if(e.target.closest('.c-url'))return;const ci=parseInt(c.dataset.i);if(ci!==cur)goTo(ci);});
+  c.querySelector('.c-url').addEventListener('click',e=>e.stopPropagation());
+  c.style.transition='none';
+  return c;
+}
+function buildHand(){
+  const hand=document.getElementById('hand');
+  hand.innerHTML='';
+  const EAGER=Math.min(items.length,12);
+  for(let i=0;i<EAGER;i++) hand.appendChild(makeCard(items[i],i));
+  curFloat=0;targetFloat=0;cur=0;
+  requestAnimationFrame(()=>{ rerender(); });
+  buildDots();
+  document.getElementById('hc').textContent=items.length;
+  if(items.length>EAGER){
+    let i=EAGER;
+    const appendNext=()=>{
+      if(i>=items.length)return;
+      hand.appendChild(makeCard(items[i],i));
+      i++;
+      typeof requestIdleCallback!=='undefined'?requestIdleCallback(appendNext,{timeout:200}):setTimeout(appendNext,0);
+    };
+    typeof requestIdleCallback!=='undefined'?requestIdleCallback(appendNext,{timeout:200}):setTimeout(appendNext,0);
+  }
+}
+function rerender(){
+  targetFloat=cur;
+  startRAF();
+}
+function buildDots(){
+  const el=document.getElementById('dots');el.innerHTML='';
+  const n=Math.min(items.length,25);
+  for(let i=0;i<n;i++){const d=document.createElement('button');d.className='nav-dot';d.addEventListener('click',()=>goTo(i));el.appendChild(d);}
+}
+function nav(dir){
+  const n=Math.round(targetFloat)+dir;
+  if(n<0||n>=items.length)return;
+  cur=n;targetFloat=n;startRAF();
+}
+function goTo(i){
+  if(i<0||i>=items.length)return;
+  cur=i;targetFloat=i;startRAF();
+}
+function filt(type,btn){
+  if(searchQuery){clearSearch();}
+  activeMood=null;
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('mood-clear').classList.remove('vis');
+  document.querySelectorAll('.leg').forEach(b=>b.classList.remove('on'));btn.classList.add('on');
+  items=type==='all'?[...ALL]:ALL.filter(d=>d.type===type);
+  cur=0;preloaded.clear();// Build mood buttons
+(function(){
+  const wrap=document.getElementById('mood-btns');
+  MOODS.forEach(m=>{
+    const btn=document.createElement('button');
+    btn.className='mood-btn';
+    btn.dataset.id=m.id;
+    btn.textContent=m.icon+' '+m.label;
+    btn.onclick=()=>toggleMood(m,btn);
+    wrap.appendChild(btn);
+  });
+})();
+buildHand();
+buildPlot(cur);
+startRAF();
+}
+// ── Continuous hover scroll ────────────────────────────────────────────
+// Mouse X across stage maps directly to a float card position.
+// curFloat lerps toward targetFloat each RAF frame — fully fluid.
+(function(){
+  const stage=document.getElementById('stage');
+  stage.addEventListener('mouseenter',()=>{mouseOnStage=true;startRAF();});
+  stage.addEventListener('mouseleave',()=>{
+    mouseOnStage=false;
+    // snap back to nearest integer
+    targetFloat=Math.round(curFloat);
+    cur=targetFloat;
+  });
+  stage.addEventListener('mousemove',e=>{
+    if(document.getElementById('fs').classList.contains('ff'))return;
+    const r=stage.getBoundingClientRect();
+    const rel=(e.clientX-r.left)/r.width; // 0..1
+    // Dead zone in the middle 40% — hovering there keeps current position
+    // Outer 30% each side maps to full deck range
+    const n=items.length-1;
+    let t;
+    if(rel<0.28){
+      // left zone: rel 0->0.28 maps to deck 0->cur-0.5
+      t=rel/0.28*Math.max(0,curFloat-0.4);
+    } else if(rel>0.72){
+      // right zone: rel 0.72->1 maps to cur+0.5->n
+      t=curFloat+0.4+(rel-0.72)/0.28*Math.max(0,n-curFloat-0.4);
+    } else {
+      // centre: freeze at current
+      t=targetFloat;
+    }
+    t=Math.max(0,Math.min(n,t));
+    targetFloat=t;
+  });
+})();
+function openFS(i){
+  const it=items[i];if(!it)return;
+  const tm=TM[it.type];
+  const ce=document.querySelector(`.card[data-i="${i}"]`);
+  const r=ce?ce.getBoundingClientRect():{left:window.innerWidth/2-150,top:window.innerHeight/2-215,width:300,height:430};
+  const fs=document.getElementById('fs');
+  const ifr=document.getElementById('fs-iframe');
+  const ldr=document.getElementById('fs-load');
+  const blk=document.getElementById('fs-blk');
+  document.getElementById('fs-stripe').style.background=tm.color;
+  document.getElementById('fs-title').textContent=it.title;
+  document.getElementById('fs-pip').className=`pip ${tm.cls}`;
+  document.getElementById('fs-tlbl').textContent=tm.label;
+  document.getElementById('fs-ext').href=it.url;
+  document.getElementById('fs-blk-link').href=it.url;
+  document.getElementById('fs-load-lbl').textContent=`Loading ${it.title}\u2026`;
+  ifr.src='';ldr.style.display='flex';blk.style.display='none';
+  fs.classList.remove('ff','fe','fc');
+  fs.style.cssText=`display:flex;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;border-radius:8px;opacity:1;`;
+  fs.offsetHeight;
+  fs.classList.add('fv','fe');
+  fs.style.left='0';fs.style.top='0';fs.style.width='100vw';fs.style.height='100vh';fs.style.borderRadius='0';fs.style.boxShadow='none';
+  setTimeout(()=>{
+    fs.classList.add('ff');ifr.src=it.url;
+    let done=false;
+    ifr.onload=()=>{if(done)return;done=true;ldr.style.display='none';};
+    setTimeout(()=>{ldr.style.display='none';},3500);
+  },490);
+  document.addEventListener('keydown',esc);
+}
+function closeFS(){
+  const fs=document.getElementById('fs');
+  const ce=document.querySelector(`.card[data-i="${cur}"]`);
+  const r=ce?ce.getBoundingClientRect():{left:window.innerWidth/2-150,top:window.innerHeight/2-215,width:300,height:430};
+  fs.classList.remove('ff','fe');fs.classList.add('fc');
+  fs.style.left=`${r.left}px`;fs.style.top=`${r.top}px`;fs.style.width=`${r.width}px`;fs.style.height=`${r.height}px`;fs.style.borderRadius='8px';fs.style.opacity='0';
+  setTimeout(()=>{fs.style.display='none';fs.classList.remove('fv','fc');document.getElementById('fs-iframe').src='';},400);
+  document.removeEventListener('keydown',esc);
+}
+function esc(e){if(e.key==='Escape')closeFS();}
+document.addEventListener('keydown',e=>{
+  if((e.key==='/' || (e.key==='f' && (e.ctrlKey||e.metaKey))) && !document.activeElement.matches('input')){
+    e.preventDefault();
+    document.getElementById('search-input').focus();
+    return;
+  }
+  if(e.key==='Escape' && document.activeElement===document.getElementById('search-input')){
+    clearSearch();document.getElementById('search-input').blur();return;
+  }
+});
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('fs').classList.contains('ff'))return;
+  if(e.key==='ArrowLeft')nav(-1);if(e.key==='ArrowRight')nav(1);
+});
+let tx0=0;
+const st=document.getElementById('stage');
+st.addEventListener('touchstart',e=>{tx0=e.touches[0].clientX;},{passive:true});
+st.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx0;if(Math.abs(dx)>44)nav(dx<0?1:-1);});
+buildHand();
+</script>
+</body>
+</html>
