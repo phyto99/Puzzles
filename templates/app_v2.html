@@ -4,43 +4,135 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Unified Puzzle Generator</title>
+    <script>try{var _t=localStorage.getItem('puzzleTheme');if(_t&&_t!=='light')document.documentElement.setAttribute('data-theme',_t);}catch(e){}</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="/static/entropy_engine.js"></script>
     <style>
+        /* ── Theme variables ── */
+        :root {
+            --bg:           #f0f0f0;
+            --surface:      #ffffff;
+            --surface2:     #f7f7f7;
+            --border:       #cccccc;
+            --border2:      #e0e0e0;
+            --border3:      #eeeeee;
+            --text:         #333333;
+            --text2:        #555555;
+            --text3:        #666666;
+            --text4:        #888888;
+            --text5:        #aaaaaa;
+            --text6:        #222222;
+            --hover-bg:     #eeeeee;
+            --hover-border: #888888;
+            --panel-bg:     #dddddd;
+            --scene-bg:     #dce0e5;
+            --track-bg:     #e4e4e4;
+            --bar-bg:       #e8e8e8;
+            --table-alt:    #fafafa;
+            --sep:          #dddddd;
+            --correct-bg:   #e8f5e9;
+            --wrong-bg:     #ffebee;
+            --shadow:       rgba(0,0,0,.1);
+            --img-filter:   none;
+            --sel-bg:       #333333;
+            --sel-txt:      #ffffff;
+        }
+        [data-theme="ash"] {
+            --bg: #252525;          --surface: #2f2f2f;      --surface2: #272727;
+            --border: #4a4a4a;      --border2: #3a3a3a;      --border3: #333333;
+            --text: #e0e0e0;        --text2: #bbbbbb;        --text3: #999999;
+            --text4: #787878;       --text5: #585858;        --text6: #f0f0f0;
+            --hover-bg: #3a3a3a;    --hover-border: #6a6a6a;
+            --panel-bg: #404040;    --scene-bg: #353a3f;
+            --track-bg: #404040;    --bar-bg: #3c3c3c;       --table-alt: #282828;
+            --sep: #383838;         --correct-bg: rgba(76,175,80,.2); --wrong-bg: rgba(244,67,54,.2);
+            --shadow: rgba(0,0,0,.35); --img-filter: invert(1); --sel-bg: #dddddd; --sel-txt: #1a1a1a;
+        }
+        [data-theme="dark"] {
+            --bg: #121212;          --surface: #1e1e1e;      --surface2: #181818;
+            --border: #3a3a3a;      --border2: #2a2a2a;      --border3: #222222;
+            --text: #e8e8e8;        --text2: #bbbbbb;        --text3: #909090;
+            --text4: #686868;       --text5: #484848;        --text6: #f0f0f0;
+            --hover-bg: #2a2a2a;    --hover-border: #606060;
+            --panel-bg: #303030;    --scene-bg: #262a2e;
+            --track-bg: #2e2e2e;    --bar-bg: #2e2e2e;       --table-alt: #181818;
+            --sep: #282828;         --correct-bg: rgba(76,175,80,.15); --wrong-bg: rgba(244,67,54,.15);
+            --shadow: rgba(0,0,0,.45); --img-filter: invert(1); --sel-bg: #e0e0e0; --sel-txt: #111111;
+        }
+        [data-theme="amoled"] {
+            --bg: #000000;          --surface: #0c0c0c;      --surface2: #080808;
+            --border: #2a2a2a;      --border2: #1c1c1c;      --border3: #141414;
+            --text: #ffffff;        --text2: #cccccc;        --text3: #909090;
+            --text4: #606060;       --text5: #404040;        --text6: #ffffff;
+            --hover-bg: #1a1a1a;    --hover-border: #555555;
+            --panel-bg: #1c1c1c;    --scene-bg: #0e1114;
+            --track-bg: #1e1e1e;    --bar-bg: #1e1e1e;       --table-alt: #080808;
+            --sep: #181818;         --correct-bg: rgba(76,175,80,.12); --wrong-bg: rgba(244,67,54,.12);
+            --shadow: rgba(0,0,0,.65); --img-filter: invert(1); --sel-bg: #eeeeee; --sel-txt: #000000;
+        }
+
         * { box-sizing: border-box; }
         body {
             font-family: sans-serif;
             text-align: center;
-            background: #f0f0f0;
+            background: var(--bg);
             margin: 0;
             padding: 20px;
+            color: var(--text);
+            transition: background .2s, color .2s;
         }
-        h1 { color: #333; margin-bottom: 10px; }
-        h2 { color: #555; margin-top: 24px; margin-bottom: 12px; }
+        h1 { color: var(--text); margin-bottom: 10px; }
+        h2 { color: var(--text2); margin-top: 24px; margin-bottom: 12px; }
 
         .container {
             max-width: 1050px;
             margin: 0 auto;
-            background: white;
+            background: var(--surface);
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,.1);
+            box-shadow: 0 2px 10px var(--shadow);
             position: relative;
+            transition: background .2s;
         }
 
         /* ── controls ── */
         .controls {
             position: absolute;
             top: 20px; right: 20px;
-            display: flex; gap: 8px;
+            display: flex; gap: 8px; align-items: center;
         }
         .controls select, .controls button {
             padding: 5px 10px;
             font-size: .9rem;
-            border: 1px solid #ccc;
+            border: 1px solid var(--border);
             border-radius: 4px;
-            background: white;
+            background: var(--surface) !important;
+            color: var(--text) !important;
             cursor: pointer;
+        }
+
+        /* ── theme toggle ── */
+        .theme-toggle {
+            display: flex;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .theme-toggle button {
+            padding: 4px 8px;
+            border: none;
+            border-right: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text4);
+            cursor: pointer;
+            font-size: .72rem;
+            transition: background .15s, color .15s;
+            white-space: nowrap;
+        }
+        .theme-toggle button:last-child { border-right: none; }
+        .theme-toggle button.active {
+            background: var(--text) !important;
+            color: var(--surface) !important;
         }
 
         .status {
@@ -63,11 +155,11 @@
         }
         .panel {
             width: 150px; height: 150px;
-            background: #ddd;
-            border: 1px solid #ccc;
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
             display: flex; align-items: center; justify-content: center;
         }
-        .panel img { width: 100%; height: 100%; image-rendering: pixelated; }
+        .panel img { width: 100%; height: 100%; image-rendering: pixelated; filter: var(--img-filter); }
 
         .answers-grid {
             display: grid;
@@ -78,17 +170,18 @@
         }
         .answer-panel {
             width: 150px; height: 150px;
-            background: #fff;
-            border: 2px solid #ccc;
+            background: var(--surface);
+            border: 2px solid var(--border);
             cursor: pointer;
             transition: all .2s;
         }
-        .answer-panel:hover { border-color: #888; transform: scale(1.02); }
-        .answer-panel.correct { border-color: #4CAF50; background: #e8f5e9; box-shadow: 0 0 10px #4CAF50; }
-        .answer-panel.wrong   { border-color: #f44336; background: #ffebee; opacity: .7; }
+        .answer-panel img { filter: var(--img-filter); }
+        .answer-panel:hover { border-color: var(--hover-border); transform: scale(1.02); }
+        .answer-panel.correct { border-color: #4CAF50; background: var(--correct-bg); box-shadow: 0 0 10px #4CAF50; }
+        .answer-panel.wrong   { border-color: #f44336; background: var(--wrong-bg); opacity: .7; }
 
         /* ══════════════════════════════════════════
-           ACRE  (shared 3-D scene styles)
+           ACRE
         ══════════════════════════════════════════ */
         .acre-context {
             display: grid;
@@ -99,8 +192,8 @@
             margin-left: auto; margin-right: auto;
         }
         .acre-scene {
-            background: #fff;
-            border: 1px solid #ccc;
+            background: var(--surface);
+            border: 1px solid var(--border);
             border-radius: 4px;
             overflow: hidden;
         }
@@ -108,7 +201,7 @@
             width: 100%;
             padding-top: 75%;
             position: relative;
-            background: #dce0e5;
+            background: var(--scene-bg);
         }
         .canvas-container canvas {
             position: absolute;
@@ -123,7 +216,7 @@
         }
         .acre-interactive-scene {
             width: 400px;
-            border: 3px solid #ccc;
+            border: 3px solid var(--border);
             border-radius: 4px;
             overflow: hidden;
         }
@@ -131,30 +224,31 @@
         .acre-interactive-scene.wrong   { border-color: #f44336; opacity: .8; }
         .acre-state-label {
             margin-top: 8px;
-            font-size: 1.1rem; font-weight: bold; color: #333;
+            font-size: 1.1rem; font-weight: bold; color: var(--text);
             min-height: 28px;
         }
         .acre-btn {
             padding: 10px 30px;
             font-size: 1.05rem; font-weight: bold;
-            border: 2px solid #ccc;
-            background: white;
+            border: 2px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
             border-radius: 6px;
             cursor: pointer;
             transition: all .2s;
         }
-        .acre-btn:hover { background: #eee; transform: translateY(-2px); }
-        .acre-btn.selected { background: #333; color: white; border-color: #333; }
+        .acre-btn:hover { background: var(--hover-bg); transform: translateY(-2px); }
+        .acre-btn.selected { background: var(--sel-bg); color: var(--sel-txt); border-color: var(--sel-bg); }
 
         /* ══════════════════════════════════════════
-           CLEVR  (3-D scene + question overlay)
+           CLEVR
         ══════════════════════════════════════════ */
         #clevrScene {
             width: 480px;
             height: 360px;
             position: relative;
-            background: #dce0e5;
-            border: 1px solid #ccc;
+            background: var(--scene-bg);
+            border: 1px solid var(--border);
             border-radius: 4px;
             overflow: hidden;
             margin: 0 auto 20px;
@@ -165,7 +259,7 @@
         }
         .clevr-question {
             font-size: 1.2rem; font-weight: bold;
-            color: #222;
+            color: var(--text6);
             margin: 0 auto 18px;
             max-width: 600px;
         }
@@ -179,15 +273,16 @@
         .clevr-btn {
             padding: 12px 20px;
             font-size: 1rem; font-weight: bold;
-            border: 2px solid #ccc;
+            border: 2px solid var(--border);
             border-radius: 6px;
-            background: white;
+            background: var(--surface);
+            color: var(--text);
             cursor: pointer;
             transition: all .2s;
         }
-        .clevr-btn:hover { border-color: #888; transform: scale(1.02); }
-        .clevr-btn.correct { border-color: #4CAF50; background: #e8f5e9; box-shadow: 0 0 8px #4CAF50; }
-        .clevr-btn.wrong   { border-color: #f44336; background: #ffebee; opacity: .7; }
+        .clevr-btn:hover { border-color: var(--hover-border); transform: scale(1.02); }
+        .clevr-btn.correct { border-color: #4CAF50; background: var(--correct-bg); box-shadow: 0 0 8px #4CAF50; }
+        .clevr-btn.wrong   { border-color: #f44336; background: var(--wrong-bg); opacity: .7; }
 
         /* ══════════════════════════════════════════
            ARC
@@ -203,18 +298,18 @@
             display: flex; align-items: center; gap: 8px;
         }
         .arc-pair-label {
-            font-size: .75rem; color: #888;
+            font-size: .75rem; color: var(--text4);
             writing-mode: vertical-rl;
             text-orientation: mixed;
         }
         .arc-arrow {
-            font-size: 1.4rem; color: #555;
+            font-size: 1.4rem; color: var(--text2);
             display: flex; align-items: center;
         }
 
         .arc-grid-wrap {
             display: inline-block;
-            border: 2px solid #555;
+            border: 2px solid var(--text2);
             line-height: 0;
         }
         .arc-row { display: flex; }
@@ -231,14 +326,14 @@
             margin: 0 auto;
         }
         .arc-choice {
-            border: 3px solid #ccc;
+            border: 3px solid var(--border);
             border-radius: 6px;
             padding: 6px;
             cursor: pointer;
             transition: all .2s;
             display: inline-flex;
         }
-        .arc-choice:hover { border-color: #888; transform: scale(1.03); }
+        .arc-choice:hover { border-color: var(--hover-border); transform: scale(1.03); }
         .arc-choice.correct { border-color: #4CAF50; box-shadow: 0 0 10px #4CAF50; }
         .arc-choice.wrong   { border-color: #f44336; opacity: .7; }
 
@@ -260,7 +355,7 @@
         .bongard-side h3 {
             margin: 0 0 8px;
             font-size: .95rem;
-            color: #555;
+            color: var(--text2);
             text-transform: uppercase;
             letter-spacing: 1px;
         }
@@ -269,9 +364,9 @@
             grid-template-columns: repeat(2, 1fr);
             gap: 6px;
         }
-        .bongard-img { width: 90px; height: 90px; }
+        .bongard-img { width: 90px; height: 90px; filter: var(--img-filter); }
         .bongard-divider {
-            width: 2px; background: #ccc;
+            width: 2px; background: var(--border);
             align-self: stretch;
             margin: 24px 0;
         }
@@ -279,22 +374,23 @@
             display: flex; flex-direction: column;
             align-items: center; gap: 14px;
         }
-        .bongard-test-img { width: 130px; height: 130px; border: 2px solid #555; border-radius: 4px; }
+        .bongard-test-img { width: 130px; height: 130px; border: 2px solid var(--text2); border-radius: 4px; filter: var(--img-filter); }
         .bongard-btns { display: flex; gap: 20px; }
         .bongard-btn {
             padding: 10px 32px;
             font-size: 1rem; font-weight: bold;
-            border: 2px solid #ccc;
+            border: 2px solid var(--border);
             border-radius: 6px;
-            background: white;
+            background: var(--surface);
+            color: var(--text);
             cursor: pointer;
             transition: all .2s;
         }
-        .bongard-btn:hover { background: #eee; transform: translateY(-2px); }
-        .bongard-btn.correct { border-color: #4CAF50; background: #e8f5e9; }
-        .bongard-btn.wrong   { border-color: #f44336; background: #ffebee; }
+        .bongard-btn:hover { background: var(--hover-bg); transform: translateY(-2px); }
+        .bongard-btn.correct { border-color: #4CAF50; background: var(--correct-bg); }
+        .bongard-btn.wrong   { border-color: #f44336; background: var(--wrong-bg); }
         .bongard-hint {
-            font-size: .9rem; color: #777;
+            font-size: .9rem; color: var(--text4);
             margin-top: 6px; min-height: 20px;
         }
 
@@ -307,41 +403,48 @@
             justify-content: space-between;
             flex-wrap: wrap;
             gap: 8px;
-            background: #f7f7f7;
-            border: 1px solid #e0e0e0;
+            background: var(--surface2);
+            border: 1px solid var(--border2);
             border-radius: 6px;
             padding: 8px 14px;
             margin-bottom: 16px;
             font-size: .82rem;
-            color: #444;
+            color: var(--text);
         }
         #statsBar .stat-block { display: flex; flex-direction: column; align-items: center; gap: 1px; }
-        #statsBar .stat-val   { font-size: 1.15rem; font-weight: bold; color: #222; }
-        #statsBar .stat-lbl   { font-size: .7rem; color: #888; text-transform: uppercase; letter-spacing: .5px; }
-        #statsBar .stat-sep   { width: 1px; background: #ddd; align-self: stretch; }
+        #statsBar .stat-val   { font-size: 1.15rem; font-weight: bold; color: var(--text6); }
+        #statsBar .stat-lbl   { font-size: .7rem; color: var(--text4); text-transform: uppercase; letter-spacing: .5px; }
+        #statsBar .stat-sep   { width: 1px; background: var(--sep); align-self: stretch; }
+        #statsBar > button {
+            padding: 3px 10px; border: 1px solid var(--border); border-radius: 4px;
+            background: var(--surface) !important; color: var(--text) !important;
+            cursor: pointer; font-size: .78rem;
+        }
+        #statsBar > button:last-of-type { color: #c00 !important; }
         #statsDetail {
             display: none;
             margin-top: 10px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid var(--border3);
             padding-top: 10px;
         }
         #statsDetail table { width: 100%; border-collapse: collapse; font-size: .8rem; }
         #statsDetail th, #statsDetail td { text-align: left; padding: 3px 8px; }
-        #statsDetail th { color: #666; font-weight: 600; }
-        #statsDetail tr:nth-child(even) td { background: #fafafa; }
+        #statsDetail th { color: var(--text3); font-weight: 600; }
+        #statsDetail tr:nth-child(even) td { background: var(--table-alt); }
         .stat-bar-fill { height: 6px; border-radius: 3px; background: #2a4bd7; transition: width .4s; }
-        .stat-bar-bg   { background: #e8e8e8; border-radius: 3px; width: 80px; overflow: hidden; display: inline-block; vertical-align: middle; margin-left: 4px; }
+        .stat-bar-bg   { background: var(--bar-bg); border-radius: 3px; width: 80px; overflow: hidden; display: inline-block; vertical-align: middle; margin-left: 4px; }
 
         /* ══════════════════════════════════════════
            Footer / credits
         ══════════════════════════════════════════ */
         footer {
             margin-top: 36px;
-            font-size: .8em; color: #666;
-            border-top: 1px solid #eee;
+            font-size: .8em; color: var(--text3);
+            border-top: 1px solid var(--border3);
             padding-top: 16px;
         }
         footer div { margin: 4px 0; }
+        footer a { color: var(--text2); }
 
         /* ══════════════════════════════════════════
            Shared interactive game panel
@@ -357,13 +460,13 @@
         .game-canvas-col { flex-shrink: 0; }
         .game-canvas-col canvas {
             display: block;
-            border: 3px solid #555;
+            border: 3px solid var(--text2);
             border-radius: 4px;
             image-rendering: pixelated;
             cursor: crosshair;
         }
-        .game-meta { font-size: .85rem; color: #666; margin-bottom: 6px; }
-        .game-info { margin-top: 8px; font-size: .82rem; color: #555; }
+        .game-meta { font-size: .85rem; color: var(--text3) !important; margin-bottom: 6px; }
+        .game-info { margin-top: 8px; font-size: .82rem; color: var(--text2); }
         .game-controls-col { min-width: 180px; }
         .game-controls-col .action-label {
             font-weight: bold;
@@ -373,21 +476,22 @@
         .game-action-btns { display: flex; flex-direction: column; gap: 6px; }
         .game-action-btn {
             padding: 6px 14px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--border);
             border-radius: 4px;
             cursor: pointer;
-            background: white;
+            background: var(--surface);
+            color: var(--text);
             font-size: .9rem;
             font-weight: bold;
             display: flex;
             gap: 8px;
             align-items: center;
         }
-        .game-action-btn:hover { background: #eee; }
+        .game-action-btn:hover { background: var(--hover-bg); }
         .game-action-btn kbd {
             font-size: .65rem;
-            color: #999;
-            border: 1px solid #ddd;
+            color: var(--text5);
+            border: 1px solid var(--sep);
             border-radius: 3px;
             padding: 1px 5px;
             font-weight: normal;
@@ -395,15 +499,16 @@
         .game-ctrl-row { margin-top: 14px; display: flex; gap: 6px; flex-wrap: wrap; }
         .game-ctrl-btn {
             padding: 6px 14px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--border);
             border-radius: 4px;
             cursor: pointer;
-            background: white;
+            background: var(--surface);
+            color: var(--text);
         }
         .game-hint {
             margin-top: 12px;
             font-size: .74rem;
-            color: #aaa;
+            color: var(--text5);
             line-height: 1.7;
         }
         .game-feedback {
@@ -424,7 +529,7 @@
         .ep-caps {
             font-size: 10px;
             font-family: monospace;
-            color: #999;
+            color: var(--text4);
             letter-spacing: .10em;
             text-transform: uppercase;
         }
@@ -433,16 +538,16 @@
             align-items: center;
             gap: 10px;
             padding: 6px 12px;
-            background: #f8f8f8;
-            border: 0.5px solid #e0e0e0;
+            background: var(--surface2);
+            border: 0.5px solid var(--border2);
             border-radius: 6px;
             flex-wrap: wrap;
         }
         #entropyDetails {
             margin-top: 4px;
             display: none;
-            background: #f8f8f8;
-            border: 0.5px solid #e0e0e0;
+            background: var(--surface2);
+            border: 0.5px solid var(--border2);
             border-radius: 6px;
             padding: 12px 14px;
         }
@@ -453,22 +558,22 @@
             gap: 7px;
             margin-bottom: 6px;
         }
-        /* familiarity track (zone markers baked in by JS) */
+        /* familiarity track */
         .ep-track-wrap {
             position: relative;
             height: 4px;
             border-radius: 2px;
-            background: #e4e4e4;
+            background: var(--track-bg);
         }
         /* queue card */
         .ep-queue-card {
             display: flex;
             align-items: center;
             gap: 8px;
-            border: 0.5px solid #e8e8e8;
+            border: 0.5px solid var(--border2);
             border-radius: 5px;
             padding: 7px 10px;
-            background: white;
+            background: var(--surface);
             margin-bottom: 0;
         }
         /* interference connector */
@@ -477,6 +582,34 @@
             align-items: center;
             gap: 6px;
             padding: 2px 10px 2px 28px;
+        }
+        .ep-sep {
+            width: 0.5px; height: 12px;
+            background: var(--sep);
+        }
+
+        /* ── Inline element overrides ── */
+        #pgmMatrix    { border: 2px solid var(--text2) !important; filter: var(--img-filter); }
+        #arcOutputGrid { border: 2px solid var(--text2) !important; }
+        #pvqaImage    { border: 1px solid var(--border); border-radius: 4px; }
+        #marvelMeta   { color: var(--text3) !important; }
+        #pvqaExplanation { color: var(--text3) !important; }
+        #pgmMeta      { color: var(--text4) !important; }
+        #arcTrialDisplay { color: var(--text4) !important; }
+        #marvelContext img, #marvelChoices img, #pvqaImage img { filter: var(--img-filter); }
+        #epPickedLabel  { color: var(--text6) !important; }
+        #epQueueInline  { color: var(--text3) !important; }
+        #epToggleBtn {
+            background: var(--surface) !important;
+            color: var(--text4) !important;
+            border-color: var(--border) !important;
+        }
+        [onclick="arcResizeOutput()"],
+        [onclick="arcCopyFromInput()"],
+        [onclick="arcReset()"] {
+            background: var(--surface) !important;
+            border-color: var(--border) !important;
+            color: var(--text) !important;
         }
     </style>
 </head>
@@ -506,8 +639,8 @@
             <span class="stat-lbl">Attempted</span>
         </div>
         <div style="flex:1"></div>
-        <button onclick="toggleStats()" style="padding:3px 10px;border:1px solid #ccc;border-radius:4px;background:white;cursor:pointer;font-size:.78rem;">Details ▾</button>
-        <button onclick="resetStats()" style="padding:3px 10px;border:1px solid #ccc;border-radius:4px;background:white;cursor:pointer;font-size:.78rem;color:#c00;">Reset</button>
+        <button onclick="toggleStats()">Details ▾</button>
+        <button onclick="resetStats()">Reset</button>
     </div>
     <div id="statsDetail">
         <table>
@@ -517,6 +650,12 @@
     </div>
 
     <div class="controls">
+        <div class="theme-toggle" title="Theme">
+            <button data-theme-btn="light"  onclick="setTheme('light')" >☀ Light</button>
+            <button data-theme-btn="ash"    onclick="setTheme('ash')"   >Ash</button>
+            <button data-theme-btn="dark"   onclick="setTheme('dark')"  >Dark</button>
+            <button data-theme-btn="amoled" onclick="setTheme('amoled')">⬛ AMOLED</button>
+        </div>
         <select id="generatorType" onchange="loadNewPuzzle();renderEntropyPanel(this.value);">
             <optgroup label="Pattern Recognition">
                 <option value="raven">I-RAVEN</option>
@@ -541,10 +680,7 @@
             </optgroup>
         </select>
         <select id="subType" onchange="loadNewPuzzle()"></select>
-        <button onclick="loadNewPuzzle()"
-            style="padding:5px 10px;border-radius:4px;border:1px solid #ccc;background:white;cursor:pointer;">
-            Skip
-        </button>
+        <button onclick="loadNewPuzzle()">Skip</button>
     </div>
 
     <!-- ══ Entropy Bar ══ -->
@@ -552,19 +688,19 @@
         <!-- compact always-visible bar -->
         <div id="entropyBarInner">
             <span class="ep-caps">ENTROPY ROTATION PROTOCOL</span>
-            <div style="width:0.5px;height:12px;background:#ddd;"></div>
-            <span id="epPickedLabel" style="color:#222;font-weight:500;font-size:12px;font-family:monospace;">—</span>
-            <div id="epInlineBar" style="position:relative;height:4px;border-radius:2px;background:#e4e4e4;width:80px;flex-shrink:0;"></div>
-            <span id="epFamPct"  style="color:#888;font-size:10px;font-family:monospace;">—</span>
+            <div class="ep-sep"></div>
+            <span id="epPickedLabel" style="font-weight:500;font-size:12px;font-family:monospace;">—</span>
+            <div id="epInlineBar" style="position:relative;height:4px;border-radius:2px;background:var(--track-bg);width:80px;flex-shrink:0;"></div>
+            <span id="epFamPct"  style="color:var(--text4);font-size:10px;font-family:monospace;">—</span>
             <span id="epZone"    style="font-size:9px;border-radius:3px;padding:1px 5px;border:0.5px solid currentColor;">—</span>
             <div style="flex:1;"></div>
             <span class="ep-caps">SESSION ENTROPY</span>
             <span id="epEntropyScore" style="font-size:15px;font-weight:500;font-family:monospace;color:#1D9E75;">—%</span>
-            <div style="width:0.5px;height:12px;background:#ddd;"></div>
+            <div class="ep-sep"></div>
             <span class="ep-caps" style="white-space:nowrap;">NEXT →</span>
-            <span id="epQueueInline" style="color:#666;font-size:10px;font-family:monospace;">—</span>
+            <span id="epQueueInline" style="font-size:10px;font-family:monospace;">—</span>
             <button onclick="toggleEntropyDetails()" id="epToggleBtn"
-                style="padding:2px 8px;border:0.5px solid #d0d0d0;border-radius:4px;background:white;cursor:pointer;font-size:10px;font-family:monospace;color:#666;">▸</button>
+                style="padding:2px 8px;border-radius:4px;cursor:pointer;font-size:10px;font-family:monospace;">▸</button>
             <button onclick="openDevPanel()" title="Developer view — full feature breakdown"
                 style="padding:2px 8px;border:0.5px solid #888;border-radius:4px;background:#222;cursor:pointer;font-size:10px;font-family:monospace;color:#ccc;">DEV</button>
         </div>
@@ -576,7 +712,7 @@
                 <!-- LEFT: subtype scores for active type -->
                 <div>
                     <div style="display:flex;align-items:center;margin-bottom:10px;">
-                        <span class="ep-caps">SUBTYPE SCORES — <span id="epCurrentTypeName" style="color:#444;">—</span></span>
+                        <span class="ep-caps">SUBTYPE SCORES — <span id="epCurrentTypeName" style="color:var(--text);">—</span></span>
                     </div>
                     <div id="epSubtypeList" style="display:flex;flex-direction:column;gap:5px;"></div>
                     <!-- cluster legend -->
@@ -3083,7 +3219,27 @@ window.onload = () => {
     loadNewPuzzle();
     // Entropy panel: render after a tick so engine is ready
     setTimeout(() => renderEntropyPanel(document.getElementById('generatorType').value), 100);
+    // Sync theme toggle button state
+    const saved = localStorage.getItem('puzzleTheme') || 'light';
+    _applyThemeButtons(saved);
 };
+
+/* ── Theme toggle ── */
+function setTheme(t) {
+    if (t === 'light') {
+        document.documentElement.removeAttribute('data-theme');
+    } else {
+        document.documentElement.setAttribute('data-theme', t);
+    }
+    _applyThemeButtons(t);
+    try { localStorage.setItem('puzzleTheme', t); } catch(e) {}
+}
+
+function _applyThemeButtons(t) {
+    document.querySelectorAll('[data-theme-btn]').forEach(b =>
+        b.classList.toggle('active', b.getAttribute('data-theme-btn') === t)
+    );
+}
 </script>
 
 <!-- ── Docs overlay ─────────────────────────────────────────────────────── -->
