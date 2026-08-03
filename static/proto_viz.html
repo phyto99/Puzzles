@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cognitive Trajectory</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#080808;font-family:Arial,sans-serif;display:flex;flex-direction:column;align-items:center;padding:12px 14px 20px;min-height:100vh;}
+.hd{color:#2e2e2e;font-size:9px;letter-spacing:.15em;text-transform:uppercase;margin-bottom:7px;}
+
+/* ── Controls ── */
+.ctrl{max-width:980px;width:100%;display:flex;flex-direction:column;gap:5px;margin-bottom:7px;}
+.row{display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
+.row-lbl{font-size:7px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  padding:2px 6px;border:1px solid #141414;color:#222;flex-shrink:0;user-select:none;}
+
+/* Mode buttons */
+.mbtn{padding:3px 12px;border:1px solid #181818;background:#080808;color:#222;
+  font-size:8px;font-family:Arial;font-weight:700;letter-spacing:.09em;text-transform:uppercase;cursor:pointer;}
+.mbtn:hover{color:#555;border-color:#2e2e2e;}
+.mbtn.on{color:#b8b8b8;border-color:#b8b8b8;}
+
+/* Metric buttons - shared class, color set by parent mode */
+.xbtn,.ybtn{padding:3px 9px;border:1px solid #131313;background:#080808;
+  color:#1c1c1c;font-size:7.5px;font-family:Arial;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;cursor:pointer;}
+.xbtn:hover,.ybtn:hover{color:#555;border-color:#282828;}
+.xbtn.on{color:#6ec6ff;border-color:#6ec6ff;}
+.ybtn.on{color:#9de09d;border-color:#9de09d;}
+
+/* Session controls */
+.sep{width:1px;height:14px;background:#141414;flex-shrink:0;}
+#playBtn{padding:2px 8px;border:1px solid #181818;background:#080808;color:#282828;
+  font-size:8px;font-family:Arial;cursor:pointer;}
+#playBtn:hover{color:#555;border-color:#333;}
+#sesSlider{-webkit-appearance:none;width:160px;height:2px;background:#181818;outline:none;cursor:pointer;}
+#sesSlider::-webkit-slider-thumb{-webkit-appearance:none;width:8px;height:8px;border-radius:50%;background:#b0b0b0;cursor:pointer;}
+.sval{font-size:7.5px;color:#282828;min-width:18px;}
+.slbl{font-size:7px;color:#1e1e1e;letter-spacing:.07em;text-transform:uppercase;}
+
+/* Predictor window inputs */
+.pwrap{display:none;align-items:center;gap:5px;}
+.pwrap.vis{display:flex;}
+.pwrap label{font-size:7px;color:#1e1e1e;letter-spacing:.07em;text-transform:uppercase;}
+.pwrap input[type=number]{width:30px;background:#080808;border:1px solid #141414;color:#333;
+  font-size:7.5px;font-family:Arial;text-align:center;padding:1px 2px;}
+
+/* Description */
+.desc-box{max-width:980px;width:100%;margin-bottom:7px;border-left:1px solid #151515;padding-left:10px;}
+.desc-short{font-size:8px;color:#2c2c2c;line-height:1.5;display:flex;align-items:baseline;gap:8px;}
+.desc-tog{font-size:7px;color:#1a1a1a;letter-spacing:.06em;cursor:pointer;text-transform:uppercase;
+  white-space:nowrap;user-select:none;background:none;border:none;font-family:Arial;padding:0;}
+.desc-tog:hover{color:#555;}
+.desc-exp{display:none;margin-top:4px;}
+.desc-exp.open{display:block;}
+.desc-title{font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#222;margin-bottom:2px;}
+.desc-phil{font-size:7.5px;color:#1c1c1c;line-height:1.75;margin-bottom:2px;}
+.desc-sys{font-size:7px;color:#171717;line-height:1.7;}
+.desc-sys strong{color:#202020;}
+
+canvas{display:block;cursor:crosshair;}
+.leg{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:7px;max-width:980px;}
+.li{display:flex;align-items:center;gap:4px;font-size:7px;color:#262626;}
+.ld{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+</style>
+</head>
+<body>
+<div class="hd">Cognitive Trajectory — Multi-Dimensional Analysis</div>
+
+<div class="ctrl">
+  <!-- Row 1: mode + session controls -->
+  <div class="row">
+    <button id="m_traj" class="mbtn on" onclick="setMode('traj')">Trajectory</button>
+    <button id="m_scat" class="mbtn"    onclick="setMode('scat')">Scatter</button>
+    <button id="m_corr" class="mbtn"    onclick="setMode('corr')">Correlation</button>
+    <button id="m_pred" class="mbtn"    onclick="setMode('pred')">Predictor</button>
+    <div class="sep" id="sesep" style="display:none"></div>
+    <button id="playBtn" onclick="togglePlay()" style="display:none">▶</button>
+    <span class="slbl" id="seslbl" style="display:none">Session</span>
+    <input type="range" id="sesSlider" min="2" max="53" value="40" oninput="onSlider()" style="display:none">
+    <span class="sval" id="sesVal" style="display:none">40</span>
+    <!-- Predictor windows -->
+    <div class="pwrap" id="pwrap">
+      <label>Early s0–</label><input type="number" id="earlyEnd" value="14" min="4" max="26" onchange="redraw()">
+      <label>Late s</label><input type="number" id="lateStart" value="40" min="27" max="50" onchange="redraw()">
+      <label>–53</label>
+    </div>
+  </div>
+  <!-- Row 2: primary metric selector -->
+  <div class="row" id="row1">
+    <span class="row-lbl" id="lbl1">Metric</span>
+    <div id="r1btns" class="row"></div>
+  </div>
+  <!-- Row 3: secondary metric selector (scatter Y / pred late) -->
+  <div class="row" id="row2" style="display:none">
+    <span class="row-lbl" id="lbl2" style="color:#9de09d;border-color:#1a2e1a">Y</span>
+    <div id="r2btns" class="row"></div>
+  </div>
+</div>
+
+<div class="desc-box">
+  <div class="desc-short">
+    <span id="descShort"></span>
+    <button class="desc-tog" id="descTog" onclick="toggleDesc()">▸ philosophy</button>
+  </div>
+  <div class="desc-exp" id="descExp">
+    <div class="desc-title" id="descTitle"></div>
+    <div class="desc-phil" id="descPhil"></div>
+    <div class="desc-sys"  id="descSys"></div>
+  </div>
+</div>
+
+<canvas id="c" width="980" height="440"></canvas>
+<div class="leg" id="leg"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════════════
+const PT  =['raven','pgm','marvel','bongard','pvqa','acre','clevr','arc','arc3','rlp'];
+const CLS ={raven:'ri',pgm:'ri',marvel:'ri',bongard:'ri',arc:'ri',acre:'cs',clevr:'cs',rlp:'cs',pvqa:'s2',arc3:'adv'};
+const VOL ={raven:.90,pgm:.85,marvel:.60,bongard:.80,pvqa:.70,acre:.75,clevr:.70,arc:.95,arc3:.95,rlp:.65};
+const COG ={raven:.70,pgm:.75,marvel:.50,bongard:.65,pvqa:.60,acre:.70,clevr:.65,arc:.90,arc3:.95,rlp:.50};
+const NS=54, NPE=5;
+const TMAP=[['pgm','raven',.80],['raven','arc',.70],['arc','arc3',.85],['bongard','pgm',.60],['acre','clevr',.70],
+  ['raven','acre',.60],['arc3','raven',.55],['clevr','pvqa',.50],['marvel','bongard',.45],['pgm','arc',.65],
+  ['arc','raven',.60],['clevr','acre',.50],['bongard','raven',.50],['rlp','clevr',.40],['acre','rlp',.45],
+  ['pvqa','bongard',.40],['arc3','arc',.70],['pgm','bongard',.45]];
+
+function zf(f){if(f<.15)return 0;if(f<.42)return(f-.15)/.27;if(f<.78)return(.78-f)/.36;return 0;}
+function rs(f,t){return zf(f)*VOL[t]*COG[t];}
+function clamp(v){return Math.min(.97,Math.max(.03,v));}
+function cn(v){return Math.min(.99,Math.max(.01,v));}
+
+// ══════════════════════════════════════════════════
+// METRICS
+// ══════════════════════════════════════════════════
+const METRICS=[
+  {id:'trf',lbl:'Transfer',
+   short:'Does A-practice improve B-performance? The only definitive test of understanding vs. memorization.',
+   title:'Transfer Score — Understanding vs Memorization',
+   phil:'The only metric that definitively distinguishes a student who understood a rule from one who memorized a pattern. Understanding is compressed structure that generalizes across domains; memorization is indexed instances that do not. This is exactly what adversarial benchmarks test for — Raven\'s Matrices, ARC-AGI, Bongard, and PGM are designed so that surface pattern-matching fails and only structural generalization works. Transfer score measures whether practicing domain A improves performance in domain B beyond what B-only practice would predict, weighted by the known transfer relationship between them.',
+   sys:'<strong>System:</strong> TRANSFER_MAP defines 18 directed edges with strength values (pgm→raven: 0.80, arc→arc3: 0.85). Transfer score = fam gain in target types above Ebbinghaus baseline after source-type practice, weighted by edge strength.'},
+  {id:'ire',lbl:'Interference',
+   short:'Does cognitive diversity help or hurt you? Win-rate differential between diverse-cluster vs homogeneous prior sessions.',
+   title:'Interference Resilience — The Other Side of Transfer',
+   phil:'Tests the same underlying variable as Transfer Score but from the opposite temporal direction. Transfer Score measures gain in B after A practice. Interference Resilience measures whether dissimilar-cluster prior sessions help or hurt current performance. A deep encoder benefits — dissimilar circuits warm up related structure. A shallow encoder is hurt — the dissimilar session consumes working memory with no cross-activation. High interference resilience combined with high transfer score is the strongest composite signal of structural generalization.',
+   sys:'<strong>System:</strong> Interference resilience = win-rate differential between diverse-cluster vs homogeneous 20-session windows. Requires ≥4 samples each side. Exponential moving average smooths the signal.'},
+  {id:'rec',lbl:'Reconstruction',
+   short:'After forgetting, how fast do you recover? Fast recovery = principled encoding. Leading indicator for transfer.',
+   title:'Reconstruction Rate — Encoding Depth (Recovery Direction)',
+   phil:'Measures encoding depth by watching how fast a forgotten skill returns. Bjork\'s desirable difficulties research establishes that deep encoding — information stored as compressed principles — reconstructs faster after forgetting than shallow encoding. A principle can be regenerated from the rule itself; an instance requires exact retrieval. When fam drops into discovery territory and the student returns with a win, the speed of fam recovery relative to baseline learning rate reveals whether original encoding was principled or instance-based.',
+   sys:'<strong>System:</strong> Ebbinghaus decay _decayedFam(fam, lastPlayed, volatility) models expected drop. When prevF < 0.30 and win, Δfam/session normalized against learning rate = reconstruction rate.'},
+  {id:'dec',lbl:'Decay Resist.',
+   short:'How slowly do unplayed types fade? Above 0.5 = better than Ebbinghaus baseline. Confirms long-term structural encoding.',
+   title:'Decay Resistance — Encoding Depth (Forgetting Direction)',
+   phil:'Measures encoding depth from the forgetting direction. The shape of the forgetting curve is diagnostic: principle-based memories show steep initial drop then a flat tail — the principle persists as structure even as surface activation fades. Instance-based memories decay continuously matching the Ebbinghaus model. Decay resistance is the ratio of actual fam to Ebbinghaus-predicted fam for types not recently practiced.',
+   sys:'<strong>System:</strong> Ebbinghaus: fam *= exp(-volatility × 0.25 × daysSince). Decay resistance = actual fam / predicted fam for types unplayed in the last 5 sessions.'},
+  {id:'meta',lbl:'Meta-learning',
+   short:'Win rate when types are in discovery territory (fam < 0.30). Hypothesis formation under genuine novelty.',
+   title:'Meta-learning Speed — Hypothesis Generation under Novelty',
+   phil:'Win rate specifically when a type is in discovery territory — fam below 0.30, where the student has no reliable pattern and must form a hypothesis from examples alone. Transfer Expert archetypes score higher here because prior cross-domain transfer partially primes the type before explicit practice. Rote learners score lower — no cross-domain priming. ARC-AGI-3 is designed to keep fam perpetually low, making this metric directly correspond to ARC-AGI-3 performance.',
+   sys:'<strong>System:</strong> Rolling 15-session win rate restricted to sessions where snap[i-1][chosen] < 0.30. ARC3 has cogLoad=0.95, volatility=0.95, ensuring more time in discovery zone.'},
+  {id:'cog',lbl:'Cog. Load',
+   short:'Win rate on hardest types only (COG > 0.65, VOL > 0.80). Working memory ceiling for abstract reasoning.',
+   title:'Cognitive Load Tolerance — Working Memory Ceiling',
+   phil:'Measures the working memory capacity available for abstract reasoning. Some problems require holding multiple abstract objects in active memory simultaneously, tracking structural relationships, and applying rule transformations — Baddeley\'s central executive under maximum load. This capacity determines which problems are even reachable for a given student; it is the denominator in the learning equation.',
+   sys:'<strong>System:</strong> COG (0.50–0.95) and VOL (0.60–0.95) per type define the difficulty space. Hard intersection (COG > 0.65 AND VOL > 0.80) covers arc, arc3, raven, pgm.'},
+];
+const MID=METRICS.map(m=>m.id);
+
+// ══════════════════════════════════════════════════
+// ARCHETYPES
+// ══════════════════════════════════════════════════
+const ARCHS=[
+  {name:'You',color:'#ffffff',tc:.30,ir:.30,
+   pref:{raven:.75,pgm:.70,marvel:.40,bongard:.60,pvqa:.50,acre:.60,clevr:.50,arc:.70,arc3:.55,rlp:.35},
+   lr:{raven:.082,pgm:.076,marvel:.055,bongard:.068,pvqa:.060,acre:.068,clevr:.062,arc:.095,arc3:.090,rlp:.050}},
+  {name:'Transfer Expert',color:'#3B82F6',tc:.72,ir:.72,
+   pref:{raven:.92,pgm:.88,arc:.90,arc3:.78,bongard:.55,acre:.65,clevr:.55,marvel:.28,pvqa:.28,rlp:.28},
+   lr:{raven:.108,pgm:.102,arc:.122,arc3:.104,bongard:.070,acre:.084,clevr:.076,marvel:.048,pvqa:.048,rlp:.038}},
+  {name:'Spatial',color:'#A855F7',tc:.16,ir:.20,
+   pref:{pvqa:.94,arc3:.84,clevr:.74,arc:.48,bongard:.38,raven:.28,pgm:.28,marvel:.28,acre:.28,rlp:.18},
+   lr:{pvqa:.118,arc3:.100,clevr:.096,arc:.068,bongard:.058,raven:.048,pgm:.048,marvel:.048,acre:.048,rlp:.038}},
+  {name:'Expert',color:'#10B981',tc:.55,ir:.58,
+   pref:{raven:.76,pgm:.76,arc:.84,arc3:.82,bongard:.74,acre:.74,clevr:.72,marvel:.64,pvqa:.64,rlp:.54},
+   lr:{raven:.138,pgm:.138,arc:.158,arc3:.150,bongard:.128,acre:.128,clevr:.124,marvel:.104,pvqa:.104,rlp:.094}},
+  {name:'Beginner',color:'#F59E0B',tc:.08,ir:.10,
+   pref:{raven:.50,pgm:.42,arc:.42,arc3:.30,bongard:.42,acre:.52,clevr:.52,marvel:.52,pvqa:.52,rlp:.52},
+   lr:{raven:.036,pgm:.036,arc:.038,arc3:.030,bongard:.038,acre:.048,clevr:.048,marvel:.048,pvqa:.048,rlp:.048}},
+  {name:'Rules Only',color:'#38BDF8',tc:.26,ir:.15,
+   pref:{raven:.96,pgm:.94,bongard:.84,arc:.74,arc3:.50,marvel:.40,acre:.50,clevr:.40,pvqa:.30,rlp:.30},
+   lr:{raven:.114,pgm:.104,bongard:.094,arc:.094,arc3:.070,marvel:.060,acre:.070,clevr:.060,pvqa:.050,rlp:.040}},
+  {name:'Constraint',color:'#F97316',tc:.22,ir:.18,
+   pref:{acre:.96,clevr:.94,rlp:.84,pvqa:.50,bongard:.50,raven:.40,pgm:.40,arc:.40,arc3:.30,marvel:.30},
+   lr:{acre:.124,clevr:.114,rlp:.104,pvqa:.070,bongard:.070,raven:.060,pgm:.060,arc:.060,arc3:.050,marvel:.050}},
+  {name:'Rote',color:'#EF4444',tc:.04,ir:.04,
+   pref:{raven:.94,pgm:.90,arc:.84,arc3:.74,bongard:.64,acre:.50,clevr:.50,marvel:.50,pvqa:.50,rlp:.40},
+   lr:{raven:.210,pgm:.198,arc:.218,arc3:.192,bongard:.155,acre:.112,clevr:.112,marvel:.088,pvqa:.088,rlp:.072}},
+  {name:'Slow',color:'#84CC16',tc:.18,ir:.20,
+   pref:{raven:.62,pgm:.62,arc:.62,bongard:.52,acre:.52,clevr:.52,arc3:.42,marvel:.42,pvqa:.42,rlp:.42},
+   lr:{raven:.026,pgm:.026,arc:.030,bongard:.026,acre:.026,clevr:.026,arc3:.026,marvel:.026,pvqa:.026,rlp:.026}},
+  {name:'Sprint',color:'#E879F9',tc:.44,ir:.42,
+   pref:{raven:.84,arc:.90,arc3:.86,bongard:.64,pgm:.74,acre:.64,clevr:.64,marvel:.40,pvqa:.40,rlp:.30},
+   lr:{raven:.228,arc:.248,arc3:.222,bongard:.170,pgm:.200,acre:.158,clevr:.158,marvel:.112,pvqa:.112,rlp:.088}},
+];
+
+// ══════════════════════════════════════════════════
+// DATA GENERATION
+// ══════════════════════════════════════════════════
+function genStudent(arch,exact){
+  const lr={},pref={};
+  PT.forEach(t=>{
+    lr[t]  =exact?arch.lr[t]  :Math.max(.01,arch.lr[t]  +(Math.random()-.5)*.016);
+    pref[t]=exact?arch.pref[t]:cn(arch.pref[t]+(Math.random()-.5)*.13);
+  });
+  const tc=exact?arch.tc:cn(arch.tc+(Math.random()-.5)*.08);
+  const ir=exact?arch.ir:cn(arch.ir+(Math.random()-.5)*.08);
+  const fam={}; PT.forEach(t=>fam[t]=.50);
+  const sessions=[],snap=[];
+
+  for(let s=0;s<NS;s++){
+    PT.forEach(t=>{fam[t]=Math.max(.02,fam[t]*Math.exp(-VOL[t]*.25*1.5));});
+    const W=PT.map(t=>Math.max(.01,pref[t]*.55+rs(fam[t],t)*.45+Math.random()*.06));
+    const tot=W.reduce((a,b)=>a+b,0);
+    let r=Math.random()*tot,chosen=PT[0];
+    for(let i=0;i<PT.length;i++){r-=W[i];if(r<=0){chosen=PT[i];break;}}
+    const prevF=fam[chosen];
+    const prevCls=sessions.slice(Math.max(0,s-3),s).map(x=>CLS[x.chosen]);
+    const diverse=prevCls.length>0&&prevCls.some(c=>c!==CLS[chosen]);
+    const win=Math.random()<Math.min(.92,.28+fam[chosen]*.52+(diverse?ir*.12:0));
+    if(win){
+      fam[chosen]=Math.min(.97,fam[chosen]+lr[chosen]);
+      TMAP.forEach(([a,b,str])=>{if(a===chosen)fam[b]=Math.min(.97,fam[b]+str*lr[chosen]*tc);});
+    } else { fam[chosen]=Math.max(.03,fam[chosen]-lr[chosen]*.38); }
+    snap.push({...fam});
+    sessions.push({chosen,win,prevF,diverse});
+  }
+
+  const metrics=sessions.map((sess,i)=>{
+    const w10=sessions.slice(Math.max(0,i-9),i+1);
+    const w15=sessions.slice(Math.max(0,i-14),i+1);
+    const w20=sessions.slice(Math.max(0,i-19),i+1);
+    const w5 =sessions.slice(Math.max(0,i-4),i+1);
+    // Transfer
+    let tG=0,tW=0;
+    w10.forEach((ws,wi)=>{
+      const gi=Math.max(0,i-9)+wi;
+      TMAP.forEach(([a,b,str])=>{if(ws.chosen===a){const pF=gi>0?snap[gi-1][b]:.5,ex=pF*Math.exp(-VOL[b]*.25*1.5);tG+=(snap[gi][b]-ex)*str;tW+=str;}});
+    });
+    const trf=clamp(tW>0?(tG/tW)*9+.5:.5);
+    // Interference
+    const hiD=[],loD=[];
+    w20.forEach((ws,wi)=>{
+      const gi=Math.max(0,i-19)+wi;if(gi<2)return;
+      const pCls=sessions.slice(gi-2,gi).map(x=>CLS[x.chosen]);
+      const div=pCls.filter(c=>c!==CLS[ws.chosen]).length/2;
+      (div>.5?hiD:loD).push(ws.win?1:0);
+    });
+    const ire=(hiD.length>=4&&loD.length>=4)?clamp((hiD.reduce((a,b)=>a+b,0)/hiD.length-loD.reduce((a,b)=>a+b,0)/loD.length)*2.8+.5):.5;
+    // Reconstruction
+    let rV=[];
+    w10.forEach((ws,wi)=>{const gi=Math.max(0,i-9)+wi;if(gi>0&&ws.prevF<.30&&ws.win)rV.push(clamp((snap[gi][ws.chosen]-ws.prevF)/(lr[ws.chosen]*1.8)));});
+    const rec=clamp(rV.length>0?rV.reduce((a,b)=>a+b,0)/rV.length:.5);
+    // Decay resistance
+    let dR=[];
+    PT.forEach(t=>{if(!w5.some(x=>x.chosen===t)&&i>=5){const fa=snap[Math.max(0,i-5)][t],ex=fa*Math.exp(-VOL[t]*.25*1.5*5);if(ex>.04)dR.push(snap[i][t]/ex);}});
+    const dec=clamp(dR.length>0?(dR.reduce((a,b)=>a+b,0)/dR.length-.6)*.7+.5:.5);
+    // Meta-learning
+    const dS=w15.filter(ws=>ws.prevF<.30);
+    const meta=clamp(dS.length>=3?dS.filter(ws=>ws.win).length/dS.length:dS.length>0?dS.filter(ws=>ws.win).length/dS.length:.45);
+    // Cog load
+    const hard=w10.filter(x=>COG[x.chosen]>.65&&VOL[x.chosen]>.80);
+    const cog=clamp(hard.length>=2?hard.filter(x=>x.win).length/hard.length:w10.filter(x=>x.win).length/w10.length*.88);
+    return {trf,ire,rec,dec,meta,cog};
+  });
+
+  // Smooth ire
+  let prev=.5;
+  metrics.forEach(m=>{if(m.ire===.5)m.ire=prev*.85+.5*.15;prev=m.ire*.3+prev*.7;m.ire=prev;});
+
+  return {arch:{...arch,tc,ir},sessions,snap,metrics};
+}
+
+const STUDENTS=[];
+ARCHS.forEach((a,ai)=>{for(let k=0;k<NPE;k++)STUDENTS.push(genStudent(a,ai===0&&k===0));});
+const ME=STUDENTS[0];
+
+// ══════════════════════════════════════════════════
+// STATISTICS
+// ══════════════════════════════════════════════════
+function pearsonR(A,B){
+  const n=A.length;let mA=0,mB=0;
+  for(let i=0;i<n;i++){mA+=A[i];mB+=B[i];}mA/=n;mB/=n;
+  let num=0,dA=0,dB=0;
+  for(let i=0;i<n;i++){const da=A[i]-mA,db=B[i]-mB;num+=da*db;dA+=da*da;dB+=db*db;}
+  return dA>0&&dB>0?num/Math.sqrt(dA*dB):0;
+}
+function linReg(xs,ys){
+  const n=xs.length,mx=xs.reduce((a,b)=>a+b,0)/n,my=ys.reduce((a,b)=>a+b,0)/n;
+  let num=0,den=0;
+  xs.forEach((x,i)=>{num+=(x-mx)*(ys[i]-my);den+=(x-mx)**2;});
+  const slope=den>0?num/den:0,intercept=my-slope*mx;
+  return {slope,intercept,r2:pearsonR(xs,ys)**2};
+}
+
+// Pre-compute all-time correlations
+const CORR={};
+MID.forEach(a=>{CORR[a]={};MID.forEach(b=>{
+  if(a===b){CORR[a][b]=1;return;}
+  const A=STUDENTS.flatMap(s=>s.metrics.map(m=>m[a]));
+  const B=STUDENTS.flatMap(s=>s.metrics.map(m=>m[b]));
+  CORR[a][b]=pearsonR(A,B);
+});});
+
+// Pre-compute correlation SERIES (cumulative up to each session)
+const CORR_SER={};
+MID.forEach(a=>{CORR_SER[a]={};MID.forEach(b=>{
+  if(a===b){CORR_SER[a][b]=new Array(NS).fill(1);return;}
+  CORR_SER[a][b]=Array.from({length:NS},(_,si)=>{
+    const A=STUDENTS.flatMap(s=>s.metrics.slice(0,si+1).map(m=>m[a]));
+    const B=STUDENTS.flatMap(s=>s.metrics.slice(0,si+1).map(m=>m[b]));
+    return pearsonR(A,B);
+  });
+});});
+
+function centroid(ai,mid,si){
+  const g=STUDENTS.slice(ai*NPE,(ai+1)*NPE);
+  return g.reduce((s,st)=>s+st.metrics[si][mid],0)/g.length;
+}
+
+// ══════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════
+let _mode='traj',_mid='trf',_sx='trf',_sy='ire',_si=40;
+let _px='meta',_py='trf',_earlyEnd=14,_lateStart=40;
+let _sel=null,_playing=false,_playTimer=null,_descOpen=false;
+
+// Layout constants
+const TL={PL:50,PR:20,PTOP:16,PB:30};
+const SL={PL:54,PR:28,PTOP:20,PB:38};
+const PL_={PL:54,PR:28,PTOP:22,PB:40};
+
+// ══════════════════════════════════════════════════
+// SELECTED STUDENT OVERLAY
+// ══════════════════════════════════════════════════
+function drawSelOverlay(ctx,si){
+  if(_sel===null)return;
+  const st=STUDENTS[_sel];
+  const m=st.metrics[Math.min(si,NS-1)];
+  const lines=[
+    st.arch.name.toUpperCase(),
+    `trf ${m.trf.toFixed(2)}  ire ${m.ire.toFixed(2)}`,
+    `rec ${m.rec.toFixed(2)}  dec ${m.dec.toFixed(2)}`,
+    `meta ${m.meta.toFixed(2)}  cog ${m.cog.toFixed(2)}`,
+  ];
+  const W=980,bw=130,bh=56,bx=W-bw-8,by=8;
+  ctx.fillStyle='rgba(8,8,8,0.85)';ctx.fillRect(bx,by,bw,bh);
+  ctx.strokeStyle='#222';ctx.lineWidth=.5;ctx.strokeRect(bx,by,bw,bh);
+  lines.forEach((l,i)=>{
+    ctx.fillStyle=i===0?st.arch.color:'#2a2a2a';
+    ctx.font=i===0?'bold 7.5px Arial':'7px Arial';
+    ctx.textAlign='left';ctx.fillText(l,bx+6,by+12+i*13);
+  });
+}
+
+// ══════════════════════════════════════════════════
+// DRAW — TRAJECTORY
+// ══════════════════════════════════════════════════
+function drawTraj(mid){
+  const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);ctx.fillStyle='#080808';ctx.fillRect(0,0,W,H);
+  const {PL,PR,PTOP,PB}=TL,PW=W-PL-PR,PH=H-PTOP-PB;
+  const xs=i=>PL+(i/(NS-1))*PW;
+  const fy=v=>PTOP+PH*(1-Math.max(0,Math.min(1,v)));
+  [.1,.2,.3,.4,.5,.6,.7,.8,.9].forEach(v=>{
+    ctx.strokeStyle='#0d0d0d';ctx.lineWidth=.5;
+    ctx.beginPath();ctx.moveTo(PL,fy(v));ctx.lineTo(PL+PW,fy(v));ctx.stroke();
+    ctx.fillStyle='#1c1c1c';ctx.font='7px Arial';ctx.textAlign='right';ctx.fillText(v.toFixed(1),PL-4,fy(v)+2.5);
+  });
+  [0,10,20,30,40,50].forEach(n=>{ctx.strokeStyle='#0c0c0c';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(xs(n),PTOP);ctx.lineTo(xs(n),PTOP+PH);ctx.stroke();});
+  ctx.strokeStyle='#141414';ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(PL,fy(.5));ctx.lineTo(PL+PW,fy(.5));ctx.stroke();
+  // Band + median
+  for(let si=0;si<NS-1;si++){
+    const v=STUDENTS.map(s=>s.metrics[si][mid]).sort((a,b)=>a-b);
+    const y1=fy(v[Math.floor(v.length*.25)]),y2=fy(v[Math.floor(v.length*.75)]);
+    ctx.fillStyle='#111';ctx.fillRect(xs(si),Math.min(y1,y2),xs(si+1)-xs(si)+.5,Math.abs(y2-y1)+.5);
+  }
+  ctx.strokeStyle='#191919';ctx.lineWidth=1;ctx.setLineDash([3,6]);
+  ctx.beginPath();
+  for(let si=0;si<NS;si++){const v=STUDENTS.map(s=>s.metrics[si][mid]).sort((a,b)=>a-b);si===0?ctx.moveTo(xs(si),fy(v[25])):ctx.lineTo(xs(si),fy(v[25]));}
+  ctx.stroke();ctx.setLineDash([]);
+  // Other students
+  const hasSel=_sel!==null;
+  STUDENTS.forEach((st,idx)=>{
+    if(idx===0)return;
+    const dim=hasSel&&idx!==_sel;
+    ctx.strokeStyle=st.arch.color;ctx.globalAlpha=dim?.02:.06;ctx.lineWidth=.8;
+    ctx.beginPath();st.metrics.forEach((m,si)=>si===0?ctx.moveTo(xs(si),fy(m[mid])):ctx.lineTo(xs(si),fy(m[mid])));ctx.stroke();
+  });
+  STUDENTS.forEach((st,idx)=>{
+    if(idx===0)return;
+    const dim=hasSel&&idx!==_sel;
+    ctx.fillStyle=idx===_sel?st.arch.color:st.arch.color;ctx.globalAlpha=dim?.05:.15;
+    st.metrics.forEach((m,si)=>{ctx.beginPath();ctx.arc(xs(si),fy(m[mid]),1.5,0,Math.PI*2);ctx.fill();});
+  });
+  ctx.globalAlpha=1;
+  // ME: phase-colored segments
+  ME.metrics.forEach((m,si)=>{
+    if(si===0)return;
+    const wA=ME.metrics.slice(Math.max(0,si-3),si+1).map(x=>x[mid]);
+    const wB=ME.metrics.slice(Math.max(0,si-7),Math.max(0,si-3)).map(x=>x[mid]);
+    const avgA=wA.reduce((a,b)=>a+b,0)/wA.length;
+    const avgB=wB.length>0?wB.reduce((a,b)=>a+b,0)/wB.length:avgA;
+    const delta=avgA-avgB;
+    let col=delta>.022?'#3aef3a':delta<-.022?'#ef3a3a':'#ffffff';
+    let alp=delta>.022?.5:delta<-.022?.42:.28;
+    ctx.strokeStyle=col;ctx.globalAlpha=alp;ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(xs(si-1),fy(ME.metrics[si-1][mid]));ctx.lineTo(xs(si),fy(m[mid]));ctx.stroke();ctx.globalAlpha=1;
+  });
+  ctx.fillStyle='#ffffff';
+  ME.metrics.forEach((m,si)=>{ctx.beginPath();ctx.arc(xs(si),fy(m[mid]),2.2,0,Math.PI*2);ctx.fill();});
+  // Axes
+  ctx.strokeStyle='#121212';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(PL,PTOP);ctx.lineTo(PL,PTOP+PH);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(PL,PTOP+PH);ctx.lineTo(PL+PW,PTOP+PH);ctx.stroke();
+  [0,10,20,30,40,50].forEach(n=>{ctx.fillStyle='#1c1c1c';ctx.font='7px Arial';ctx.textAlign='center';ctx.fillText(n,xs(n),PTOP+PH+11);});
+  ctx.fillStyle='#181818';ctx.font='7.5px Arial';ctx.textAlign='center';ctx.fillText('SESSION →',PL+PW/2,H-3);
+  ctx.save();ctx.fillStyle='#1c1c1c';ctx.font='7.5px Arial';ctx.textAlign='center';ctx.translate(11,PTOP+PH/2);ctx.rotate(-Math.PI/2);ctx.fillText(METRICS.find(m=>m.id===mid).lbl,0,0);ctx.restore();
+  // Phase legend
+  [[38,'#3aef3a',.5,'growth'],[88,'#ef3a3a',.42,'declining'],[148,'#ffffff',.28,'plateau']].forEach(([x,c,a,t])=>{
+    ctx.fillStyle=c;ctx.globalAlpha=a;ctx.fillRect(PL+x,PTOP+2,12,2);ctx.globalAlpha=1;
+    ctx.fillStyle='#242424';ctx.font='7px Arial';ctx.textAlign='left';ctx.fillText(t,PL+x+14,PTOP+5);
+  });
+  drawSelOverlay(ctx,_si);
+}
+
+// ══════════════════════════════════════════════════
+// DRAW — SCATTER
+// ══════════════════════════════════════════════════
+function drawScatter(xId,yId,si){
+  const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);ctx.fillStyle='#080808';ctx.fillRect(0,0,W,H);
+  const {PL,PR,PTOP,PB}=SL,PW=W-PL-PR,PH=H-PTOP-PB;
+  const sx=v=>PL+Math.max(0,Math.min(1,v))*PW;
+  const sy=v=>PTOP+PH*(1-Math.max(0,Math.min(1,v)));
+  [.1,.2,.3,.4,.5,.6,.7,.8,.9].forEach(v=>{
+    ctx.strokeStyle='#0d0d0d';ctx.lineWidth=.5;
+    ctx.beginPath();ctx.moveTo(sx(v),PTOP);ctx.lineTo(sx(v),PTOP+PH);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(PL,sy(v));ctx.lineTo(PL+PW,sy(v));ctx.stroke();
+    ctx.fillStyle='#1a1a1a';ctx.font='7px Arial';
+    ctx.textAlign='center';ctx.fillText(v.toFixed(1),sx(v),PTOP+PH+11);
+    ctx.textAlign='right';ctx.fillText(v.toFixed(1),PL-3,sy(v)+2.5);
+  });
+  ctx.strokeStyle='#151515';ctx.lineWidth=.8;
+  ctx.beginPath();ctx.moveTo(sx(.5),PTOP);ctx.lineTo(sx(.5),PTOP+PH);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(PL,sy(.5));ctx.lineTo(PL+PW,sy(.5));ctx.stroke();
+
+  const TRAIL=12;
+  // Archetype centroid trails + arrowheads
+  ARCHS.forEach((arch,ai)=>{
+    const pts=[];
+    for(let t=Math.max(0,si-TRAIL);t<=si;t++)pts.push([sx(centroid(ai,xId,t)),sy(centroid(ai,yId,t))]);
+    for(let p=1;p<pts.length;p++){
+      ctx.strokeStyle=arch.color;ctx.globalAlpha=.03+.08*(p/pts.length);ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(pts[p-1][0],pts[p-1][1]);ctx.lineTo(pts[p][0],pts[p][1]);ctx.stroke();
+    }
+    if(pts.length>=3){
+      const [x1,y1]=pts[pts.length-3],[x2,y2]=pts[pts.length-1];
+      const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+      if(len>1.5){const nx=dx/len,ny=dy/len,px=-ny,py=nx,as=5;
+        ctx.fillStyle=arch.color;ctx.globalAlpha=.7;
+        ctx.beginPath();ctx.moveTo(x2+nx*as,y2+ny*as);ctx.lineTo(x2-nx*as*.5+px*as*.7,y2-ny*as*.5+py*as*.7);ctx.lineTo(x2-nx*as*.5-px*as*.7,y2-ny*as*.5-py*as*.7);ctx.fill();}
+    }
+    ctx.globalAlpha=1;
+  });
+
+  // Selected student individual trail
+  if(_sel!==null){
+    const st=STUDENTS[_sel];
+    const pts=[];
+    for(let t=Math.max(0,si-TRAIL);t<=si;t++)pts.push([sx(st.metrics[t][xId]),sy(st.metrics[t][yId])]);
+    ctx.strokeStyle='#ffffff';ctx.lineWidth=1.2;
+    for(let p=1;p<pts.length;p++){
+      ctx.globalAlpha=.04+.16*(p/pts.length);
+      ctx.beginPath();ctx.moveTo(pts[p-1][0],pts[p-1][1]);ctx.lineTo(pts[p][0],pts[p][1]);ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  }
+
+  // Student dots
+  const hasSel=_sel!==null;
+  STUDENTS.forEach((st,idx)=>{
+    if(idx===0)return;
+    const m=st.metrics[si];
+    const dim=hasSel&&idx!==_sel;
+    ctx.fillStyle=st.arch.color;ctx.globalAlpha=dim?.08:.26;
+    const r=idx===_sel?4:2.4;
+    ctx.beginPath();ctx.arc(sx(m[xId]),sy(m[yId]),r,0,Math.PI*2);ctx.fill();
+  });
+  ctx.globalAlpha=1;
+
+  // Archetype centroid labels
+  ARCHS.forEach((arch,ai)=>{
+    if(ai===0)return;
+    const cx=sx(centroid(ai,xId,si)),cy=sy(centroid(ai,yId,si));
+    ctx.fillStyle=arch.color;ctx.globalAlpha=.8;
+    ctx.beginPath();ctx.arc(cx,cy,4,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+    ctx.fillStyle=arch.color;ctx.font='7px Arial';ctx.textAlign='left';ctx.fillText(arch.name,cx+6,cy+2.5);
+  });
+  // You clones dim
+  STUDENTS.slice(1,NPE).forEach(st=>{const m=st.metrics[si];ctx.fillStyle='#333';ctx.globalAlpha=.5;ctx.beginPath();ctx.arc(sx(m[xId]),sy(m[yId]),1.6,0,Math.PI*2);ctx.fill();});ctx.globalAlpha=1;
+  // ME
+  const me=ME.metrics[si];
+  ctx.fillStyle='#ffffff';ctx.beginPath();ctx.arc(sx(me[xId]),sy(me[yId]),5,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#ffffff';ctx.font='7.5px Arial';ctx.textAlign='left';ctx.fillText('YOU',sx(me[xId])+7,sy(me[yId])+2.5);
+  // Axes
+  ctx.strokeStyle='#121212';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(PL,PTOP);ctx.lineTo(PL,PTOP+PH);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(PL,PTOP+PH);ctx.lineTo(PL+PW,PTOP+PH);ctx.stroke();
+  const xM=METRICS.find(m=>m.id===xId),yM=METRICS.find(m=>m.id===yId);
+  ctx.fillStyle='#6ec6ff';ctx.font='7.5px Arial';ctx.textAlign='center';ctx.fillText(xM.lbl+' →',PL+PW/2,H-3);
+  ctx.save();ctx.fillStyle='#9de09d';ctx.font='7.5px Arial';ctx.textAlign='center';ctx.translate(10,PTOP+PH/2);ctx.rotate(-Math.PI/2);ctx.fillText('↑ '+yM.lbl,0,0);ctx.restore();
+  ctx.fillStyle='#222';ctx.font='7px Arial';ctx.textAlign='right';ctx.fillText('s'+si,PL+PW,PTOP-4);
+  drawSelOverlay(ctx,si);
+}
+
+// ══════════════════════════════════════════════════
+// DRAW — CORRELATION
+// ══════════════════════════════════════════════════
+function corrCol(r){
+  const a=Math.abs(r);
+  return r>0?{bg:`rgba(38,110,38,${a*.45})`,txt:`rgba(70,210,70,${.25+a*.75})`}
+    :r<0?{bg:`rgba(110,38,38,${a*.45})`,txt:`rgba(210,70,70,${.25+a*.75})`}
+    :{bg:'#0e0e0e',txt:'#222'};
+}
+function drawCorr(si){
+  const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);ctx.fillStyle='#080808';ctx.fillRect(0,0,W,H);
+
+  const N=METRICS.length;
+  // Square cells: derive size from available height so grid is a perfect square
+  const LPAD=64,TPAD=28,BPAD=22,RPAD=160; // ranked pairs column on right
+  const availH=H-TPAD-BPAD, availW=W-LPAD-RPAD;
+  const CS=Math.floor(Math.min(availH,availW)/N); // cell size (square)
+  const GS=CS*N; // grid side length
+  // Center the square grid in the available space
+  const OX=Math.round((W-RPAD-GS)/2+LPAD/2);
+  const OY=Math.round((H-GS)/2);
+
+  // Column labels (top)
+  METRICS.forEach((m,j)=>{
+    ctx.fillStyle='#2a2a2a';ctx.font='7px Arial';ctx.textAlign='center';
+    ctx.fillText(m.id.toUpperCase(),OX+j*CS+CS/2,OY-9);
+  });
+  // Row labels (left)
+  METRICS.forEach((m,i)=>{
+    ctx.fillStyle='#2a2a2a';ctx.font='7px Arial';ctx.textAlign='right';
+    ctx.fillText(m.id.toUpperCase(),OX-6,OY+i*CS+CS/2+2.5);
+  });
+
+  // Cells
+  METRICS.forEach((ma,i)=>{
+    METRICS.forEach((mb,j)=>{
+      const isDiag=i===j;
+      const r=isDiag?1:CORR_SER[ma.id][mb.id][si];
+      const rFull=isDiag?1:CORR[ma.id][mb.id];
+      const cx=OX+j*CS, cy=OY+i*CS;
+      const cc=isDiag?{bg:'#0f0f0f',txt:'#202020'}:corrCol(r);
+      ctx.fillStyle=cc.bg;ctx.fillRect(cx+1,cy+1,CS-2,CS-2);
+
+      if(!isDiag){
+        // r value
+        ctx.fillStyle=cc.txt;ctx.font='bold 9px Arial';ctx.textAlign='center';
+        ctx.fillText(r.toFixed(2),cx+CS/2,cy+CS/2-5);
+        // Δ vs final
+        const delta=r-rFull;
+        ctx.fillStyle=Math.abs(delta)<.01?'#1e1e1e':delta>0?'rgba(70,210,70,.4)':'rgba(210,70,70,.4)';
+        ctx.font='6px Arial';
+        ctx.fillText((delta>=0?'+':'')+delta.toFixed(2),cx+CS/2,cy+CS/2+5);
+        // Sparkline (bottom quarter of cell)
+        const ser=CORR_SER[ma.id][mb.id];
+        const sMin=Math.min(...ser),sMax=Math.max(...ser),sRange=sMax-sMin||.01;
+        const spY=cy+CS-6, spH=Math.floor(CS*.22), spX=cx+4, spW=CS-8;
+        ctx.strokeStyle=cc.txt;ctx.globalAlpha=.22;ctx.lineWidth=.8;
+        ctx.beginPath();
+        ser.forEach((rv,k)=>{
+          const px=spX+k/(NS-1)*spW, py=spY-((rv-sMin)/sRange)*spH;
+          k===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+        });
+        ctx.stroke();
+        // Session cursor
+        const mx_=spX+(si/(NS-1))*spW;
+        ctx.strokeStyle=cc.txt;ctx.globalAlpha=.55;ctx.lineWidth=1;
+        ctx.beginPath();ctx.moveTo(mx_,spY-spH);ctx.lineTo(mx_,spY);ctx.stroke();
+        ctx.globalAlpha=1;
+      } else {
+        ctx.fillStyle='#1a1a1a';ctx.font='8px Arial';ctx.textAlign='center';
+        ctx.fillText('—',cx+CS/2,cy+CS/2+3);
+      }
+    });
+  });
+
+  // Grid lines
+  ctx.strokeStyle='#0e0e0e';ctx.lineWidth=.5;
+  for(let i=0;i<=N;i++){
+    ctx.beginPath();ctx.moveTo(OX,OY+i*CS);ctx.lineTo(OX+GS,OY+i*CS);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(OX+i*CS,OY);ctx.lineTo(OX+i*CS,OY+GS);ctx.stroke();
+  }
+
+  // Ranked pairs column (right of grid)
+  const pairs=[];
+  for(let i=0;i<N;i++)for(let j=i+1;j<N;j++)
+    pairs.push({a:MID[i],b:MID[j],r:CORR_SER[MID[i]][MID[j]][si]});
+  pairs.sort((a,b)=>b.r-a.r);
+  const RX=OX+GS+16, RY=OY+4;
+  ctx.fillStyle='#1c1c1c';ctx.font='bold 6.5px Arial';ctx.textAlign='left';
+  ctx.fillText('RANKED PAIRS',RX,RY-4);
+  pairs.forEach((p,k)=>{
+    const cc=corrCol(p.r), ty=RY+k*(GS/pairs.length);
+    const bw=Math.max(2,Math.abs(p.r)*70);
+    ctx.fillStyle=cc.bg;ctx.fillRect(RX,ty,bw,GS/pairs.length-1);
+    ctx.fillStyle=cc.txt;ctx.font='6.5px Arial';ctx.textAlign='left';
+    ctx.fillText(`${p.a.toUpperCase()}↔${p.b.toUpperCase()}  ${p.r>=0?'+':''}${p.r.toFixed(2)}`,RX+3,ty+(GS/pairs.length)*.6);
+  });
+
+  // Footer hint
+  ctx.fillStyle='#222';ctx.font='7px Arial';ctx.textAlign='left';
+  ctx.fillText(`s${si}  ·  sparklines show r(0→${si})  ·  click cell → Predictor`,OX,H-6);
+}
+
+// ══════════════════════════════════════════════════
+// DRAW — PREDICTOR
+// ══════════════════════════════════════════════════
+function drawPred(xId,yId,eEnd,lStart){
+  const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);ctx.fillStyle='#080808';ctx.fillRect(0,0,W,H);
+  const {PL,PR,PTOP,PB}=PL_,PW=W-PL-PR,PH=H-PTOP-PB;
+  const eA=0,eB=Math.min(eEnd,NS-2),lA=Math.max(lStart,eB+1),lB=NS-1;
+  const xs_=[],ys_=[];
+  STUDENTS.forEach(s=>{
+    xs_.push(s.metrics.slice(eA,eB+1).reduce((a,m)=>a+m[xId],0)/(eB-eA+1));
+    ys_.push(s.metrics.slice(lA,lB+1).reduce((a,m)=>a+m[yId],0)/(lB-lA+1));
+  });
+  const reg=linReg(xs_,ys_);
+  const xMn=Math.max(0,Math.min(...xs_)-.05),xMx=Math.min(1,Math.max(...xs_)+.05);
+  const yMn=Math.max(0,Math.min(...ys_)-.05),yMx=Math.min(1,Math.max(...ys_)+.05);
+  const px=v=>PL+(v-xMn)/(xMx-xMn)*PW;
+  const py=v=>PTOP+PH*(1-(v-yMn)/(yMx-yMn));
+  // Grid
+  for(let v=0;v<=1;v+=.1){
+    if(v>=xMn-.01&&v<=xMx+.01){
+      ctx.strokeStyle='#0d0d0d';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(px(v),PTOP);ctx.lineTo(px(v),PTOP+PH);ctx.stroke();
+      ctx.fillStyle='#1a1a1a';ctx.font='7px Arial';ctx.textAlign='center';ctx.fillText(v.toFixed(1),px(v),PTOP+PH+11);
+    }
+    if(v>=yMn-.01&&v<=yMx+.01){
+      ctx.strokeStyle='#0d0d0d';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(PL,py(v));ctx.lineTo(PL+PW,py(v));ctx.stroke();
+      ctx.fillStyle='#1a1a1a';ctx.font='7px Arial';ctx.textAlign='right';ctx.fillText(v.toFixed(1),PL-3,py(v)+2.5);
+    }
+  }
+  // Regression line
+  ctx.strokeStyle='#1c1c1c';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(px(xMn),py(reg.slope*xMn+reg.intercept));ctx.lineTo(px(xMx),py(reg.slope*xMx+reg.intercept));ctx.stroke();
+  // Dots
+  const hasSel=_sel!==null;
+  STUDENTS.forEach((st,idx)=>{
+    const isMe=idx===0,isSel=idx===_sel;
+    const dim=hasSel&&!isMe&&!isSel;
+    ctx.fillStyle=isMe?'#ffffff':st.arch.color;
+    ctx.globalAlpha=dim?.1:isMe?1:.45;
+    const r=isMe?5.5:isSel?5:2.8;
+    ctx.beginPath();ctx.arc(px(xs_[idx]),py(ys_[idx]),r,0,Math.PI*2);ctx.fill();
+  });
+  ctx.globalAlpha=1;
+  ctx.fillStyle='#ffffff';ctx.font='7.5px Arial';ctx.textAlign='left';
+  ctx.fillText('YOU',px(xs_[0])+7,py(ys_[0])+2.5);
+  // R²
+  const sig=reg.r2>.36?'strong':reg.r2>.16?'moderate':'weak';
+  ctx.fillStyle='#262626';ctx.font='bold 20px Arial';ctx.textAlign='right';ctx.fillText('R² = '+reg.r2.toFixed(3),PL+PW,PTOP+24);
+  ctx.fillStyle='#1e1e1e';ctx.font='7px Arial';ctx.fillText(sig+' predictor',PL+PW,PTOP+35);
+  // Axes
+  ctx.strokeStyle='#121212';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(PL,PTOP);ctx.lineTo(PL,PTOP+PH);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(PL,PTOP+PH);ctx.lineTo(PL+PW,PTOP+PH);ctx.stroke();
+  const xM=METRICS.find(m=>m.id===xId),yM=METRICS.find(m=>m.id===yId);
+  ctx.fillStyle='#6ec6ff';ctx.font='7.5px Arial';ctx.textAlign='center';
+  ctx.fillText(`Early ${xM.lbl}  (s${eA}–${eB})`,PL+PW/2,H-3);
+  ctx.save();ctx.fillStyle='#9de09d';ctx.font='7.5px Arial';ctx.textAlign='center';
+  ctx.translate(10,PTOP+PH/2);ctx.rotate(-Math.PI/2);ctx.fillText(`Late ${yM.lbl}  (s${lA}–${lB})`,0,0);ctx.restore();
+  drawSelOverlay(ctx,lA);
+}
+
+// ══════════════════════════════════════════════════
+// HIT TESTING
+// ══════════════════════════════════════════════════
+function hitTraj(mx,my){
+  const {PL,PR,PTOP,PB}=TL,PW=980-PL-PR,PH=440-PTOP-PB;
+  const si=Math.round((mx-PL)/PW*(NS-1));
+  if(si<0||si>=NS)return null;
+  let best=null,bestD=16;
+  STUDENTS.forEach((st,idx)=>{
+    const fy=v=>PTOP+PH*(1-Math.max(0,Math.min(1,v)));
+    const y=fy(st.metrics[si][_mid]);
+    const d=Math.abs(my-y);
+    if(d<bestD){bestD=d;best=idx;}
+  });
+  return best;
+}
+function hitScat(mx,my){
+  const {PL,PR,PTOP,PB}=SL,PW=980-PL-PR,PH=440-PTOP-PB;
+  const sxf=v=>PL+Math.max(0,Math.min(1,v))*PW;
+  const syf=v=>PTOP+PH*(1-Math.max(0,Math.min(1,v)));
+  let best=null,bestD=400;
+  STUDENTS.forEach((st,idx)=>{
+    const m=st.metrics[_si];
+    const dx=sxf(m[_sx])-mx,dy=syf(m[_sy])-my;
+    const d=dx*dx+dy*dy;
+    if(d<bestD){bestD=d;best=idx;}
+  });
+  return bestD<400?best:null;
+}
+function hitCorr(mx,my){
+  const N=METRICS.length,CW=86,CH=54;
+  const GW=N*CW,OX=Math.floor((980-GW-80)/2)+76,OY=38;
+  const ci=Math.floor((mx-OX)/CW),ri=Math.floor((my-OY)/CH);
+  if(ci<0||ci>=N||ri<0||ri>=N||ri===ci)return null;
+  return {i:ri,j:ci};
+}
+function hitPred(mx,my){
+  const {PL,PR,PTOP,PB}=PL_,PW=980-PL-PR,PH=440-PTOP-PB;
+  const eA=0,eB=+document.getElementById('earlyEnd').value;
+  const lA=+document.getElementById('lateStart').value,lB=NS-1;
+  const xs_=STUDENTS.map(s=>s.metrics.slice(eA,eB+1).reduce((a,m)=>a+m[_px],0)/(eB-eA+1));
+  const ys_=STUDENTS.map(s=>s.metrics.slice(lA,lB+1).reduce((a,m)=>a+m[_py],0)/(lB-lA+1));
+  const xMn=Math.max(0,Math.min(...xs_)-.05),xMx=Math.min(1,Math.max(...xs_)+.05);
+  const yMn=Math.max(0,Math.min(...ys_)-.05),yMx=Math.min(1,Math.max(...ys_)+.05);
+  const pxf=v=>PL+(v-xMn)/(xMx-xMn)*PW;
+  const pyf=v=>PTOP+PH*(1-(v-yMn)/(yMx-yMn));
+  let best=null,bestD=400;
+  STUDENTS.forEach((st,idx)=>{
+    const dx=pxf(xs_[idx])-mx,dy=pyf(ys_[idx])-my;
+    const d=dx*dx+dy*dy;
+    if(d<bestD){bestD=d;best=idx;}
+  });
+  return bestD<400?best:null;
+}
+
+// ══════════════════════════════════════════════════
+// REDRAW + UI
+// ══════════════════════════════════════════════════
+function redraw(){
+  const eE=+document.getElementById('earlyEnd').value;
+  const lS=+document.getElementById('lateStart').value;
+  if(_mode==='traj') drawTraj(_mid);
+  else if(_mode==='scat') drawScatter(_sx,_sy,_si);
+  else if(_mode==='corr') drawCorr(_si);
+  else drawPred(_px,_py,eE,lS);
+}
+
+function toggleDesc(){
+  _descOpen=!_descOpen;
+  document.getElementById('descExp').classList.toggle('open',_descOpen);
+  document.getElementById('descTog').textContent=_descOpen?'▾ philosophy':'▸ philosophy';
+}
+
+const DESC_CORR={
+  short:'Pairwise Pearson r across all 50 students × sessions 0–N. Sparklines show r evolution. Click any cell to open Predictor for that pair.',
+  title:'Correlation Matrix — Metric Independence Structure',
+  phil:'If Transfer and Interference Resilience correlate at r > 0.85, one of them is redundant — both driven by the same underlying trait. If Meta-learning and Reconstruction Rate correlate at r < 0.2, they measure genuinely different cognitive capacities. The sparkline in each cell shows how r evolved from session 0 to the current session — early instability followed by convergence reveals when the metric relationship became stable.',
+  sys:'<strong>System:</strong> Pearson r computed across all 50 students × sessions 0–N (cumulative). The Δ vs final value shows how much the correlation has drifted from its eventual stable value. Ranked pairs shown right of matrix.'
+};
+const DESC_PRED={
+  short:'Early metric (window A) predicts late outcome (window B). R² reveals cross-time forecasting power. Click any student dot to inspect.',
+  title:'Leading Indicator — Predictor → Outcome Analysis',
+  phil:'Does early performance on metric A predict late performance on metric B? R² < 0.09 = almost no forecasting power. R² > 0.36 = strongly predictive. This determines which metrics to prioritize in early training. Default: does early Meta-learning Speed predict late Transfer Score? This is the most scientifically interesting question in the dataset.',
+  sys:'<strong>System:</strong> Early = mean of metric over sessions 0–earlyEnd per student. Late = mean over lateStart–53. Linear regression across 50 students. R² = squared Pearson r of early vs late values. Predictor and outcome windows are adjustable.'
+};
+
+function setDesc(id){
+  const m=METRICS.find(x=>x.id===id);
+  document.getElementById('descShort').textContent=m.short;
+  document.getElementById('descTitle').textContent=m.title;
+  document.getElementById('descPhil').textContent=m.phil;
+  document.getElementById('descSys').innerHTML=m.sys;
+}
+function setDescStatic(d){
+  document.getElementById('descShort').textContent=d.short;
+  document.getElementById('descTitle').textContent=d.title;
+  document.getElementById('descPhil').textContent=d.phil;
+  document.getElementById('descSys').innerHTML=d.sys;
+}
+
+function setMode(mode){
+  _mode=mode;
+  ['traj','scat','corr','pred'].forEach(m=>document.getElementById('m_'+m).classList.toggle('on',m===mode));
+  // Session controls visibility
+  const hasSes=mode==='scat'||mode==='corr';
+  ['sesep','playBtn','seslbl','sesSlider','sesVal'].forEach(id=>document.getElementById(id).style.display=hasSes?'':'none');
+  // Predictor windows
+  document.getElementById('pwrap').classList.toggle('vis',mode==='pred');
+  // Row 2 visibility
+  document.getElementById('row2').style.display=(mode==='scat'||mode==='pred')?'flex':'none';
+  // Row 1 label + primary button colors
+  const lbl1=document.getElementById('lbl1');
+  if(mode==='traj'){lbl1.textContent='Metric';lbl1.style.color='#b8b8b8';lbl1.style.borderColor='#2a2a2a';}
+  else if(mode==='scat'){lbl1.textContent='X';lbl1.style.color='#6ec6ff';lbl1.style.borderColor='#1a2a3a';}
+  else if(mode==='pred'){lbl1.textContent='Early';lbl1.style.color='#6ec6ff';lbl1.style.borderColor='#1a2a3a';}
+  else{lbl1.textContent='—';lbl1.style.color='#1c1c1c';lbl1.style.borderColor='#141414';}
+  const lbl2=document.getElementById('lbl2');
+  if(mode==='scat'){lbl2.textContent='Y';}else if(mode==='pred'){lbl2.textContent='Late';}
+  // Row 1 buttons: disable in corr
+  document.querySelectorAll('.xbtn').forEach(b=>{ b.style.opacity=mode==='corr'?'.2':'1'; b.style.pointerEvents=mode==='corr'?'none':''; });
+  // Description
+  if(mode==='corr') setDescStatic(DESC_CORR);
+  else if(mode==='pred') setDescStatic(DESC_PRED);
+  else setDesc(_mid);
+  redraw();
+}
+
+function setP1(id){
+  if(_mode==='traj'){_mid=id;setDesc(id);}
+  else if(_mode==='scat') _sx=id;
+  else if(_mode==='pred') _px=id;
+  document.querySelectorAll('.xbtn').forEach(b=>b.classList.toggle('on',b.dataset.id===id));
+  redraw();
+}
+function setP2(id){
+  if(_mode==='scat') _sy=id;
+  else if(_mode==='pred') _py=id;
+  document.querySelectorAll('.ybtn').forEach(b=>b.classList.toggle('on',b.dataset.id===id));
+  redraw();
+}
+
+function onSlider(){
+  _si=+document.getElementById('sesSlider').value;
+  document.getElementById('sesVal').textContent=_si;
+  redraw();
+}
+function togglePlay(){
+  _playing=!_playing;
+  document.getElementById('playBtn').textContent=_playing?'⏸':'▶';
+  if(_playing){
+    _playTimer=setInterval(()=>{
+      _si=_si>=53?2:_si+1;
+      document.getElementById('sesSlider').value=_si;
+      document.getElementById('sesVal').textContent=_si;
+      redraw();
+      if(_si>=53){_playing=false;clearInterval(_playTimer);document.getElementById('playBtn').textContent='▶';}
+    },80);
+  } else { clearInterval(_playTimer); }
+}
+
+// Canvas click handler — linked brushing + correlation cell → predictor
+document.getElementById('c').addEventListener('click',e=>{
+  const rect=document.getElementById('c').getBoundingClientRect();
+  const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  if(_mode==='corr'){
+    const cell=hitCorr(mx,my);
+    if(cell){
+      _px=MID[cell.j];_py=MID[cell.i];
+      document.querySelectorAll('.xbtn').forEach(b=>b.classList.toggle('on',b.dataset.id===_px));
+      document.querySelectorAll('.ybtn').forEach(b=>b.classList.toggle('on',b.dataset.id===_py));
+      setMode('pred');return;
+    }
+    return;
+  }
+  let found=null;
+  if(_mode==='traj') found=hitTraj(mx,my);
+  else if(_mode==='scat') found=hitScat(mx,my);
+  else if(_mode==='pred') found=hitPred(mx,my);
+  _sel=(found===_sel)?null:found;
+  redraw();
+});
+
+// ══════════════════════════════════════════════════
+// BUILD UI
+// ══════════════════════════════════════════════════
+const r1=document.getElementById('r1btns'),r2=document.getElementById('r2btns');
+METRICS.forEach(m=>{
+  const b1=document.createElement('button');b1.className='xbtn';b1.dataset.id=m.id;b1.textContent=m.lbl;b1.onclick=()=>setP1(m.id);r1.appendChild(b1);
+  const b2=document.createElement('button');b2.className='ybtn';b2.dataset.id=m.id;b2.textContent=m.lbl;b2.onclick=()=>setP2(m.id);r2.appendChild(b2);
+});
+
+// Legend
+const leg=document.getElementById('leg');
+leg.innerHTML=`<div class="li"><div class="ld" style="background:#fff"></div>You</div>`;
+ARCHS.slice(1).forEach(a=>{leg.innerHTML+=`<div class="li"><div class="ld" style="background:${a.color}"></div>${a.name} ×${NPE}</div>`;});
+leg.innerHTML+=`<div class="li" style="margin-left:8px"><div style="width:9px;height:6px;background:#111;display:inline-block;margin-right:3px;vertical-align:middle"></div>p25–p75 (n=50)</div>`;
+leg.innerHTML+=`<div class="li" style="color:#3aef3a;opacity:.6">▬ growth</div><div class="li" style="color:#ef3a3a;opacity:.5">▬ declining</div>`;
+leg.innerHTML+=`<div class="li" style="margin-left:8px;color:#252525;font-style:italic">click any dot to inspect  ·  click corr cell → predictor</div>`;
+
+// Init
+window.addEventListener('load',()=>{
+  setDesc('trf');
+  document.querySelector('.xbtn[data-id="trf"]').classList.add('on');
+  document.querySelector('.ybtn[data-id="ire"]').classList.add('on');
+  drawTraj('trf');
+});
+</script>
+</body>
+</html>

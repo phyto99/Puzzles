@@ -588,6 +588,52 @@
             background: var(--sep);
         }
 
+        /* ── Profile grid ── */
+        #profileGrid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1px;
+            background: var(--text);
+            border: 3px solid var(--text);
+            border-radius: 0;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .pc {
+            position: relative;
+            height: 54px;
+            background: var(--surface);
+            overflow: hidden;
+        }
+        .pc-fill {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: calc(var(--f, 0) * 100%);
+            background: var(--z, var(--text4));
+            opacity: 0.22;
+            transition: height .5s;
+        }
+        .pc-label {
+            position: absolute;
+            top: 5px; left: 0; right: 0;
+            font-size: 7.5px; font-family: monospace; font-weight: 700;
+            text-align: center; letter-spacing: .07em;
+            color: var(--text);
+        }
+        .pc-score {
+            position: absolute;
+            bottom: 4px; left: 0; right: 0;
+            font-size: 14px; font-family: monospace; font-weight: 700;
+            text-align: center;
+            color: var(--z, var(--text4));
+        }
+        .pc-dot {
+            position: absolute;
+            top: 4px; right: 5px;
+            width: 4px; height: 4px; border-radius: 50%;
+            background: var(--c, var(--text4));
+        }
+
         /* ── Inline element overrides ── */
         #pgmMatrix    { border: 2px solid var(--text2) !important; filter: var(--img-filter); }
         #arcOutputGrid { border: 2px solid var(--text2) !important; }
@@ -1129,6 +1175,8 @@ function recordResult(genType, correct) {
             EntropyEngine.recordPuzzleFeatures(genType, currentPuzzleFeatures, correct);
         }
         renderEntropyPanel(genType);
+        // Refresh profile if it's open
+        if (document.getElementById('profileOverlay')?.classList.contains('open')) renderProfileGrid();
     }
 }
 
@@ -3224,6 +3272,54 @@ window.onload = () => {
     _applyThemeButtons(saved);
 };
 
+/* ── Profile overlay ── */
+function toggleProfile() {
+    const ov = document.getElementById('profileOverlay');
+    const open = ov.classList.toggle('open');
+    if (open) renderProfileGrid();
+}
+
+/* ── Profile grid ── */
+const _PROFILE_TYPES = [
+    { id:'raven',     lbl:'RAVEN'   },
+    { id:'pgm',       lbl:'PGM'     },
+    { id:'marvel',    lbl:'MARVEL'  },
+    { id:'bongard',   lbl:'BONGARD' },
+    { id:'puzzlevqa', lbl:'PVQA'    },
+    { id:'acre',      lbl:'ACRE'    },
+    { id:'clevr',     lbl:'CLEVR'   },
+    { id:'arc',       lbl:'ARC'     },
+    { id:'arc3',      lbl:'ARC3'    },
+    { id:'rlp',       lbl:'RLP'     },
+];
+
+function renderProfileGrid() {
+    const grid = document.getElementById('profileGrid');
+    if (!grid || !window.EntropyEngine) return;
+
+    grid.innerHTML = '';
+    _PROFILE_TYPES.forEach(({ id, lbl }) => {
+        const reg  = EntropyEngine.PUZZLE_REGISTRY[id];
+        const summ = EntropyEngine.getGameSummary(id);
+        const fam  = summ.familiarity;
+        const played = summ.sessions > 0;
+        const zColor = played ? EntropyEngine._zoneColor(fam) : null;
+        const cColor = EntropyEngine.CLUSTERS[reg?.cluster]?.hex ?? '#888';
+
+        const cell = document.createElement('div');
+        cell.className = 'pc';
+        if (zColor) cell.style.setProperty('--z', zColor);
+        cell.style.setProperty('--f', played ? fam.toFixed(3) : '0');
+        cell.style.setProperty('--c', cColor);
+        cell.innerHTML =
+            `<div class="pc-fill"></div>` +
+            `<div class="pc-label">${lbl}</div>` +
+            `<div class="pc-score">${played ? Math.round(fam * 100) : '—'}</div>` +
+            `<div class="pc-dot"></div>`;
+        grid.appendChild(cell);
+    });
+}
+
 /* ── Theme toggle ── */
 function setTheme(t) {
     if (t === 'light') {
@@ -3252,6 +3348,39 @@ function _applyThemeButtons(t) {
     display: flex; align-items: center; justify-content: center;
   }
   #docsBtn:hover { background: #e01f6e; transform: scale(1.08); }
+
+  #profileBtn {
+    position: fixed; bottom: 20px; right: 20px; z-index: 9000;
+    background: var(--text); color: var(--surface); border: none; border-radius: 0;
+    width: 44px; height: 44px; font-size: 20px; cursor: pointer;
+    box-shadow: 0 2px 10px var(--shadow); transition: opacity .15s, transform .15s;
+    display: flex; align-items: center; justify-content: center;
+    font-family: monospace;
+  }
+  #profileBtn:hover { opacity: .8; transform: scale(1.06); }
+
+  #vizOverlay {
+    display: none; position: fixed; inset: 0; z-index: 8999;
+    background: rgba(0,0,0,.85); backdrop-filter: blur(4px);
+  }
+  #vizOverlay.open { display: flex; flex-direction: column; }
+  #vizHeader {
+    display: flex; align-items: center;
+    background: #080808; border-bottom: 1px solid #1e1e1e; flex-shrink: 0;
+    padding: 0 6px;
+  }
+  #vizTitle {
+    padding: 10px 16px; font-size: 11px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: #444;
+  }
+  #vizClose {
+    margin-left: auto; padding: 10px 18px; color: #444; cursor: pointer;
+    font-size: 18px; background: none; border: none;
+  }
+  #vizClose:hover { color: #fff; }
+  #vizFrameWrap { flex: 1; overflow: hidden; }
+  #vizFrameWrap iframe { width: 100%; height: 100%; border: none; background: #080808; }
+
   #docsOverlay {
     display: none; position: fixed; inset: 0; z-index: 8999;
     background: rgba(0,0,0,.7); backdrop-filter: blur(4px);
@@ -3278,6 +3407,17 @@ function _applyThemeButtons(t) {
 </style>
 
 <button id="docsBtn" onclick="toggleDocs()" title="Docs">📋</button>
+<button id="profileBtn" onclick="toggleViz()" title="Cognitive Trajectory">◈</button>
+
+<div id="vizOverlay">
+  <div id="vizHeader">
+    <span id="vizTitle">Cognitive Trajectory</span>
+    <button id="vizClose" onclick="toggleViz()">✕</button>
+  </div>
+  <div id="vizFrameWrap">
+    <iframe id="vizFrame" src="about:blank"></iframe>
+  </div>
+</div>
 
 <div id="docsOverlay">
   <div id="docsHeader">
@@ -3292,11 +3432,20 @@ function _applyThemeButtons(t) {
 </div>
 
 <script>
-  let _docsOpen = false;
+  let _docsOpen = false, _vizOpen = false;
 
   function toggleDocs() {
     _docsOpen = !_docsOpen;
     document.getElementById('docsOverlay').classList.toggle('open', _docsOpen);
+  }
+
+  function toggleViz() {
+    _vizOpen = !_vizOpen;
+    document.getElementById('vizOverlay').classList.toggle('open', _vizOpen);
+    if (_vizOpen) {
+      const f = document.getElementById('vizFrame');
+      if (f.src === 'about:blank') f.src = '/static/proto_viz.html';
+    }
   }
 
   function switchDoc(page, tab) {
@@ -3306,7 +3455,10 @@ function _applyThemeButtons(t) {
   }
 
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && _docsOpen) toggleDocs();
+    if (e.key === 'Escape') {
+      if (_vizOpen)  toggleViz();
+      if (_docsOpen) toggleDocs();
+    }
   });
 </script>
 </body>
